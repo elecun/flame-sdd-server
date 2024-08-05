@@ -1,0 +1,23 @@
+{
+    "rt_cycle_ns" : 1000000000,
+    "verbose" : 1,
+
+    "parameters":{
+        "default_buffer_size":100000
+    },
+
+    "dataport":{
+        "status" : {
+            "transport" : "tcp",
+            "host":"*",
+            "port" : 5558,
+            "socket_type" : "pub",
+            "queue_size" : 1000
+        },
+        "image_stream" : {
+            "transport" : "inproc",
+            "socket_type" : "pull",
+            "queue_size" : 5000
+        }
+    }
+}
