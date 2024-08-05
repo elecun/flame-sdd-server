@@ -18,32 +18,32 @@ ifeq ($(ARCH),arm64)
 	CC := /usr/bin/aarch64-linux-gnu-g++
 	GCC := /usr/bin/aarch64-linux-gnu-g++
 	LD_LIBRARY_PATH += -L./lib/arm64
-	OUTDIR		= $(CURRENT_DIR)/bin/arm64/
-	BUILDDIR	= $(CURRENT_DIR)/bin/arm64/
+	OUTDIR		= $(CURRENT_DIR)/bin/arm64
+	BUILDDIR	= $(CURRENT_DIR)/bin/arm64
 	INCLUDE_DIR = -I./ -I$(CURRENT_DIR)/ -I$(CURRENT_DIR)/include/ -I$(CURRENT_DIR)/include/dep -I/usr/include
 	LD_LIBRARY_PATH += -L/usr/local/lib -L./lib/arm64
 else ifeq ($(ARCH), armhf)
 	CC := /usr/bin/arm-linux-gnueabihf-g++-9
 	GCC := /usr/bin/arm-linux-gnueabihf-gcc-9
 	LD_LIBRARY_PATH += -L./lib/armhf
-	OUTDIR		= $(CURRENT_DIR)/bin/armhf/
-	BUILDDIR	= $(CURRENT_DIR)/bin/armhf/
+	OUTDIR		= $(CURRENT_DIR)/bin/armhf
+	BUILDDIR	= $(CURRENT_DIR)/bin/armhf
 	INCLUDE_DIR = -I./ -I$(CURRENT_DIR)/ -I$(CURRENT_DIR)/include/ -I$(CURRENT_DIR)/include/dep -I/usr/include
 	LD_LIBRARY_PATH += -L/usr/local/lib -L./lib/armhf
 else ifeq ($(ARCH), aarch64) # for Mac Apple Silicon
 	CC := g++
 	GCC := gcc
 	LD_LIBRARY_PATH += -L./lib/aarch64
-	OUTDIR		= $(CURRENT_DIR)/bin/aarch64/
-	BUILDDIR	= $(CURRENT_DIR)/bin/aarch64/
+	OUTDIR		= $(CURRENT_DIR)/bin/aarch64
+	BUILDDIR	= $(CURRENT_DIR)/bin/aarch64
 	INCLUDE_DIR = -I./ -I$(CURRENT_DIR) -I$(CURRENT_DIR)/include -I$(CURRENT_DIR)/include/dep
 	LD_LIBRARY_PATH = -L/usr/local/lib -L$(CURRENT_DIR)/lib/aarch64/
 else
 	CC := g++
 	GCC := gcc
 #	LD_LIBRARY_PATH += -L./lib/x86_64
-	OUTDIR		= $(CURRENT_DIR)/bin/x86_64/
-	BUILDDIR	= $(CURRENT_DIR)/bin/x86_64/
+	OUTDIR		= $(CURRENT_DIR)/bin/x86_64
+	BUILDDIR	= $(CURRENT_DIR)/bin/x86_64
 	INCLUDE_DIR = -I./ -I$(CURRENT_DIR) -I$(FLAME_PATH)/include -I$(FLAME_PATH)/include/dep -I/usr/include -I/usr/local/include -I/opt/pylon/include -I/usr/include/opencv4
 	LIBDIR = -L/usr/local/lib -L$(FLAME_PATH)/lib/x86_64/ -L/opt/pylon/lib/
 export LD_LIBRARY_PATH := $(LIBDIR):$(LD_LIBRARY_PATH)
@@ -71,6 +71,7 @@ CXXFLAGS += -D__MAJOR__=0 -D__MINOR__=$(MIN_COUNT) -D__REV__=$(REV_COUNT)
 RM	= rm -rf
 
 
+DK_H_INSPECTOR = $(BUILDDIR)/dk_h_inspector
 
 # flame service engine
 flame:	$(BUILDDIR)flame.o \
@@ -109,9 +110,9 @@ $(BUILDDIR)device.uvccam.multi.o:	$(CURRENT_DIR)/components/device.uvccam.multi/
 									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
 
 # for dk project
-basler_gige_cam_linker.comp:	$(BUILDDIR)basler.gige.cam.linker.o
-							$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(BUILDDIR)$@ $^ $(LDFLAGS) $(LDLIBS) -lopencv_core -lopencv_imgcodecs -lopencv_highgui -lopencv_imgproc -lpylonbase -lpylonutility 
-$(BUILDDIR)basler.gige.cam.linker.o:	$(CURRENT_DIR)/components/basler.gige.cam.linker/basler.gige.cam.linker.cc
+basler_gige_cam_linker.comp:	$(BUILDDIR)/basler.gige.cam.linker.o
+							$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(DK_H_INSPECTOR)/$@ $^ $(LDFLAGS) $(LDLIBS) -lopencv_core -lopencv_imgcodecs -lopencv_highgui -lopencv_imgproc -lpylonbase -lpylonutility 
+$(BUILDDIR)/basler.gige.cam.linker.o:	$(CURRENT_DIR)/components/basler.gige.cam.linker/basler.gige.cam.linker.cc
 									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
 
 image_flow_handler.comp:	$(BUILDDIR)image.flow.handler.o
@@ -195,9 +196,9 @@ dk_h_unittest : dk_image_push_unittest.comp
 components : device.uvccam.multi.comp data_push.comp data_pull_test.comp basler_gige_cam_linker.comp dk_gui_supporter.comp dk_level_data_gateway.comp dk_sdd_inference.comp dk_presdd_inference.comp dk_sys_op_trigger.comp nas_file_stacker.comp ni_pulse_generator.comp dk_remote_light_linker.comp dk_remote_lens_linker.comp
 
 deploy : FORCE
-	cp $(BUILDDIR)*.comp $(BUILDDIR)flame $(BINDIR)
+	cp $(BUILDDIR)/*.comp $(BUILDDIR)/flame $(BINDIR)
 clean : FORCE 
-		$(RM) $(BUILDDIR)*.o $(BUILDDIR)flame
+		$(RM) $(BUILDDIR)/*.o $(BUILDDIR)/flame
 debug:
 	@echo "Building for Architecture : $(ARCH)"
 	@echo "Building for OS : $(OS)"
