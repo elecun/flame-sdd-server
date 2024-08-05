@@ -33,12 +33,12 @@ TriggerSource = Line1
 #include <thread>
 #include <string>
 #include <atomic>
-#include <boost/lockfree/queue.hpp>
+// #include <boost/lockfree/queue.hpp>
 
 using namespace std;
 using namespace Pylon;
 using namespace GenApi;
-using namespace boost;
+// using namespace boost;
 
 class basler_gige_cam_linker : public flame::component::object {
     public:
