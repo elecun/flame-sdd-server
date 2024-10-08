@@ -115,6 +115,11 @@ basler_gige_cam_linker.comp:	$(BUILDDIR)/basler.gige.cam.linker.o
 $(BUILDDIR)/basler.gige.cam.linker.o:	$(CURRENT_DIR)/components/basler.gige.cam.linker/basler.gige.cam.linker.cc
 									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
 
+basler_gige_cam_grabber.comp:	$(BUILDDIR)/basler.gige.cam.grabber.o
+							$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(DK_H_INSPECTOR)/$@ $^ $(LDFLAGS) $(LDLIBS) -lopencv_core -lopencv_imgcodecs -lopencv_highgui -lopencv_imgproc -lpylonbase -lpylonutility 
+$(BUILDDIR)/basler.gige.cam.grabber.o:	$(CURRENT_DIR)/components/basler.gige.cam.grabber/basler.gige.cam.grabber.cc
+									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
+
 image_flow_handler.comp:	$(BUILDDIR)image.flow.handler.o
 							$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(BUILDDIR)$@ $^ $(LDFLAGS) $(LDLIBS) -lopencv_core -lopencv_imgcodecs -lopencv_highgui -lopencv_imgproc -lpylonbase -lpylonutility 
 $(BUILDDIR)image.flow.handler.o:	$(CURRENT_DIR)/components/image.flow.handler/image.flow.handler.cc
@@ -186,6 +191,8 @@ $(BUILDDIR)dk.image.push.unittest.o:	$(CURRENT_DIR)/components/dk.image.push.uni
 
 all : flame
 dk_h_inspector : basler_gige_cam_linker.comp  dk_level_data_gateway.comp dk_sdd_inference.comp dk_presdd_inference.comp dk_sys_op_trigger.comp nas_file_stacker.comp ni_pulse_generator.comp dk_light_linker.comp dk_ni_daq_handler.comp image_flow_handler.comp
+
+dk_h_inspector_perf_test : basler_gige_cam_grabber.comp
 
 dk_h_inspector_remote : dk_remote_lens_linker.comp
 
