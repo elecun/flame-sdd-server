@@ -42,8 +42,8 @@ else
 	CC := g++
 	GCC := gcc
 #	LD_LIBRARY_PATH += -L./lib/x86_64
-	OUTDIR		= $(CURRENT_DIR)/bin/x86_64
-	BUILDDIR	= $(CURRENT_DIR)/bin/x86_64
+	OUTDIR		= $(CURRENT_DIR)/bin/x86_64/
+	BUILDDIR	= $(CURRENT_DIR)/bin/x86_64/
 	INCLUDE_DIR = -I./ -I$(CURRENT_DIR) -I$(FLAME_PATH)/include -I$(FLAME_PATH)/include/dep -I/usr/include -I/usr/local/include -I/opt/pylon/include -I/usr/include/opencv4
 	LIBDIR = -L/usr/local/lib -L$(FLAME_PATH)/lib/x86_64/ -L/opt/pylon/lib/
 export LD_LIBRARY_PATH := $(LIBDIR):$(LD_LIBRARY_PATH)
@@ -155,9 +155,9 @@ nas_file_stacker.comp:	$(BUILDDIR)nas.file.stacker.o
 $(BUILDDIR)nas.file.stacker.o:	$(CURRENT_DIR)/components/nas.file.stacker/nas.file.stacker.cc
 							$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
 
-dk_ni_daq_handler.comp:	$(BUILDDIR)dk.ni.daq.handler.o
+ni_daq_pulse_generator.comp:	$(BUILDDIR)ni.daq.pulse.generator.o
 							$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(BUILDDIR)$@ $^ $(LDLIBS) -lnidaqmx
-$(BUILDDIR)dk.ni.daq.handler.o:	$(CURRENT_DIR)/components/dk.ni.daq.handler/dk.ni.daq.handler.cc
+$(BUILDDIR)ni.daq.pulse.generator.o:	$(CURRENT_DIR)/components/ni.daq.pulse.generator/ni.daq.pulse.generator.cc
 									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
 
 dk_light_linker.comp:	$(BUILDDIR)dk.light.linker.o
@@ -190,9 +190,9 @@ $(BUILDDIR)dk.image.push.unittest.o:	$(CURRENT_DIR)/components/dk.image.push.uni
 
 
 all : flame
-dk_h_inspector : basler_gige_cam_linker.comp  dk_level_data_gateway.comp dk_sdd_inference.comp dk_presdd_inference.comp dk_sys_op_trigger.comp nas_file_stacker.comp ni_pulse_generator.comp dk_light_linker.comp dk_ni_daq_handler.comp image_flow_handler.comp
+dk_h_inspector : basler_gige_cam_linker.comp  dk_level_data_gateway.comp dk_sdd_inference.comp dk_presdd_inference.comp dk_sys_op_trigger.comp nas_file_stacker.comp ni_pulse_generator.comp dk_light_linker.comp ni_daq_pulse_generator.comp image_flow_handler.comp
 
-dk_h_inspector_perf_test : basler_gige_cam_grabber.comp
+dk_h_inspector_perf_test : basler_gige_cam_grabber.comp ni_daq_pulse_generator.comp
 
 dk_h_inspector_remote : dk_remote_lens_linker.comp
 
