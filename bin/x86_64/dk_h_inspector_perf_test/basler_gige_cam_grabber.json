@@ -1,5 +1,5 @@
 {
-    "rt_cycle_ns" : 700000000,
+    "rt_cycle_ns" : 1000000000,
     "verbose" : 1,
 
     "parameters":{

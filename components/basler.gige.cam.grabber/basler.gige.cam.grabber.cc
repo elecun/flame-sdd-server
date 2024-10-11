@@ -47,7 +47,6 @@ bool basler_gige_cam_grabber::on_init(){
             _camera_status[id]["frames"] = 0;  // add frames (unsigned long long)
             _camera_status[id]["status"] = "-"; // add status (-|working|connected)
         }
-        
 
         // thread monitor = thread(&basler_gige_cam_grabber::_status_monitor_task, this, get_profile()->parameters());
 
@@ -128,7 +127,7 @@ void basler_gige_cam_grabber::_publish_status(){
         get_port("status")->send(topic_msg, zmq::send_flags::sndmore);
         get_port("status")->send(end_msg, zmq::send_flags::dontwait);
 
-        logger::debug("published the camera status ({})", topic);
+        logger::info("published the camera status ({})", topic);
     }
     catch(std::runtime_error& e){
         logger::error("{}", e.what());
