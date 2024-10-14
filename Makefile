@@ -33,11 +33,12 @@ else ifeq ($(ARCH), armhf)
 else ifeq ($(ARCH), aarch64) # for Mac Apple Silicon
 	CC := g++
 	GCC := gcc
-	LD_LIBRARY_PATH += -L./lib/aarch64
+#	LD_LIBRARY_PATH += -L./lib/aarch64-linux-gnu
 	OUTDIR		= $(CURRENT_DIR)/bin/aarch64
 	BUILDDIR	= $(CURRENT_DIR)/bin/aarch64
-	INCLUDE_DIR = -I./ -I$(CURRENT_DIR) -I$(CURRENT_DIR)/include -I$(CURRENT_DIR)/include/dep
-	LD_LIBRARY_PATH = -L/usr/local/lib -L$(CURRENT_DIR)/lib/aarch64/
+	INCLUDE_DIR = -I./ -I$(CURRENT_DIR) -I$(FLAME_PATH)/include -I$(FLAME_PATH)/include/dep -I/usr/include -I/usr/local/include -I/opt/pylon/include -I/usr/include/opencv4
+	LIBDIR = -L/usr/local/lib -L$(CURRENT_DIR)/lib/aarch64-linux-gnu/
+export LD_LIBRARY_PATH := $(LIBDIR):$(LD_LIBRARY_PATH)
 else
 	CC := g++
 	GCC := gcc

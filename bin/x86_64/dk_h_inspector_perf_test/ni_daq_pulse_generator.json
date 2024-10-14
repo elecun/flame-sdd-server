@@ -38,7 +38,7 @@
         },
         "manual_control" : {
             "transport" : "tcp",
-            "socket_type" : "sub",
+            "socket_type" : "rep",
             "host":"127.0.0.1",
             "port" : 5008,
             "queue_size" : 1000
