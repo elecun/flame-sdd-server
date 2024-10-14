@@ -20,7 +20,6 @@ bool ni_daq_pulse_generator::on_init(){
     logger::info("[{}] Camera Triggering via {}/{} at {}(samples:{}, duty:{})", get_name(), _daq_device_name, _daq_counter_channel, _daq_pulse_freq, _daq_pulse_samples, _daq_pulse_duty);
 
 
-
     //_start_pulse_generation(_daq_pulse_freq, _daq_pulse_samples, _daq_pulse_duty);
     thread subscriber = thread(&ni_daq_pulse_generator::_subscribe, this, get_profile()->parameters());
     _subscriber_handle = subscriber.native_handle();
@@ -136,6 +135,7 @@ void ni_daq_pulse_generator::_subscribe(json parameters){
 
             zmq::recv_result_t topic_result = get_port("manual_control")->recv(topic, zmq::recv_flags::none);
             zmq::recv_result_t message_result = get_port("manual_control")->recv(json_msg, zmq::recv_flags::none);
+
             if(message_result){
                 std::string message(static_cast<char*>(json_msg.data()), json_msg.size());
                 auto json_data = json::parse(message);
@@ -151,6 +151,8 @@ void ni_daq_pulse_generator::_subscribe(json parameters){
                         logger::info("[{}] Stop generating camera triggering...", get_name());
                     }
                 }
+
+                logger::info("Received Message : {}", json_data.dump());
             }
         }
         catch(const json::parse_error& e){

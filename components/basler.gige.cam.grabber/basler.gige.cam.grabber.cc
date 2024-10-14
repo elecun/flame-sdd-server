@@ -127,7 +127,7 @@ void basler_gige_cam_grabber::_publish_status(){
         get_port("status")->send(topic_msg, zmq::send_flags::sndmore);
         get_port("status")->send(end_msg, zmq::send_flags::dontwait);
 
-        logger::info("published the camera status ({})", topic);
+        //logger::info("published the camera status ({})", topic);
     }
     catch(std::runtime_error& e){
         logger::error("{}", e.what());
@@ -198,6 +198,8 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                         // get_port("image_stream_monitor")->send(topic_msg, zmq::send_flags::sndmore);
                         get_port("image_stream_monitor")->send(id_message, zmq::send_flags::sndmore);
                         get_port("image_stream_monitor")->send(image_message, zmq::send_flags::dontwait);
+
+                        logger::info("[{}] {}", camera_id, _camera_grab_counter[camera_id]);
 
                     }
                     else{
