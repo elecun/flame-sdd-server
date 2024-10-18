@@ -34,6 +34,7 @@ class ni_daq_pulse_generator : public flame::component::object {
         void _stop_pulse_generation();
 
         void _subscribe(json parameters);
+        void _response(json parameters);
 
     private:
         string _daq_device_name {""};
@@ -47,8 +48,10 @@ class ni_daq_pulse_generator : public flame::component::object {
         std::atomic<bool> _triggering { false };
 
         /* for manual control */
-        pthread_t _subscriber_handle;
+        pthread_t _subscriber_handle;   // pub/sub
+        pthread_t _responser_handle;    // req/rep
         std::atomic<bool> _thread_stop_signal { false };
+        
 
 }; /* class */
 

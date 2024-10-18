@@ -21,9 +21,16 @@ bool ni_daq_pulse_generator::on_init(){
 
 
     //_start_pulse_generation(_daq_pulse_freq, _daq_pulse_samples, _daq_pulse_duty);
-    thread subscriber = thread(&ni_daq_pulse_generator::_subscribe, this, get_profile()->parameters());
-    _subscriber_handle = subscriber.native_handle();
-    subscriber.detach();
+
+    /* for manual control with pub/sub */
+    // thread subscriber = thread(&ni_daq_pulse_generator::_subscribe, this, get_profile()->parameters());
+    // _subscriber_handle = subscriber.native_handle();
+    // subscriber.detach();
+
+    /* for manual control with req/rep */
+    thread responser = thread(&ni_daq_pulse_generator::_response, this, get_profile()->parameters());
+    _responser_handle = responser.native_handle();
+    responser.detach();
 
     return true;
 }
@@ -51,8 +58,11 @@ void ni_daq_pulse_generator::on_close(){
 
     /* cancel the subscriber thread */
     _thread_stop_signal.store(true);
-    pthread_cancel(_subscriber_handle);
-    pthread_join(_subscriber_handle, nullptr);
+    
+    // pthread_cancel(_subscriber_handle);
+    // pthread_join(_subscriber_handle, nullptr);
+    pthread_cancel(_responser_handle);
+    pthread_join(_responser_handle, nullptr);
     
 }
 
@@ -160,6 +170,60 @@ void ni_daq_pulse_generator::_subscribe(json parameters){
         }
         catch(const std::runtime_error& e){
             logger::error("[{}] Runtime error occurred!", get_name());
+        }
+        catch(const zmq::error_t& e){
+            logger::error("[{}] Pipeline error : {}", get_name(), e.what());
+        }
+    }
+
+}
+
+void ni_daq_pulse_generator::_response(json parameters){
+
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
+    pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, nullptr);
+
+    while(!_thread_stop_signal.load()){
+        try{
+            pipe_data request;
+
+            zmq::recv_result_t request_result = get_port("manual_control")->recv(request, zmq::recv_flags::none);
+
+            if(request_result){
+                std::string message(static_cast<char*>(request.data()), request.size());
+                auto json_data = json::parse(message);
+
+                if(json_data.contains("op_trigger")){
+                    bool triggered = json_data["op_trigger"].get<bool>();
+                    if(triggered){
+                        _start_pulse_generation(_daq_pulse_freq, _daq_pulse_samples, _daq_pulse_duty);
+                        logger::info("[{}] Start generating camera triggering...", get_name());
+                    }
+                    else {
+                        _stop_pulse_generation();
+                        logger::info("[{}] Stop generating camera triggering...", get_name());
+                    }
+                }
+
+                logger::info("Received Message : {}", json_data.dump());
+
+                // reply
+                json reply_message = {
+                    {"response_code", 1}
+                };
+                pipe_data reply(reply_message.dump().size());
+                memcpy(reply.data(), reply_message.dump().data(), reply_message.dump().size());
+                get_port("manual_control")->send(reply, zmq::send_flags::none);
+            }
+        }
+        catch(const json::parse_error& e){
+            logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());
+        }
+        catch(const std::runtime_error& e){
+            logger::error("[{}] Runtime error occurred!", get_name());
+        }
+        catch(const zmq::error_t& e){
+            logger::error("[{}] Pipeline error : {}", get_name(), e.what());
         }
     }
 

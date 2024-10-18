@@ -5,7 +5,7 @@ import json
 
 context = zmq.Context()
 socket = context.socket(zmq.REQ)
-socket.bind("tcp://127.0.0.1:5008")
+socket.connect("tcp://127.0.0.1:5008")
 
 message = {
     "op_trigger":True
@@ -18,6 +18,7 @@ print(f"send message : {request_string}")
 
 # response
 response = socket.recv_string()
-response_json = json.loads(response)
-print(f"response : {json.dumps(response_json, indent=4)}")
+print(response)
+#response_json = json.loads(response)
+#print(f"response : {json.dumps(response_json, indent=4)}")
 
