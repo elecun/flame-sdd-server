@@ -8,7 +8,7 @@ socket = context.socket(zmq.REQ)
 socket.connect("tcp://127.0.0.1:5008")
 
 message = {
-    "op_trigger":True
+    "op_trigger":False
 }
 
 # request
@@ -21,4 +21,3 @@ response = socket.recv_string()
 print(response)
 #response_json = json.loads(response)
 #print(f"response : {json.dumps(response_json, indent=4)}")
-

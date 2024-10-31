@@ -15,6 +15,20 @@ bool basler_gige_cam_grabber::on_init(){
 
     try{
 
+        //stream method check
+        json param = get_profile()->parameters();
+        if(param.contains("stream_method")){
+            string _set_method = param["stream_method"];
+            std::transform(_set_method.begin(), _set_method.end(), _set_method.begin(), ::tolower);
+            _stream_method = _method_type[_set_method];
+        }
+
+        if(_stream_method==0){
+            if(param.contains("stream_batch_buffer")){
+                _stream_batch_buffer_size = param["stream_batch_buffer"].get<int>();
+            }
+        }
+
         //1. initialization
         PylonInitialize();
 
@@ -46,6 +60,11 @@ bool basler_gige_cam_grabber::on_init(){
             _camera_status.insert(make_pair(id, camera));
             _camera_status[id]["frames"] = 0;  // add frames (unsigned long long)
             _camera_status[id]["status"] = "-"; // add status (-|working|connected)
+
+            //image container reserve
+            // if(_stream_method==0){
+            //     _image_container[id].reserve(_stream_batch_buffer_size);
+            // }
         }
 
         // thread monitor = thread(&basler_gige_cam_grabber::_status_monitor_task, this, get_profile()->parameters());
@@ -71,6 +90,11 @@ void basler_gige_cam_grabber::on_loop(){
 }
 
 void basler_gige_cam_grabber::on_close(){
+
+    /* show container size */
+    for (map<int, vector<vector<unsigned char>>>::iterator it = _image_container.begin(); it != _image_container.end(); ++it){
+        logger::info("[{}] Image Container size : {}", it->first, _image_container[it->first].size());
+    }
 
     /* camera grab thread will be killed */
     for(auto& worker:_camera_grab_worker){
@@ -174,30 +198,37 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                         cv::Mat image(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC1, (void*)pImageBuffer);
 
                         //jpg encoding
-                        std::vector<uchar> buffer;
+                        std::vector<unsigned char> buffer;
                         cv::imencode(".jpg", image, buffer);
+
+                        // batch stream method
+                        if(_stream_method==0){
+                            _image_container[camera_id].push_back(buffer);
+                        }
+
+                        
 
                         //logger::info("Captured image resolution : {}x{}({})", image.cols, image.rows, image.channels());
                         
                         // set topic
-                        string topic = fmt::format("{}/{}", get_name(), "/image_stream_monitor");
-                        pipe_data topic_msg(topic.data(), topic.size());
+                        // string topic = fmt::format("{}/{}", get_name(), "/image_stream_monitor");
+                        // pipe_data topic_msg(topic.data(), topic.size());
 
-                        string cid = fmt::format("{}",camera_id);
-                        pipe_data idMessage(cid.size());
-                        memcpy(idMessage.data(), cid.c_str(), cid.size());
+                        // string cid = fmt::format("{}",camera_id);
+                        // pipe_data idMessage(cid.size());
+                        // memcpy(idMessage.data(), cid.c_str(), cid.size());
 
-                        json cam_id = {{"camera_id", camera_id}};
-                        string str_cam_id = cam_id.dump();
-                        pipe_data id_message(str_cam_id.size());
-                        memcpy(id_message.data(), str_cam_id.c_str(), str_cam_id.size());
+                        // json cam_id = {{"camera_id", camera_id}};
+                        // string str_cam_id = cam_id.dump();
+                        // pipe_data id_message(str_cam_id.size());
+                        // memcpy(id_message.data(), str_cam_id.c_str(), str_cam_id.size());
 
-                        pipe_data image_message(buffer.size());
-                        memcpy(image_message.data(), buffer.data(), buffer.size());
+                        // pipe_data image_message(buffer.size());
+                        // memcpy(image_message.data(), buffer.data(), buffer.size());
 
                         // get_port("image_stream_monitor")->send(topic_msg, zmq::send_flags::sndmore);
-                        get_port("image_stream_monitor")->send(id_message, zmq::send_flags::sndmore);
-                        get_port("image_stream_monitor")->send(image_message, zmq::send_flags::dontwait);
+                        // get_port("image_stream_monitor")->send(id_message, zmq::send_flags::sndmore);
+                        // get_port("image_stream_monitor")->send(image_message, zmq::send_flags::dontwait);
 
                         logger::info("[{}] {}", camera_id, _camera_grab_counter[camera_id]);
 

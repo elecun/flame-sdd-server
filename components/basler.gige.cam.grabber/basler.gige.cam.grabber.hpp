@@ -65,6 +65,14 @@ class basler_gige_cam_grabber : public flame::component::object {
         std::atomic<bool> _thread_stop_signal { false };
 
         pthread_t _status_monitor; /* for status publish */
+
+        map<string, int> _method_type { 
+            {"batch", 0 },
+            {"realtime", 1}
+        };
+        int _stream_method = 0; //batch mode default
+        int _stream_batch_buffer_size = 1000;
+        map<int, vector<vector<unsigned char>>> _image_container;
         
 
 

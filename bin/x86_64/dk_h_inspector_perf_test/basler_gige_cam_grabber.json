@@ -4,6 +4,7 @@
 
     "parameters":{
         "stream_method":"batch",
+        "stream_batch_buffer":1000,
         "acqusition_mode":"Continuous",
         "trigger_selector":"FrameStart",
         "trigger_mode":"On",
