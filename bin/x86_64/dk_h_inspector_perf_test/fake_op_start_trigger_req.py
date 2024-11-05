@@ -5,10 +5,10 @@ import json
 
 context = zmq.Context()
 socket = context.socket(zmq.REQ)
-socket.connect("tcp://127.0.0.1:5008")
+socket.connect("tcp://127.0.0.1:5101")
 
 message = {
-    "op_trigger":False
+    "op_trigger":True
 }
 
 # request

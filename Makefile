@@ -161,6 +161,11 @@ ni_daq_pulse_generator.comp:	$(BUILDDIR)ni.daq.pulse.generator.o
 $(BUILDDIR)ni.daq.pulse.generator.o:	$(CURRENT_DIR)/components/ni.daq.pulse.generator/ni.daq.pulse.generator.cc
 									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
 
+dk_level2_terminal.comp:	$(BUILDDIR)dk.level2.terminal.o
+							$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(BUILDDIR)$@ $^ $(LDLIBS)
+$(BUILDDIR)dk.level2.terminal.o:	$(CURRENT_DIR)/components/dk.level2.terminal/dk.level2.terminal.cc
+									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
+
 dk_light_linker.comp:	$(BUILDDIR)dk.light.linker.o
 							$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(BUILDDIR)$@ $^ $(LDLIBS)
 $(BUILDDIR)dk.light.linker.o:	$(CURRENT_DIR)/components/dk.light.linker/dk.light.linker.cc
@@ -193,7 +198,7 @@ $(BUILDDIR)dk.image.push.unittest.o:	$(CURRENT_DIR)/components/dk.image.push.uni
 all : flame
 dk_h_inspector : basler_gige_cam_linker.comp  dk_level_data_gateway.comp dk_sdd_inference.comp dk_presdd_inference.comp dk_sys_op_trigger.comp nas_file_stacker.comp ni_pulse_generator.comp dk_light_linker.comp ni_daq_pulse_generator.comp image_flow_handler.comp
 
-dk_h_inspector_perf_test : basler_gige_cam_grabber.comp ni_daq_pulse_generator.comp
+dk_h_inspector_perf_test : basler_gige_cam_grabber.comp ni_daq_pulse_generator.comp dk_level2_terminal.comp
 
 dk_h_inspector_remote : dk_remote_lens_linker.comp
 

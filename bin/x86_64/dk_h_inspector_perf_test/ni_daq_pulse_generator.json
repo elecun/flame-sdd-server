@@ -40,7 +40,7 @@
             "transport" : "tcp",
             "socket_type" : "rep",
             "host":"127.0.0.1",
-            "port" : 5008,
+            "port" : 5101,
             "queue_size" : 1000
         }
     }

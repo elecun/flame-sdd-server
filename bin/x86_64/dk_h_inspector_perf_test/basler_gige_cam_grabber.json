@@ -29,14 +29,14 @@
         "status" : {
             "transport" : "tcp",
             "host":"*",
-            "port" : 5556,
+            "port" : 5002,
             "socket_type" : "pub",
             "queue_size" : 1000
         },
         "image_stream_monitor":{
             "transport" : "tcp",
             "host":"*",
-            "port" : 5557,
+            "port" : 5102,
             "socket_type" : "pub",
             "queue_size" : 5000
         },
