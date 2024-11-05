@@ -65,8 +65,13 @@ void dk_level2_terminal::_response(json parameters){
                 std::string message(static_cast<char*>(request.data()), request.size());
                 auto json_data = json::parse(message);
 
+                /* parse received data */
+                _parse(json_data);
+
                 if(json_data.contains("LOT")){
                     bool lot_number = json_data["LOT"].get<string>();
+
+                    _parse
 
                     /* create */
                     if(triggered){
@@ -100,5 +105,8 @@ void dk_level2_terminal::_response(json parameters){
             logger::error("[{}] Pipeline error : {}", get_name(), e.what());
         }
     }
+}
+
+void dk_level2_terminal::_parse(json data){
 
 }

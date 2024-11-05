@@ -31,6 +31,9 @@ class dk_level2_terminal : public flame::component::object {
         /* level2 data request response */
         void _response(json parameters);
 
+        /* parse received packet into internal data */
+        void _parse(json data);
+
     private:
         pthread_t _responser_handle;
         std::atomic<bool> _thread_stop_signal { false };
