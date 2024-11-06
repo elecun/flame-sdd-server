@@ -5,7 +5,7 @@ import json
 
 context = zmq.Context()
 socket = context.socket(zmq.REQ)
-socket.connect("tcp://127.0.0.1:5009")
+socket.connect("tcp://127.0.0.1:5103")
 
 message = {
     "LOT":"L00000"

@@ -1,0 +1,29 @@
+{
+    "rt_cycle_ns" : 100000000,
+    "verbose" : 1,
+
+    "parameters":{
+        "mount_path" : "/mnt/sddnas"
+    },
+
+    "dataport":{
+        "status_out" : {
+            "transport" : "tcp",
+            "host":"*",
+            "port" : 5004,
+            "socket_type" : "pub",
+            "queue_size" : 1000,
+            "io_handling":"async"
+        },
+        "image_stream" : {
+            "transport" : "inproc",
+            "socket_type" : "pull",
+            "queue_size" : 10000
+        },
+        "level2_terminal_out" : {
+            "transport" : "inproc",
+            "socket_type" : "rep",
+            "queue_size" : 10
+        }
+    }
+}

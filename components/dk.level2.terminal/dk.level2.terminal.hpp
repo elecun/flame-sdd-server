@@ -1,7 +1,7 @@
 /**
  * @file dk.level2.terminal.hpp
  * @author Byunghun Hwang <bh.hwang@iae.re.kr>
- * @brief DK Level2 Data Interface component
+ * @brief DK Level2 Data Interface Terminal component
  * @version 0.1
  * @date 2024-06-30
  * 
@@ -32,7 +32,11 @@ class dk_level2_terminal : public flame::component::object {
         void _response(json parameters);
 
         /* parse received packet into internal data */
-        void _parse(json data);
+        string _parse(json data);
+
+        void _request(string port_name, json data);
+        void _reply(string port_name, int response_code);
+        bool _wait_response(string port_name);
 
     private:
         pthread_t _responser_handle;

@@ -43,7 +43,7 @@
         "image_stream" : {
             "transport" : "inproc",
             "socket_type" : "push",
-            "queue_size" : 5000
+            "queue_size" : 10000
         }
     }
 }

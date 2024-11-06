@@ -57,43 +57,38 @@ void dk_level2_terminal::_response(json parameters){
 
     while(!_thread_stop_signal.load()){
         try{
-            pipe_data request;
+            pipe_data request_in;
 
-            zmq::recv_result_t request_result = get_port("level2_terminal")->recv(request, zmq::recv_flags::none);
+            zmq::recv_result_t request_in_result = get_port("level2_terminal_in")->recv(request_in, zmq::recv_flags::none);
+            string lot_number = "";
 
-            if(request_result){
-                std::string message(static_cast<char*>(request.data()), request.size());
+            /* terminal in */
+            if(request_in_result){
+                std::string message(static_cast<char*>(request_in.data()), request_in.size());
                 auto json_data = json::parse(message);
 
                 /* parse received data */
-                _parse(json_data);
+                lot_number = _parse(json_data);
 
-                if(json_data.contains("LOT")){
-                    bool lot_number = json_data["LOT"].get<string>();
-
-                    _parse
-
-                    /* create */
-                    if(triggered){
-                        _start_pulse_generation(_daq_pulse_freq, _daq_pulse_samples, _daq_pulse_duty);
-                        logger::info("[{}] Start generating camera triggering...", get_name());
-                    }
-                    else {
-                        _stop_pulse_generation();
-                        logger::info("[{}] Stop generating camera triggering...", get_name());
-                    }
-                }
-
-                logger::info("Received Message : {}", json_data.dump());
-
-                // reply
-                json reply_message = {
-                    {"response_code", 1}
-                };
-                pipe_data reply(reply_message.dump().size());
-                memcpy(reply.data(), reply_message.dump().data(), reply_message.dump().size());
-                get_port("manual_control")->send(reply, zmq::send_flags::none);
+                // level2_terminal_in reply
+                _reply("level2_terminal_in", 1);
             }
+
+            /* terminal out */
+            if(!lot_number.empty()){
+                logger::info("[{}] LOT Number : {}", get_name(), lot_number);
+                json msg {
+                    {"LOT", lot_number}
+                };
+
+                _request("level2_terminal_out", msg);
+                _wait_response("level2_terminal_out");
+                
+            }
+            else{
+                logger::warn("[{}] No LOT number contained", get_name());
+            }
+
         }
         catch(const json::parse_error& e){
             logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());
@@ -107,6 +102,43 @@ void dk_level2_terminal::_response(json parameters){
     }
 }
 
-void dk_level2_terminal::_parse(json data){
+string dk_level2_terminal::_parse(json data){
+    if(data.contains("LOT")){
+        string lot_number = data["LOT"].get<string>();
+        return lot_number;
+    }
+    return "";
+}
 
+void dk_level2_terminal::_reply(string port_name, int response_code){
+    json reply_message = {
+        {"response_code", response_code}
+    };
+    pipe_data reply(reply_message.dump().size());
+    memcpy(reply.data(), reply_message.dump().data(), reply_message.dump().size());
+    get_port(port_name)->send(reply, zmq::send_flags::none);
+}
+
+bool dk_level2_terminal::_wait_response(string port_name){
+    pipe_data res;
+    zmq::recv_result_t res_result = get_port(port_name)->recv(res, zmq::recv_flags::none);
+
+    if(res_result){
+        std::string message(static_cast<char*>(res.data()), res.size());
+        auto json_data = json::parse(message);
+        if(json_data.contains("response_code")){
+            int code = json_data["response_code"].get<int>();
+            logger::info("[{}] Responsed (code:{})", get_name(), code);
+        }
+        return true;
+    }
+
+    return false;
+}
+
+void dk_level2_terminal::_request(string port_name, json data){
+    string dump_data = data.dump();
+    pipe_data request_message(dump_data.size());
+    memcpy(request_message.data(), dump_data.c_str(), dump_data.size());
+    zmq::recv_result_t request_message_result = get_port(port_name)->send(request_message, zmq::send_flags::none);
 }

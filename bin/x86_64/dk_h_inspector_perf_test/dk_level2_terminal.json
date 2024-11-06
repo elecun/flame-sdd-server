@@ -14,12 +14,17 @@
             "socket_type" : "pub",
             "queue_size" : 1000
         },
-        "level2_terminal" : {
+        "level2_terminal_in" : {
             "transport" : "tcp",
             "socket_type" : "rep",
             "host":"127.0.0.1",
             "port" : 5103,
-            "queue_size" : 1000
+            "queue_size" : 100
+        },
+        "level2_terminal_out" : {
+            "transport" : "inproc",
+            "socket_type" : "req",
+            "queue_size" : 100
         }
     }
 }

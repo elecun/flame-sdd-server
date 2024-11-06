@@ -3,8 +3,10 @@
 #include <flame/log.hpp>
 #include <flame/config_def.hpp>
 #include <opencv2/opencv.hpp>
+#include <chrono>
 
 using namespace flame;
+using namespace std;
 
 static basler_gige_cam_grabber* _instance = nullptr;
 flame::component::object* create(){ if(!_instance) _instance = new basler_gige_cam_grabber(); return _instance; }
@@ -204,6 +206,25 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                         // batch stream method
                         if(_stream_method==0){
                             _image_container[camera_id].push_back(buffer);
+                        }
+                        // realtime stream with multipart
+                        else {
+
+                            //1. image information (camera id, timestamp)
+                            auto now = std::chrono::system_clock::now();
+                            long long timestamp = chrono::duration_cast<chrono::milliseconds>(now.time_since_epoch()).count();
+                            json image_info = {
+                                {"camera_id", camera_id},
+                                {"timestamp", timestamp}
+                            };
+                            string image_info_dump = image_info.dump();
+                            pipe_data image_info_msg(image_info_dump.size());
+                            memcpy(image_info_msg.data(), image_info_dump.c_str(), image_info_dump.size());
+                            get_port("image_stream")->send(image_info_msg, zmq::send_flags::sndmore);
+
+                            //2. real image bytearray
+                            pipe_data image_data(buffer.data(), buffer.size());
+                            get_port("image_stream")->send(image_data, zmq::send_flags::none);
                         }
 
                         
