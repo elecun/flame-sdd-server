@@ -85,7 +85,7 @@ class AppWindow(QMainWindow):
                 self.btn_trigger_stop.clicked.connect(self.on_btn_trigger_stop)
                 self.btn_defect_visualization_test.clicked.connect(self.on_btn_defect_visualization_test)
                 self.btn_light_on.clicked.connect(self.on_btn_light_on)
-                self.btn_light_on.clicked.connect(self.on_btn_light_off)
+                self.btn_light_off.clicked.connect(self.on_btn_light_off)
 
         except Exception as e:
             self.__console.error(f"{e}")
@@ -102,7 +102,7 @@ class AppWindow(QMainWindow):
         self.__console.info("Window is now terminated")
 
         # code here
-        trigger.stop_trigger()
+        self.__trigger.stop_trigger()
             
         return super().closeEvent(event)
     

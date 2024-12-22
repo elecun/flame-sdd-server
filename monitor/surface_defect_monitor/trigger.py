@@ -47,8 +47,7 @@ class Trigger:
             self.__task.stop()
             self.__task.close()
             self.__task = None
-        else:
-            self.__console.info("Task is now stopped")
+            self.__console.info("Trigger is now stopped")
 
     def is_triggering(self):
         """check if tsk is runniung"""
