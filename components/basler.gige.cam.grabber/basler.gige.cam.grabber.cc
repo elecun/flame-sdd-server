@@ -230,25 +230,26 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
 
                         //logger::info("Captured image resolution : {}x{}({})", image.cols, image.rows, image.channels());
                         
+                        // image stream monitoring.. publish
                         // set topic
-                        // string topic = fmt::format("{}/{}", get_name(), "/image_stream_monitor");
-                        // pipe_data topic_msg(topic.data(), topic.size());
+                        string topic = fmt::format("{}", "image_stream_monitor");
+                        pipe_data topic_msg(topic.data(), topic.size());
 
                         // string cid = fmt::format("{}",camera_id);
-                        // pipe_data idMessage(cid.size());
-                        // memcpy(idMessage.data(), cid.c_str(), cid.size());
+                        pipe_data idMessage(cid.size());
+                        memcpy(idMessage.data(), cid.c_str(), cid.size());
 
-                        // json cam_id = {{"camera_id", camera_id}};
-                        // string str_cam_id = cam_id.dump();
-                        // pipe_data id_message(str_cam_id.size());
-                        // memcpy(id_message.data(), str_cam_id.c_str(), str_cam_id.size());
+                        json cam_id = {{"camera_id", camera_id}};
+                        string str_cam_id = cam_id.dump();
+                        pipe_data id_message(str_cam_id.size());
+                        memcpy(id_message.data(), str_cam_id.c_str(), str_cam_id.size());
 
-                        // pipe_data image_message(buffer.size());
-                        // memcpy(image_message.data(), buffer.data(), buffer.size());
+                        pipe_data image_message(buffer.size());
+                        memcpy(image_message.data(), buffer.data(), buffer.size());
 
-                        // get_port("image_stream_monitor")->send(topic_msg, zmq::send_flags::sndmore);
-                        // get_port("image_stream_monitor")->send(id_message, zmq::send_flags::sndmore);
-                        // get_port("image_stream_monitor")->send(image_message, zmq::send_flags::dontwait);
+                        get_port("image_stream_monitor")->send(topic_msg, zmq::send_flags::sndmore);
+                        get_port("image_stream_monitor")->send(id_message, zmq::send_flags::sndmore);
+                        get_port("image_stream_monitor")->send(image_message, zmq::send_flags::dontwait);
 
                         logger::info("[{}] {}", camera_id, _camera_grab_counter[camera_id]);
 

@@ -13,7 +13,7 @@ import numpy as np
 from datetime import datetime
 import pyqtgraph as graph
 import random
-import pyzmq
+import zmq
 
 try:
     # using PyQt5
@@ -58,10 +58,10 @@ class AppWindow(QMainWindow):
             self.__frame_window_map[id] = self.findChild(QLabel, config["camera_windows"][idx])
 
         # zmq subscribe for camera monitoring
-        self.__camera_monitor_context = pyzmq.Context()
-        self.__camera_monitor_socket = self.__camera_monitor_context.socket(pyzmq.SUB)
+        self.__camera_monitor_context = zmq.Context()
+        self.__camera_monitor_socket = self.__camera_monitor_context.socket(zmq.SUB)
         self.__camera_monitor_socket.connect(f"tcp://{config['camera_monitoring_ip']}:{config['camera_monitoring_port']}")
-        self.__camera_monitor_socket.setsockopt_string(pyzmq.SUBSCRIBE, "image_stream_monitor")
+        self.__camera_monitor_socket.setsockopt_string(zmq.SUBSCRIBE, "image_stream_monitor")
         self.__image_stream_thread = threading.Thread(target=self.__image_stream_subscribe)
         self.__image_stream_thread.start()
 
