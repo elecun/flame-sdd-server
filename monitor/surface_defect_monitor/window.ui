@@ -27,7 +27,7 @@
    <widget class="QTabWidget" name="tabWidget">
     <property name="geometry">
      <rect>
-      <x>0</x>
+      <x>-10</x>
       <y>520</y>
       <width>1511</width>
       <height>371</height>
@@ -444,25 +444,12 @@ background-color: rgb(212, 212, 212);</string>
         </font>
        </property>
        <property name="text">
-        <string>0,1,2</string>
+        <string>1,7,9</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
        </property>
       </widget>
-     </widget>
-     <widget class="QGroupBox" name="groupBox_5">
-      <property name="geometry">
-       <rect>
-        <x>590</x>
-        <y>10</y>
-        <width>241</width>
-        <height>201</height>
-       </rect>
-      </property>
-      <property name="title">
-       <string>Camera Control</string>
-      </property>
      </widget>
      <widget class="QGroupBox" name="groupBox_6">
       <property name="geometry">
@@ -751,7 +738,7 @@ background-color: rgb(212, 212, 212);</string>
      <enum>QTabWidget::South</enum>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="tab_3">
      <attribute name="title">

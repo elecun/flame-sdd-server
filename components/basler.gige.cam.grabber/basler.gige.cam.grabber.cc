@@ -19,13 +19,13 @@ bool basler_gige_cam_grabber::on_init(){
 
         //stream method check
         json param = get_profile()->parameters();
-        if(param.contains("stream_method")){
+        if(param.contains("stream_method")){ 
             string _set_method = param["stream_method"];
             std::transform(_set_method.begin(), _set_method.end(), _set_method.begin(), ::tolower);
             _stream_method = _method_type[_set_method];
         }
 
-        if(_stream_method==0){
+        if(_stream_method==0){ // batch stream mode
             if(param.contains("stream_batch_buffer")){
                 _stream_batch_buffer_size = param["stream_batch_buffer"].get<int>();
             }
@@ -207,7 +207,7 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                         if(_stream_method==0){
                             _image_container[camera_id].push_back(buffer);
                         }
-                        // realtime stream with multipart
+                        // realtime stream method with multipart
                         else {
 
                             //1. image information (camera id, timestamp)
@@ -236,8 +236,8 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                         pipe_data topic_msg(topic.data(), topic.size());
 
                         // string cid = fmt::format("{}",camera_id);
-                        pipe_data idMessage(cid.size());
-                        memcpy(idMessage.data(), cid.c_str(), cid.size());
+                        // pipe_data idMessage(cid.size());
+                        // memcpy(idMessage.data(), cid.c_str(), cid.size());
 
                         json cam_id = {{"camera_id", camera_id}};
                         string str_cam_id = cam_id.dump();

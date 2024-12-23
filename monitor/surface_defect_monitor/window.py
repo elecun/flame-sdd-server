@@ -14,6 +14,7 @@ from datetime import datetime
 import pyqtgraph as graph
 import random
 import zmq
+import json
 
 try:
     # using PyQt5
@@ -166,6 +167,7 @@ class AppWindow(QMainWindow):
         """ event callback : light on """
         if "dmx_ip" in self.__config and "dmx_port" in self.__config:
             self.__light.light_on(self.__config["dmx_ip"], self.__config["dmx_port"])
+            self.__console.info(f"Light ON")
         else:
             QMessageBox.critical(self, "Error", f"DMX IP and Port is not defined")
         
@@ -181,21 +183,31 @@ class AppWindow(QMainWindow):
         """ zmq subscribe for camera monitoring """
         while True:
             try:
-                image_data = self.__camera_monitor_socket.recv()
-                np_array = np.frombuffer(image_data, np.uint8)
-                image = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
-                # display image
-                rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                h, w, ch = rgb_image.shape
-                bytes_per_line = ch * w
-                qt_image = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
-                pixmap = QPixmap.fromImage(qt_image)
-                # self.label_camera_1.setPixmap(pixmap.scaled(self.label_camera_1.size(), Qt.KeepAspectRatio))
-                try:
-                    self.__frame_window_map
-                    self.__frame_window_map[camera_id].setPixmap(pixmap.scaled(self.__frame_window_map[camera_id].size(), Qt.AspectRatioMode.KeepAspectRatio))
-                except Exception as e:
-                    self.__console.error(e)
+
+                parts = self.__camera_monitor_socket.recv_multipart()
+                if len(parts) < 3:
+                    self.__console.error(f"Invalid multipart message received")
+                else:
+                    topic = parts[0].decode("utf-8")
+                    camera_id = int(json.loads(parts[1].decode("utf-8"))["camera_id"])
+                    image_data = parts[2]
+
+                if topic == "image_stream_monitor":
+                    np_array = np.frombuffer(image_data, np.uint8)
+                    image = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
+                    # display image
+                    rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                    h, w, ch = rgb_image.shape
+                    bytes_per_line = ch * w
+                    qt_image = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
+                    pixmap = QPixmap.fromImage(qt_image)
+
+                    try:
+                        self.__frame_window_map[camera_id].setPixmap(pixmap.scaled(self.__frame_window_map[camera_id].size(), Qt.KeepAspectRatio))
+                    except Exception as e:
+                        self.__console.error(e)
+                else:
+                    self.__console.error(f"Invalid topic received: {topic}")
 
             except Exception as e:
                 self.__console.critical(f"Error receiving image: {e}")
