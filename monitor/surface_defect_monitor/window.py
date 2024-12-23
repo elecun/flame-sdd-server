@@ -192,7 +192,7 @@ class AppWindow(QMainWindow):
                 else:
                     topic = parts[0].decode("utf-8")
                     camera_id = int(json.loads(parts[1].decode("utf-8"))["camera_id"])
-                    image_data = parts[2]
+                    image_data = parts[2].decode("utf-8")
                     self.__console.info(f"Received data from Camera ID : {camera_id}")
 
                 if topic == "image_stream_monitor" and image_data is not None:
