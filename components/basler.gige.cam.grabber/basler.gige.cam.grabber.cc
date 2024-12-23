@@ -203,6 +203,10 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                         std::vector<unsigned char> buffer;
                         cv::imencode(".jpg", image, buffer);
 
+                        //save temporary
+                        std::string filename = "image_" + std::to_string(camera_id) + "_" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + ".jpg";
+                        cv::imwrite(fmt::format("/home/dk/sddnas/{}",filename), image);
+
                         // batch stream method
                         if(_stream_method==0){
                             _image_container[camera_id].push_back(buffer);
