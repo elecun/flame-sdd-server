@@ -186,7 +186,7 @@ class AppWindow(QMainWindow):
 
                 parts = self.__camera_monitor_socket.recv_multipart()
                 self.__console.info(f"Received data part {parts}")
-                
+
                 if len(parts) < 3:
                     self.__console.error(f"Invalid multipart message received")
                 else:
@@ -195,7 +195,7 @@ class AppWindow(QMainWindow):
                     image_data = parts[2]
                     self.__console.info(f"Received data from Camera ID : {camera_id}")
 
-                if topic == "image_stream_monitor":
+                if topic == "image_stream_monitor" and image_data is not None:
                     np_array = np.frombuffer(image_data, np.uint8)
                     image = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
                     # display image
@@ -208,7 +208,7 @@ class AppWindow(QMainWindow):
                     try:
                         self.__frame_window_map[camera_id].setPixmap(pixmap.scaled(self.__frame_window_map[camera_id].size(), Qt.KeepAspectRatio))
                     except Exception as e:
-                        self.__console.error(e)
+                        self.__console.error(f"Frame display error : {e}")
                 else:
                     self.__console.error(f"Invalid topic received: {topic}")
 
