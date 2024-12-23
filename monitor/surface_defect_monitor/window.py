@@ -185,12 +185,15 @@ class AppWindow(QMainWindow):
             try:
 
                 parts = self.__camera_monitor_socket.recv_multipart()
+                self.__console.info(f"Received data part {parts}")
+                
                 if len(parts) < 3:
                     self.__console.error(f"Invalid multipart message received")
                 else:
                     topic = parts[0].decode("utf-8")
                     camera_id = int(json.loads(parts[1].decode("utf-8"))["camera_id"])
                     image_data = parts[2]
+                    self.__console.info(f"Received data from Camera ID : {camera_id}")
 
                 if topic == "image_stream_monitor":
                     np_array = np.frombuffer(image_data, np.uint8)
