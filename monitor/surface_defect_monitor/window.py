@@ -13,6 +13,7 @@ import numpy as np
 from datetime import datetime
 import pyqtgraph as graph
 import random
+import pyzmq
 
 try:
     # using PyQt5
@@ -50,6 +51,19 @@ class AppWindow(QMainWindow):
 
         self.__frame_defect_grid_layout = QVBoxLayout(self)
         self.__frame_defect_grid_plot = graph.PlotWidget()
+
+        # map between camera device and windows
+        self.__frame_window_map = {}
+        for idx, id in enumerate(config["camera_ids"]):
+            self.__frame_window_map[id] = self.findChild(QLabel, config["camera_windows"][idx])
+
+        # zmq subscribe for camera monitoring
+        self.__camera_monitor_context = pyzmq.Context()
+        self.__camera_monitor_socket = self.__camera_monitor_context.socket(pyzmq.SUB)
+        self.__camera_monitor_socket.connect(f"tcp://{config['camera_monitoring_ip']}:{config['camera_monitoring_port']}")
+        self.__camera_monitor_socket.setsockopt_string(pyzmq.SUBSCRIBE, "image_stream_monitor")
+        self.__image_stream_thread = threading.Thread(target=self.__image_stream_subscribe)
+        self.__image_stream_thread.start()
 
         try:            
             if "gui" in config:
@@ -162,3 +176,26 @@ class AppWindow(QMainWindow):
             self.__light.light_off(self.__config["dmx_ip"], self.__config["dmx_port"])
         else:
             QMessageBox.critical(self, "Error", f"DMX IP and Port is not defined")
+
+    def __image_stream_subscribe(self):
+        """ zmq subscribe for camera monitoring """
+        while True:
+            try:
+                image_data = self.__camera_monitor_socket.recv()
+                np_array = np.frombuffer(image_data, np.uint8)
+                image = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
+                # display image
+                rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                h, w, ch = rgb_image.shape
+                bytes_per_line = ch * w
+                qt_image = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
+                pixmap = QPixmap.fromImage(qt_image)
+                # self.label_camera_1.setPixmap(pixmap.scaled(self.label_camera_1.size(), Qt.KeepAspectRatio))
+                try:
+                    self.__frame_window_map
+                    self.__frame_window_map[camera_id].setPixmap(pixmap.scaled(self.__frame_window_map[camera_id].size(), Qt.AspectRatioMode.KeepAspectRatio))
+                except Exception as e:
+                    self.__console.error(e)
+
+            except Exception as e:
+                self.__console.critical(f"Error receiving image: {e}")

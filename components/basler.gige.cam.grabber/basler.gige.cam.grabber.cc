@@ -227,7 +227,6 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                             get_port("image_stream")->send(image_data, zmq::send_flags::none);
                         }
 
-                        
 
                         //logger::info("Captured image resolution : {}x{}({})", image.cols, image.rows, image.channels());
                         
