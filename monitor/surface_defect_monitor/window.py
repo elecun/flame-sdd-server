@@ -214,3 +214,22 @@ class AppWindow(QMainWindow):
 
             except Exception as e:
                 self.__console.critical(f"Error receiving image: {e}")
+
+            time.sleep(0.1) # for context switching
+
+    # show camera grabbed image
+    def __camera_frame_update(self, camera_id, frame, fps):
+        """ show camera image from subscriber"""
+        frame_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        
+        t = datetime.now()
+        cv2.putText(frame_image, t.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], (10, 1070), cv2.FONT_HERSHEY_SIMPLEX, 2.0, (0,255,0), 2, cv2.LINE_AA)
+        cv2.putText(frame_image, f"Camera #{camera_id}(fps:{fps:.1f})", (10,50), cv2.FONT_HERSHEY_SIMPLEX, 2.0, (1,255,0), 2, cv2.LINE_AA)
+
+        h, w, ch = frame_image.shape
+        qt_image = QImage(frame_image.data, w, h, ch*w, QImage.Format.Format_RGB888)
+        pixmap = QPixmap.fromImage(qt_image)
+        try:
+            self.__frame_window_map[camera_id].setPixmap(pixmap.scaled(self.__frame_window_map[camera_id].size(), Qt.AspectRatioMode.KeepAspectRatio))
+        except Exception as e:
+            self.__console.error(e)

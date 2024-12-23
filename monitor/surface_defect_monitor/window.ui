@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1900</width>
-    <height>981</height>
+    <width>1605</width>
+    <height>824</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -27,10 +27,10 @@
    <widget class="QTabWidget" name="tabWidget">
     <property name="geometry">
      <rect>
-      <x>-10</x>
-      <y>520</y>
-      <width>1511</width>
-      <height>371</height>
+      <x>0</x>
+      <y>410</y>
+      <width>1605</width>
+      <height>341</height>
      </rect>
     </property>
     <property name="tabPosition">
@@ -40,12 +40,61 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="tab">
      <attribute name="title">
-      <string>Control</string>
+      <string>Control &amp;&amp; Monitor</string>
      </attribute>
+     <widget class="QGroupBox" name="groupBox">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>271</width>
+        <height>321</height>
+       </rect>
+      </property>
+      <property name="title">
+       <string>System Status</string>
+      </property>
+      <widget class="QLabel" name="label_15">
+       <property name="geometry">
+        <rect>
+         <x>140</x>
+         <y>30</y>
+         <width>121</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background-color: rgb(0, 0, 0);
+color: rgb(0, 255, 0);</string>
+       </property>
+       <property name="text">
+        <string>working</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_16">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>32</y>
+         <width>121</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>On-site controller :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </widget>
     </widget>
     <widget class="QWidget" name="tab_2">
      <attribute name="title">
@@ -250,8 +299,8 @@ background-color: rgb(212, 212, 212);</string>
      <widget class="QGroupBox" name="groupBox_2">
       <property name="geometry">
        <rect>
-        <x>1210</x>
-        <y>270</y>
+        <x>540</x>
+        <y>10</y>
         <width>261</width>
         <height>81</height>
        </rect>
@@ -454,9 +503,9 @@ background-color: rgb(212, 212, 212);</string>
      <widget class="QGroupBox" name="groupBox_6">
       <property name="geometry">
        <rect>
-        <x>1230</x>
-        <y>10</y>
-        <width>241</width>
+        <x>540</x>
+        <y>100</y>
+        <width>261</width>
         <height>221</height>
        </rect>
       </property>
@@ -723,8 +772,8 @@ background-color: rgb(212, 212, 212);</string>
      <rect>
       <x>0</x>
       <y>0</y>
-      <width>1920</width>
-      <height>511</height>
+      <width>1605</width>
+      <height>401</height>
      </rect>
     </property>
     <property name="font">
@@ -749,8 +798,8 @@ background-color: rgb(212, 212, 212);</string>
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>1920</width>
-        <height>481</height>
+        <width>1600</width>
+        <height>361</height>
        </rect>
       </property>
       <property name="styleSheet">
@@ -771,10 +820,10 @@ background-color: rgb(212, 212, 212);</string>
      <widget class="QLabel" name="window_camera_10">
       <property name="geometry">
        <rect>
-        <x>1536</x>
-        <y>256</y>
-        <width>384</width>
-        <height>216</height>
+        <x>1280</x>
+        <y>180</y>
+        <width>320</width>
+        <height>180</height>
        </rect>
       </property>
       <property name="styleSheet">
@@ -799,10 +848,10 @@ border: 1px solid white;</string>
      <widget class="QLabel" name="window_camera_7">
       <property name="geometry">
        <rect>
-        <x>384</x>
-        <y>256</y>
-        <width>384</width>
-        <height>216</height>
+        <x>320</x>
+        <y>180</y>
+        <width>320</width>
+        <height>180</height>
        </rect>
       </property>
       <property name="styleSheet">
@@ -821,10 +870,10 @@ border: 1px solid white;</string>
      <widget class="QLabel" name="window_camera_2">
       <property name="geometry">
        <rect>
-        <x>384</x>
-        <y>20</y>
-        <width>384</width>
-        <height>216</height>
+        <x>320</x>
+        <y>0</y>
+        <width>320</width>
+        <height>180</height>
        </rect>
       </property>
       <property name="styleSheet">
@@ -844,9 +893,9 @@ border: 1px solid white;</string>
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>20</y>
-        <width>384</width>
-        <height>216</height>
+        <y>0</y>
+        <width>320</width>
+        <height>180</height>
        </rect>
       </property>
       <property name="styleSheet">
@@ -866,9 +915,9 @@ border: 1px solid white;</string>
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>256</y>
-        <width>384</width>
-        <height>216</height>
+        <y>180</y>
+        <width>320</width>
+        <height>180</height>
        </rect>
       </property>
       <property name="styleSheet">
@@ -887,10 +936,10 @@ border: 1px solid white;</string>
      <widget class="QLabel" name="window_camera_8">
       <property name="geometry">
        <rect>
-        <x>768</x>
-        <y>256</y>
-        <width>384</width>
-        <height>216</height>
+        <x>640</x>
+        <y>180</y>
+        <width>320</width>
+        <height>180</height>
        </rect>
       </property>
       <property name="styleSheet">
@@ -909,10 +958,10 @@ border: 1px solid white;</string>
      <widget class="QLabel" name="window_camera_9">
       <property name="geometry">
        <rect>
-        <x>1152</x>
-        <y>256</y>
-        <width>384</width>
-        <height>216</height>
+        <x>960</x>
+        <y>180</y>
+        <width>320</width>
+        <height>180</height>
        </rect>
       </property>
       <property name="styleSheet">
@@ -931,10 +980,10 @@ border: 1px solid white;</string>
      <widget class="QLabel" name="window_camera_3">
       <property name="geometry">
        <rect>
-        <x>768</x>
-        <y>20</y>
-        <width>384</width>
-        <height>216</height>
+        <x>640</x>
+        <y>0</y>
+        <width>320</width>
+        <height>180</height>
        </rect>
       </property>
       <property name="styleSheet">
@@ -953,10 +1002,10 @@ border: 1px solid white;</string>
      <widget class="QLabel" name="window_camera_4">
       <property name="geometry">
        <rect>
-        <x>1152</x>
-        <y>20</y>
-        <width>384</width>
-        <height>216</height>
+        <x>960</x>
+        <y>0</y>
+        <width>320</width>
+        <height>180</height>
        </rect>
       </property>
       <property name="styleSheet">
@@ -975,10 +1024,10 @@ border: 1px solid white;</string>
      <widget class="QLabel" name="window_camera_5">
       <property name="geometry">
        <rect>
-        <x>1536</x>
-        <y>20</y>
-        <width>384</width>
-        <height>216</height>
+        <x>1280</x>
+        <y>0</y>
+        <width>320</width>
+        <height>180</height>
        </rect>
       </property>
       <property name="styleSheet">
@@ -994,266 +1043,6 @@ border: 1px solid white;</string>
        <set>Qt::AlignCenter</set>
       </property>
      </widget>
-     <widget class="QLabel" name="label_window_camera_1">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>0</y>
-        <width>384</width>
-        <height>16</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>Arial</family>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">color: rgb(255, 0, 0);</string>
-      </property>
-      <property name="text">
-       <string>CAMERA 01</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-     <widget class="QLabel" name="label_window_camera_2">
-      <property name="geometry">
-       <rect>
-        <x>384</x>
-        <y>0</y>
-        <width>384</width>
-        <height>16</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>Arial</family>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">color: rgb(255, 0, 0);</string>
-      </property>
-      <property name="text">
-       <string>CAMERA 02</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-     <widget class="QLabel" name="label_window_camera_3">
-      <property name="geometry">
-       <rect>
-        <x>768</x>
-        <y>0</y>
-        <width>384</width>
-        <height>16</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>Arial</family>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">color: rgb(255, 0, 0);</string>
-      </property>
-      <property name="text">
-       <string>CAMERA 03</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-     <widget class="QLabel" name="label_window_camera_4">
-      <property name="geometry">
-       <rect>
-        <x>1152</x>
-        <y>0</y>
-        <width>384</width>
-        <height>16</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>Arial</family>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">color: rgb(255, 0, 0);</string>
-      </property>
-      <property name="text">
-       <string>CAMERA 04</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-     <widget class="QLabel" name="label_window_camera_5">
-      <property name="geometry">
-       <rect>
-        <x>1536</x>
-        <y>0</y>
-        <width>384</width>
-        <height>16</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>Arial</family>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">color: rgb(255, 0, 0);</string>
-      </property>
-      <property name="text">
-       <string>CAMERA 05</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-     <widget class="QLabel" name="label_window_camera_9">
-      <property name="geometry">
-       <rect>
-        <x>1156</x>
-        <y>240</y>
-        <width>384</width>
-        <height>16</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>Arial</family>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">color: rgb(255, 0, 0);</string>
-      </property>
-      <property name="text">
-       <string>CAMERA 09</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-     <widget class="QLabel" name="label_window_camera_6">
-      <property name="geometry">
-       <rect>
-        <x>4</x>
-        <y>240</y>
-        <width>384</width>
-        <height>16</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>Arial</family>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">color: rgb(255, 0, 0);</string>
-      </property>
-      <property name="text">
-       <string>CAMERA 06</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-     <widget class="QLabel" name="label_window_camera_7">
-      <property name="geometry">
-       <rect>
-        <x>388</x>
-        <y>240</y>
-        <width>384</width>
-        <height>16</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>Arial</family>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">color: rgb(255, 0, 0);</string>
-      </property>
-      <property name="text">
-       <string>CAMERA 07</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-     <widget class="QLabel" name="label_window_camera_8">
-      <property name="geometry">
-       <rect>
-        <x>772</x>
-        <y>240</y>
-        <width>384</width>
-        <height>16</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>Arial</family>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">color: rgb(255, 0, 0);</string>
-      </property>
-      <property name="text">
-       <string>CAMERA 08</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-     <widget class="QLabel" name="label_window_camera_10">
-      <property name="geometry">
-       <rect>
-        <x>1540</x>
-        <y>240</y>
-        <width>384</width>
-        <height>16</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>Arial</family>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">color: rgb(255, 0, 0);</string>
-      </property>
-      <property name="text">
-       <string>CAMERA 10</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
     </widget>
    </widget>
   </widget>
@@ -1262,7 +1051,7 @@ border: 1px solid white;</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1900</width>
+     <width>1605</width>
      <height>43</height>
     </rect>
    </property>
