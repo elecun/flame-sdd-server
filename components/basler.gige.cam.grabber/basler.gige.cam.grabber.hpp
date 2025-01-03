@@ -21,8 +21,8 @@ TriggerSource = Line1
 
 // Note! FrameEnd Triggering is ....
 
-#ifndef FLAME_basler_gige_cam_grabber_HPP_INCLUDED
-#define FLAME_basler_gige_cam_grabber_HPP_INCLUDED
+#ifndef FLAME_BASLER_GIGE_CAM_GRABBER_HPP_INCLUDED
+#define FLAME_BASLER_GIGE_CAM_GRABBER_HPP_INCLUDED
 
 #include <flame/component/object.hpp>
 #include <pylon/PylonIncludes.h>
