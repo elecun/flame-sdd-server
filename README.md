@@ -28,3 +28,12 @@ $ sudo apt-get install libmodbus-dev
 ```
 $ sudo apt-get install libmodbus-dev
 ```
+
+## ni.daq.pulse.generator
+* https://www.ni.com/docs/ko-KR/bundle/ni-platform-on-linux-desktop/page/supported-drivers-for-linux-distributions.html
+* https://www.ni.com/docs/ko-KR/bundle/ni-platform-on-linux-desktop/page/installing-ni-products-ubuntu.html
+```
+$ sudo apt update & apt dist-upgrade
+$ sudo reboot
+$ sudo apt-get install ni-daqmx
+```
