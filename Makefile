@@ -196,7 +196,8 @@ $(BUILDDIR)dk.image.push.unittest.o:	$(CURRENT_DIR)/components/dk.image.push.uni
 
 
 all : flame
-dk_h_inspector : basler_gige_cam_linker.comp  dk_level_data_gateway.comp dk_sdd_inference.comp dk_presdd_inference.comp dk_sys_op_trigger.comp nas_file_stacker.comp ni_pulse_generator.comp dk_light_linker.comp ni_daq_pulse_generator.comp image_flow_handler.comp
+
+dk_h_inspector : basler_gige_cam_grabber.comp nas_file_stacker.comp ni_daq_pulse_generator.comp
 
 dk_h_inspector_perf_test : basler_gige_cam_grabber.comp ni_daq_pulse_generator.comp dk_level2_terminal.comp nas_file_stacker.comp
 
