@@ -25,43 +25,52 @@ TriggerSource = Line1
 #define FLAME_BASLER_GIGE_CAM_GRABBER_HPP_INCLUDED
 
 #include <flame/component/object.hpp>
-#include <pylon/PylonIncludes.h>
-#include <pylon/BaslerUniversalInstantCamera.h>
 #include <map>
 #include <unordered_map>
 #include <vector>
 #include <thread>
 #include <string>
 #include <atomic>
-// #include <boost/lockfree/queue.hpp>
+#include <pthread.h>
+
+#include <pylon/PylonIncludes.h>
+#include <pylon/BaslerUniversalInstantCamera.h>
 
 using namespace std;
 using namespace Pylon;
 using namespace GenApi;
-// using namespace boost;
 
 class basler_gige_cam_grabber : public flame::component::object {
     public:
         basler_gige_cam_grabber() = default;
         virtual ~basler_gige_cam_grabber() = default;
 
-        // default interface functions
+        /* default interface functions */
         bool on_init() override;
         void on_loop() override;
         void on_close() override;
         void on_message() override;
 
     private:
+        /* task impl. of status publisher for every 1 sec */
+        void _subtask_status_publish(json parameters);
+
         void _image_stream_task(int camera_id, CBaslerUniversalInstantCamera* camera, json parameters);
         void _status_monitor_task(json parameters);
+        void _status_publish();
 
         void _publish_status(); //publish camera work status for every seconds
+        void _update_status();
 
     private:
+
+        /* sub-tasks */
+        pthread_t _subtask_status_publisher; /* for status publish */
+
         unordered_map<int, pthread_t> _camera_grab_worker;  // camera id, grab thread
         unordered_map<int, unsigned long long> _camera_grab_counter; // camera id, grab counter
         unordered_map<int, json> _camera_status; // camera id, status
-        map<int, CBaslerUniversalInstantCamera*> _cameras; // camera id, camera device instance
+        map<int, CBaslerUniversalInstantCamera*> _device_map; // camera id, camera device instance
         std::atomic<bool> _thread_stop_signal { false };
 
         pthread_t _status_monitor; /* for status publish */
@@ -72,7 +81,9 @@ class basler_gige_cam_grabber : public flame::component::object {
         };
         int _stream_method = 0; //batch mode default
         int _stream_batch_buffer_size = 1000;
-        map<int, vector<vector<unsigned char>>> _image_container;
+        typedef vector<unsigned char> image_data;
+        map<int, vector<image_data>> _image_container;
+        
         
 
 

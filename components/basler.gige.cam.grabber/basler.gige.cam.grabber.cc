@@ -8,6 +8,7 @@
 using namespace flame;
 using namespace std;
 
+/* create component instance */
 static basler_gige_cam_grabber* _instance = nullptr;
 flame::component::object* create(){ if(!_instance) _instance = new basler_gige_cam_grabber(); return _instance; }
 void release(){ if(_instance){ delete _instance; _instance = nullptr; }}
@@ -17,7 +18,7 @@ bool basler_gige_cam_grabber::on_init(){
 
     try{
 
-        //stream method check
+        /* read parameters */
         json param = get_profile()->parameters();
         if(param.contains("stream_method")){ 
             string _set_method = param["stream_method"];
@@ -25,30 +26,32 @@ bool basler_gige_cam_grabber::on_init(){
             _stream_method = _method_type[_set_method];
         }
 
-        if(_stream_method==0){ // batch stream mode
-            if(param.contains("stream_batch_buffer")){
-                _stream_batch_buffer_size = param["stream_batch_buffer"].get<int>();
+        /* if stream method is 'batch' mode, buffer reservation is required for memory optimization */
+        if(_stream_method==_method_type["batch"]){
+            if(param.contains("stream_batch_reserved")){
+                _stream_batch_buffer_size = param["stream_batch_reserved"].get<int>();
             }
         }
 
-        //1. initialization
+        //1. pylon initialization
         PylonInitialize();
 
-        //2. find cameras
+        //2. find GigE cameras
         CTlFactory& tlFactory = CTlFactory::GetInstance();
         DeviceInfoList_t devices;
         tlFactory.EnumerateDevices(devices);
-        if(devices.size()>1)
+        if(devices.size()>=1)
             logger::info("[{}] Found {} cameras", get_name(), devices.size());
 
-        //3. create device
+        //3. create device & insert to device map
         for(int idx=0;idx<(int)devices.size();idx++){
-            _cameras.insert(make_pair(stoi(devices[idx].GetUserDefinedName().c_str()), 
+            _device_map.insert(make_pair(stoi(devices[idx].GetUserDefinedName().c_str()), 
                             new CBaslerUniversalInstantCamera(tlFactory.CreateDevice(devices[idx]))));
             logger::info("[{}] Found User ID {}, (SN:{}, Address : {})", get_name(), devices[idx].GetUserDefinedName().c_str(), devices[idx].GetSerialNumber().c_str(), devices[idx].GetIpAddress().c_str());
         }
 
-        for(const auto& camera:_cameras){
+        //4. device control handle assign for each camera
+        for(const auto& camera:_device_map){
             thread worker = thread(&basler_gige_cam_grabber::_image_stream_task, this, camera.first, camera.second, get_profile()->parameters());
             _camera_grab_worker[camera.first] = worker.native_handle();
             _camera_grab_counter[camera.first] = 0;
@@ -63,13 +66,16 @@ bool basler_gige_cam_grabber::on_init(){
             _camera_status[id]["frames"] = 0;  // add frames (unsigned long long)
             _camera_status[id]["status"] = "-"; // add status (-|working|connected)
 
-            //image container reserve
-            // if(_stream_method==0){
-            //     _image_container[id].reserve(_stream_batch_buffer_size);
-            // }
+            // image container reserve
+            if(_stream_method==_method_type["batch"]){
+                _image_container[id].reserve(_stream_batch_buffer_size);
+            }
         }
 
-        // thread monitor = thread(&basler_gige_cam_grabber::_status_monitor_task, this, get_profile()->parameters());
+        /* component status monitoring subtask */
+        thread status_monitor_worker = thread(&basler_gige_cam_grabber::_subtask_status_publish, this, get_profile()->parameters());
+        _subtask_status_publisher = status_monitor_worker.native_handle();
+        status_monitor_worker.detach();
 
     }
     catch(const GenericException& e){
@@ -84,10 +90,17 @@ bool basler_gige_cam_grabber::on_init(){
     return true;
 }
 
+/* status publisher subtask impl. */
+void basler_gige_cam_grabber::_subtask_status_publish(json parameters){
+    while(!_thread_stop_signal.load()){
+        _update_status();
+
+        this_thread::sleep_for(chrono::seconds(1));
+    }
+}
+
 void basler_gige_cam_grabber::on_loop(){
 
-    /* camera component status update */
-    _publish_status();
 
 }
 
@@ -106,7 +119,7 @@ void basler_gige_cam_grabber::on_close(){
     _camera_grab_worker.clear();
 
     /* camera close and delete */
-    for(auto& camera:_cameras){
+    for(auto& camera:_device_map){
         if(camera.second->IsOpen()){
             camera.second->StopGrabbing();
             camera.second->Close();
@@ -115,6 +128,10 @@ void basler_gige_cam_grabber::on_close(){
         
     }
 
+    /* close status monitoring subtask */
+    pthread_cancel(_subtask_status_publisher);
+    pthread_join(_subtask_status_publisher, nullptr);
+
     PylonTerminate();
 }
 
@@ -122,10 +139,24 @@ void basler_gige_cam_grabber::on_message(){
     
 }
 
+/* update status */
+void basler_gige_cam_grabber::_update_status(){
+
+    /* update the camera working status */
+    for(auto& camera:_device_map){
+        if(camera.second->IsGrabbing())
+            _camera_status[camera.first]["status"] = "working";
+        else {
+            _camera_status[camera.first]["status"] = "not working";
+        }
+    }
+
+}
+
 void basler_gige_cam_grabber::_publish_status(){
 
     /* update the camera working status */
-    for(auto& camera:_cameras){
+    for(auto& camera:_device_map){
         if(camera.second->IsGrabbing())
             _camera_status[camera.first]["status"] = "working";
         else {
@@ -163,6 +194,17 @@ void basler_gige_cam_grabber::_publish_status(){
 void basler_gige_cam_grabber::_status_monitor_task(json parameters){
     while(!_thread_stop_signal.load()){
         this_thread::sleep_for(chrono::milliseconds(1000));
+    }
+}
+
+// camera status publish
+void basler_gige_cam_grabber::_status_publish(){
+    json defined_cameras = get_profile()->parameters()["cameras"];
+    for(auto& camera:defined_cameras){
+        int id = camera["id"].get<int>();
+        _camera_status.insert(make_pair(id, camera));
+        _camera_status[id]["frames"] = 0;  // add frames (unsigned long long)
+        _camera_status[id]["status"] = "-"; // add status (-|working|connected)
     }
 }
 
