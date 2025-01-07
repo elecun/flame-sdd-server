@@ -34,6 +34,7 @@ except ImportError:
 from util.logger.console import ConsoleLogger
 from . import trigger
 from . import light
+from subscriber.temperature_subscriber import TemperatureSubscriber
 
 
 '''
@@ -101,6 +102,11 @@ class AppWindow(QMainWindow):
                 self.btn_defect_visualization_test.clicked.connect(self.on_btn_defect_visualization_test)
                 self.btn_light_on.clicked.connect(self.on_btn_light_on)
                 self.btn_light_off.clicked.connect(self.on_btn_light_off)
+
+                # create temperature monitoring subscriber
+                if config["temperature_stream_source"] and config["temperature_stream_topic"]:
+                    self.__temperature_subscriber = TemperatureSubscriber(connection=config["temperature_stream_source"], topic=config["temperature_stream_topic"])
+
 
         except Exception as e:
             self.__console.error(f"{e}")

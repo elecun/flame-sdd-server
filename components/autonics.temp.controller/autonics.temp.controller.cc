@@ -55,7 +55,7 @@ bool autonics_temp_controller::on_init(){
 
     }
     catch(json::exception& e){
-        logger::error("Profile Error : {}", e.what());
+        logger::error("[{}] Profile Error : {}", get_name(), e.what());
         return false;
     }
 
