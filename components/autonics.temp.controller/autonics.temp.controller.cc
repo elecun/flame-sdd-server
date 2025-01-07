@@ -63,6 +63,7 @@ bool autonics_temp_controller::on_init(){
 }
 
 void autonics_temp_controller::on_loop(){
+    json data_pack;
     for(int slave_addr : _slave_addrs){
         modbus_set_slave(_modbus_ctx, slave_addr);
 
@@ -74,12 +75,25 @@ void autonics_temp_controller::on_loop(){
             continue;
         }
         else {
-            float temp = (float)reg[0] + (float)reg[1] / 10.0;
-            logger::info("[{}] Slave({}) Temperature : {} ({},{})", get_name(), slave_addr, temp, (int)reg[0], (int)reg[1]);
+            float temperature = (float)reg[0] + (float)reg[1] / 10.0;
+            data_pack[fmt::format("{}", slave_addr)] = temperature;
+            logger::info("[{}] Slave({}) Temperature : {} ({},{})", get_name(), slave_addr, temperature, (int)reg[0], (int)reg[1]);
         }
 
         usleep(70000); // 70ms
-        
+    }
+
+    /* publish all packed data */
+    try{
+        string data = data_pack.dump();
+        string topic = fmt::format("{}/{}", get_name(), "temp_stream");
+        pipe_data topic_msg(topic.data(), topic.size());
+        pipe_data data_msg(data.data(), data.size());
+        get_port("temp_stream")->send(topic_msg, zmq::send_flags::sndmore);
+        get_port("temp_stream")->send(data_msg, zmq::send_flags::dontwait);
+    }
+    catch(std::runtime_error& e){
+        logger::error("[{}] {}", get_name(), e.what());
     }
 }
 
