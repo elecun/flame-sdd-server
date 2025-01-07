@@ -171,6 +171,11 @@ dk_light_linker.comp:	$(BUILDDIR)dk.light.linker.o
 $(BUILDDIR)dk.light.linker.o:	$(CURRENT_DIR)/components/dk.light.linker/dk.light.linker.cc
 									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
 
+autonics_temp_controller.comp:	$(BUILDDIR)autonics.temp.controller.o
+							$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(BUILDDIR)$@ $^ $(LDLIBS) -lmodbus
+$(BUILDDIR)autonics.temp.controller.o:	$(CURRENT_DIR)/components/autonics.temp.controller/autonics.temp.controller.cc
+									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
+
 dk_remote_lens_linker.comp:	$(BUILDDIR)dk.remote.lens.linker.o \
 							$(BUILDDIR)UsbCtrl.o \
 							$(BUILDDIR)LensCtrl.o \

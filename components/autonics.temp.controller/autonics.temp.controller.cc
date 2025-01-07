@@ -9,6 +9,8 @@ static autonics_temp_controller* _instance = nullptr;
 flame::component::object* create(){ if(!_instance) _instance = new autonics_temp_controller(); return _instance; }
 void release(){ if(_instance){ delete _instance; _instance = nullptr; }}
 
+#define READ_PRESENT_VALUE 0x03E8
+
 bool autonics_temp_controller::on_init(){
     try{
 
@@ -23,7 +25,7 @@ bool autonics_temp_controller::on_init(){
         int stop_bit = param.value("stop_bit", 1);
         double timeout_sec = param.value("timeout_sec", 1.0);
 
-        logger::info("[{}] Use device : {}({}/{}/{}/{}", get_name(), device, baudrate, parity, data_bit, stop_bit);
+        logger::info("[{}] Use device : {}({}/{}/{}/{})", get_name(), device, baudrate, parity, data_bit, stop_bit);
         _modbus_ctx = modbus_new_rtu(device.c_str(), baudrate, parity.c_str()[0], data_bit, stop_bit);
         if(_modbus_ctx==nullptr){
             logger::error("[{}] Modbus RTU context creation failed", get_name());
@@ -61,16 +63,23 @@ bool autonics_temp_controller::on_init(){
 }
 
 void autonics_temp_controller::on_loop(){
-    for(int slave_addr : _slave_controllers){
+    for(int slave_addr : _slave_addrs){
+        modbus_set_slave(_modbus_ctx, slave_addr);
+
         uint16_t reg[2];
-        int rc = modbus_read_registers(_modbus_ctx, slave_addr, 0, 2, reg);
+        int rc = modbus_read_input_registers(_modbus_ctx, READ_PRESENT_VALUE, 2, reg); // read PV
         if(rc==-1){
-            logger::error("[{}] Modbus RTU read failed", get_name());
-            return;
+            logger::error("[{}] Modbus RTU read failed (Address : {})", get_name(), slave_addr);
+            logger::error("[{}] {}", get_name(), modbus_strerror(errno));
+            continue;
+        }
+        else {
+            float temp = (float)reg[0] + (float)reg[1] / 10.0;
+            logger::info("[{}] Slave({}) Temperature : {} ({},{})", get_name(), slave_addr, temp, (int)reg[0], (int)reg[1]);
         }
 
-        float temp = (float)reg[0] + (float)reg[1] / 10.0;
-        logger::info("[{}] Slave({}) Temperature : {}", get_name(), slave_addr, temp);
+        usleep(70000); // 70ms
+        
     }
 }
 
@@ -95,5 +104,5 @@ void autonics_temp_controller::_update_status(){
 }
 
 bool autonics_temp_controller::_init_modbus(){
-
+    return true;
 }
