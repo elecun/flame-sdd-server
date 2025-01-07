@@ -27,10 +27,10 @@
    <widget class="QTabWidget" name="tabWidget">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>600</y>
-      <width>1271</width>
-      <height>360</height>
+      <x>0</x>
+      <y>590</y>
+      <width>1280</width>
+      <height>380</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -52,30 +52,35 @@
      <widget class="QGroupBox" name="groupBox">
       <property name="geometry">
        <rect>
-        <x>10</x>
-        <y>130</y>
-        <width>641</width>
-        <height>151</height>
+        <x>350</x>
+        <y>10</y>
+        <width>291</width>
+        <height>91</height>
        </rect>
       </property>
       <property name="title">
-       <string>System Status</string>
+       <string>시스템 상태</string>
       </property>
       <widget class="QLabel" name="label_onsite_status_value">
        <property name="geometry">
         <rect>
          <x>140</x>
          <y>30</y>
-         <width>121</width>
+         <width>141</width>
          <height>21</height>
         </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>16</pointsize>
+        </font>
        </property>
        <property name="styleSheet">
         <string notr="true">background-color: rgb(0, 0, 0);
 color: rgb(0, 255, 0);</string>
        </property>
        <property name="text">
-        <string>-</string>
+        <string>working</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -118,16 +123,21 @@ color: rgb(0, 255, 0);</string>
         <rect>
          <x>140</x>
          <y>60</y>
-         <width>121</width>
+         <width>141</width>
          <height>21</height>
         </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>16</pointsize>
+        </font>
        </property>
        <property name="styleSheet">
         <string notr="true">background-color: rgb(0, 0, 0);
 color: rgb(0, 255, 0);</string>
        </property>
        <property name="text">
-        <string>-</string>
+        <string>connected</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -163,7 +173,7 @@ color: rgb(0, 255, 0);</string>
        </rect>
       </property>
       <property name="title">
-       <string>Temperature</string>
+       <string>시스템 온도</string>
       </property>
       <widget class="QLabel" name="label_temperature_1">
        <property name="geometry">
@@ -603,12 +613,12 @@ color: rgb(0, 255, 0);</string>
        <rect>
         <x>9</x>
         <y>10</y>
-        <width>641</width>
-        <height>111</height>
+        <width>321</width>
+        <height>91</height>
        </rect>
       </property>
       <property name="title">
-       <string>Process Info.</string>
+       <string>생산 관련 정보</string>
       </property>
       <widget class="QLabel" name="label_25">
        <property name="geometry">
@@ -628,16 +638,356 @@ color: rgb(0, 255, 0);</string>
         <rect>
          <x>100</x>
          <y>30</y>
-         <width>121</width>
+         <width>201</width>
          <height>21</height>
         </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>16</pointsize>
+        </font>
        </property>
        <property name="styleSheet">
         <string notr="true">background-color: rgb(0, 0, 0);
 color: rgb(0, 255, 0);</string>
        </property>
        <property name="text">
-        <string>-</string>
+        <string>DK-H-12345</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </widget>
+     <widget class="QGroupBox" name="groupBox_10">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>110</y>
+        <width>191</width>
+        <height>251</height>
+       </rect>
+      </property>
+      <property name="title">
+       <string>결함 검출 요약정보</string>
+      </property>
+      <widget class="QLabel" name="label_28">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>30</y>
+         <width>81</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+        </font>
+       </property>
+       <property name="text">
+        <string>Web 흠 :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_29">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>90</y>
+         <width>81</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+        </font>
+       </property>
+       <property name="text">
+        <string>딱지흠 :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_30">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>120</y>
+         <width>81</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+        </font>
+       </property>
+       <property name="text">
+        <string>Flange 터짐 :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_31">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>150</y>
+         <width>81</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+        </font>
+       </property>
+       <property name="text">
+        <string>Flange 거침 :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_32">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>180</y>
+         <width>81</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+        </font>
+       </property>
+       <property name="text">
+        <string>실크랙 :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_33">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>60</y>
+         <width>81</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+        </font>
+       </property>
+       <property name="text">
+        <string>Web 찢어짐 :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_onsite_status_value_2">
+       <property name="geometry">
+        <rect>
+         <x>100</x>
+         <y>30</y>
+         <width>71</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>16</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background-color: rgb(0, 0, 0);
+color: rgb(0, 255, 0);</string>
+       </property>
+       <property name="text">
+        <string>0</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_onsite_status_value_3">
+       <property name="geometry">
+        <rect>
+         <x>100</x>
+         <y>60</y>
+         <width>71</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>16</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background-color: rgb(0, 0, 0);
+color: rgb(0, 255, 0);</string>
+       </property>
+       <property name="text">
+        <string>0</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_onsite_status_value_4">
+       <property name="geometry">
+        <rect>
+         <x>100</x>
+         <y>90</y>
+         <width>71</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>16</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background-color: rgb(0, 0, 0);
+color: rgb(0, 255, 0);</string>
+       </property>
+       <property name="text">
+        <string>0</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_onsite_status_value_5">
+       <property name="geometry">
+        <rect>
+         <x>100</x>
+         <y>120</y>
+         <width>71</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>16</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background-color: rgb(0, 0, 0);
+color: rgb(0, 255, 0);</string>
+       </property>
+       <property name="text">
+        <string>0</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_onsite_status_value_6">
+       <property name="geometry">
+        <rect>
+         <x>100</x>
+         <y>150</y>
+         <width>71</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>16</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background-color: rgb(0, 0, 0);
+color: rgb(0, 255, 0);</string>
+       </property>
+       <property name="text">
+        <string>0</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_onsite_status_value_7">
+       <property name="geometry">
+        <rect>
+         <x>100</x>
+         <y>180</y>
+         <width>71</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>16</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background-color: rgb(0, 0, 0);
+color: rgb(0, 255, 0);</string>
+       </property>
+       <property name="text">
+        <string>0</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_34">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>210</y>
+         <width>81</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+        </font>
+       </property>
+       <property name="text">
+        <string>합계 :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_onsite_status_value_8">
+       <property name="geometry">
+        <rect>
+         <x>100</x>
+         <y>210</y>
+         <width>71</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>16</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background-color: rgb(0, 0, 0);
+color: rgb(255, 0, 0);</string>
+       </property>
+       <property name="text">
+        <string>0</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -715,7 +1065,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <pointsize>13</pointsize>
+         <pointsize>16</pointsize>
         </font>
        </property>
        <property name="text">
@@ -781,7 +1131,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <pointsize>13</pointsize>
+         <pointsize>16</pointsize>
         </font>
        </property>
        <property name="text">
@@ -818,7 +1168,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <pointsize>13</pointsize>
+         <pointsize>16</pointsize>
         </font>
        </property>
        <property name="text">
@@ -932,7 +1282,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <pointsize>13</pointsize>
+         <pointsize>16</pointsize>
         </font>
        </property>
        <property name="text">
@@ -1001,7 +1351,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <pointsize>13</pointsize>
+         <pointsize>16</pointsize>
         </font>
        </property>
        <property name="text">
@@ -1038,7 +1388,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <pointsize>13</pointsize>
+         <pointsize>16</pointsize>
         </font>
        </property>
        <property name="text">
@@ -1497,7 +1847,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <pointsize>13</pointsize>
+         <pointsize>15</pointsize>
         </font>
        </property>
        <property name="text">
@@ -1518,7 +1868,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <pointsize>13</pointsize>
+         <pointsize>15</pointsize>
         </font>
        </property>
        <property name="text">
@@ -1539,7 +1889,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <pointsize>13</pointsize>
+         <pointsize>15</pointsize>
         </font>
        </property>
        <property name="text">
@@ -1560,7 +1910,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <pointsize>13</pointsize>
+         <pointsize>15</pointsize>
         </font>
        </property>
        <property name="text">
@@ -1581,7 +1931,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <pointsize>13</pointsize>
+         <pointsize>15</pointsize>
         </font>
        </property>
        <property name="text">
@@ -1602,7 +1952,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <pointsize>13</pointsize>
+         <pointsize>15</pointsize>
         </font>
        </property>
        <property name="text">
@@ -1623,7 +1973,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <pointsize>13</pointsize>
+         <pointsize>15</pointsize>
         </font>
        </property>
        <property name="text">
@@ -1644,7 +1994,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <pointsize>13</pointsize>
+         <pointsize>15</pointsize>
         </font>
        </property>
        <property name="text">
@@ -1665,7 +2015,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <pointsize>13</pointsize>
+         <pointsize>15</pointsize>
         </font>
        </property>
        <property name="text">
@@ -1686,7 +2036,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <pointsize>13</pointsize>
+         <pointsize>15</pointsize>
         </font>
        </property>
        <property name="text">
@@ -2009,7 +2359,7 @@ background-color: rgb(212, 212, 212);</string>
       <x>0</x>
       <y>0</y>
       <width>1280</width>
-      <height>581</height>
+      <height>580</height>
      </rect>
     </property>
     <property name="font">
@@ -2023,7 +2373,7 @@ background-color: rgb(212, 212, 212);</string>
      <enum>QTabWidget::South</enum>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="tab_3">
      <attribute name="title">
@@ -2035,7 +2385,7 @@ background-color: rgb(212, 212, 212);</string>
         <x>0</x>
         <y>0</y>
         <width>1280</width>
-        <height>540</height>
+        <height>541</height>
        </rect>
       </property>
       <property name="styleSheet">
