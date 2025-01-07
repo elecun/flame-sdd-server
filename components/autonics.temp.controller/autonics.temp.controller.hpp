@@ -13,12 +13,15 @@
 #define FLAME_AUTONICS_TEMP_CONTROLLER_HPP_INCLUDED
 
 #include <flame/component/object.hpp>
+#include <vector>
+#include <modbus/modbus.h>
 
+using namespace std;
 
-class dk_local_temp_indicator : public flame::component::object {
+class autonics_temp_controller : public flame::component::object {
     public:
-        dk_local_temp_indicator() = default;
-        virtual ~dk_local_temp_indicator() = default;
+        autonics_temp_controller() = default;
+        virtual ~autonics_temp_controller() = default;
 
         // default interface functions
         bool on_init() override;
@@ -27,6 +30,19 @@ class dk_local_temp_indicator : public flame::component::object {
         void on_message() override;
 
     private:
+        /* task impl. of status publisher for every 1 sec */
+        void _subtask_status_publish(json parameters);
+        void _update_status();
+        bool _init_modbus();    /* initialize modbus RTU */
+
+    private:
+        /* sub-tasks */
+        pthread_t _subtask_status_publisher; /* for status publish */
+
+        /* modbus RTU */
+        modbus_t* _modbus_ctx { nullptr };
+        vector<int> _slave_addrs;
+
 
 }; /* class */
 
