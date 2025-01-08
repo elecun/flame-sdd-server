@@ -130,8 +130,18 @@ class AppWindow(QMainWindow):
         return super().closeEvent(event)
 
     def on_update_temperature(self, values:dict):
-        self.label_temperature_value_1.setText(str(values["1"]))
-        self.label_temperature_value_2.setText(str(values["2"]))
+        """ update temperature value in GUI """"
+        try:        
+            self.label_temperature_value_1.setText(str(values["1"]))
+            self.label_temperature_value_2.setText(str(values["2"]))
+            self.label_temperature_value_3.setText(str(values["3"]))
+            self.label_temperature_value_4.setText(str(values["4"]))
+            self.label_temperature_value_5.setText(str(values["5"]))
+            self.label_temperature_value_6.setText(str(values["6"]))
+            self.label_temperature_value_7.setText(str(values["7"]))
+            self.label_temperature_value_8.setText(str(values["8"]))
+        except Exception as e:
+            pass
     
 
     def on_btn_trigger_start(self):
