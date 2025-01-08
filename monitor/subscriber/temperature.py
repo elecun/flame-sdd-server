@@ -38,7 +38,6 @@ class TemperatureSubscriber(QThread):
 
     def run(self):
         """ Run the subscriber thread """
-        print("run")
         while True:
             if self.isInterruptionRequested():
                 break

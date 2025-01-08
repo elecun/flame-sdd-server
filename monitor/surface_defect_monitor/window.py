@@ -35,6 +35,7 @@ from util.logger.console import ConsoleLogger
 from . import trigger
 from . import light
 from subscriber.temperature import TemperatureSubscriber
+from requester.lens import LensControlRequester
 
 
 '''
@@ -103,6 +104,22 @@ class AppWindow(QMainWindow):
                 self.btn_light_on.clicked.connect(self.on_btn_light_on)
                 self.btn_light_off.clicked.connect(self.on_btn_light_off)
 
+                self.btn_focus_apply_1.clicked.connect(self.on_btn_focus_apply_1)
+                self.btn_focus_apply_2.clicked.connect(self.on_btn_focus_apply_2)
+                # self.btn_focus_apply_3.clicked.connect(self.on_btn_focus_apply_3)
+                # self.btn_focus_apply_4.clicked.connect(self.on_btn_focus_apply_4)
+                # self.btn_focus_apply_5.clicked.connect(self.on_btn_focus_apply_5)
+                # self.btn_focus_apply_6.clicked.connect(self.on_btn_focus_apply_6)
+                # self.btn_focus_apply_7.clicked.connect(self.on_btn_focus_apply_7)
+                # self.btn_focus_apply_8.clicked.connect(self.on_btn_focus_apply_8)
+                # self.btn_focus_apply_9.clicked.connect(self.on_btn_focus_apply_9)
+                # self.btn_focus_apply_10.clicked.connect(self.on_btn_focus_apply_10)
+                self.btn_focus_read_all.clicked.connect(self.on_btn_focus_read_all)
+
+                if config["lens_control_source"]:
+                    self.__lens_control_requester = LensControlRequester(connection=config["lens_control_source"])
+                    self.__lens_control_requester.focus_update_signal.connect(self.on_update_focus)
+
                 # create temperature monitoring subscriber
                 if config["temperature_stream_source"] and config["temperature_stream_topic"]:
                     self.__temperature_subscriber = TemperatureSubscriber(connection=config["temperature_stream_source"], topic=config["temperature_stream_topic"])
@@ -119,6 +136,16 @@ class AppWindow(QMainWindow):
             self.__frame_defect_grid_plot.clear()
         except Exception as e:
             self.__console.error(f"{e}")
+    
+    def on_btn_focus_apply_1(self):
+        focus_value = self.findChild(QLineEdit, name="edit_focus_value_1").text()
+        self.__lens_control_requester.focus_move(id=1, value)
+    def on_btn_focus_apply_2(self):
+        focus_value = self.findChild(QLineEdit, name="edit_focus_value_2").text()
+        self.__lens_control_requester.focus_move(id=2, value)
+    def on_btn_focus_read_all(self):
+        self.__lens_control_requester.read_focus()
+    
                 
     def closeEvent(self, event:QCloseEvent) -> None: 
         """ terminate main window """
@@ -130,7 +157,7 @@ class AppWindow(QMainWindow):
         return super().closeEvent(event)
 
     def on_update_temperature(self, values:dict):
-        """ update temperature value in GUI """"
+        """ update temperature value in GUI """
         try:        
             self.label_temperature_value_1.setText(str(values["1"]))
             self.label_temperature_value_2.setText(str(values["2"]))

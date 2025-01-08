@@ -43,7 +43,7 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="tab_1">
      <attribute name="title">
@@ -137,7 +137,7 @@ color: rgb(0, 255, 0);</string>
 color: rgb(0, 255, 0);</string>
        </property>
        <property name="text">
-        <string>connected</string>
+        <string>-</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -1673,7 +1673,7 @@ background-color: rgb(212, 212, 212);</string>
         <x>910</x>
         <y>10</y>
         <width>321</width>
-        <height>331</height>
+        <height>361</height>
        </rect>
       </property>
       <property name="title">
@@ -1689,7 +1689,7 @@ background-color: rgb(212, 212, 212);</string>
         </rect>
        </property>
        <property name="text">
-        <string>Lens #1 : </string>
+        <string>Lens #01 : </string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1705,7 +1705,7 @@ background-color: rgb(212, 212, 212);</string>
         </rect>
        </property>
        <property name="text">
-        <string>Lens #2 : </string>
+        <string>Lens #02 : </string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1721,7 +1721,7 @@ background-color: rgb(212, 212, 212);</string>
         </rect>
        </property>
        <property name="text">
-        <string>Lens #3 : </string>
+        <string>Lens #03 : </string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1737,7 +1737,7 @@ background-color: rgb(212, 212, 212);</string>
         </rect>
        </property>
        <property name="text">
-        <string>Lens #4 : </string>
+        <string>Lens #04 : </string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1753,7 +1753,7 @@ background-color: rgb(212, 212, 212);</string>
         </rect>
        </property>
        <property name="text">
-        <string>Lens #5 : </string>
+        <string>Lens #05 : </string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1769,7 +1769,7 @@ background-color: rgb(212, 212, 212);</string>
         </rect>
        </property>
        <property name="text">
-        <string>Lens #6 : </string>
+        <string>Lens #06 : </string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1785,7 +1785,7 @@ background-color: rgb(212, 212, 212);</string>
         </rect>
        </property>
        <property name="text">
-        <string>Lens #7 : </string>
+        <string>Lens #07 : </string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1801,7 +1801,7 @@ background-color: rgb(212, 212, 212);</string>
         </rect>
        </property>
        <property name="text">
-        <string>Lens #8 : </string>
+        <string>Lens #08 : </string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1817,7 +1817,7 @@ background-color: rgb(212, 212, 212);</string>
         </rect>
        </property>
        <property name="text">
-        <string>Lens #9 : </string>
+        <string>Lens #09 : </string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -2179,134 +2179,17 @@ background-color: rgb(212, 212, 212);</string>
         <string>Apply</string>
        </property>
       </widget>
-      <widget class="QPushButton" name="btn_focus_initialize_1">
+      <widget class="QPushButton" name="btn_focus_read_all">
        <property name="geometry">
         <rect>
-         <x>220</x>
-         <y>25</y>
-         <width>91</width>
+         <x>86</x>
+         <y>324</y>
+         <width>131</width>
          <height>32</height>
         </rect>
        </property>
        <property name="text">
-        <string>Initialize</string>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="btn_focus_initialize_2">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>55</y>
-         <width>91</width>
-         <height>32</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>Initialize</string>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="btn_focus_initialize_3">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>85</y>
-         <width>91</width>
-         <height>32</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>Initialize</string>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="btn_focus_initialize_4">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>115</y>
-         <width>91</width>
-         <height>32</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>Initialize</string>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="btn_focus_initialize_5">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>145</y>
-         <width>91</width>
-         <height>32</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>Initialize</string>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="btn_focus_initialize_6">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>175</y>
-         <width>91</width>
-         <height>32</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>Initialize</string>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="btn_focus_initialize_7">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>205</y>
-         <width>91</width>
-         <height>32</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>Initialize</string>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="btn_focus_initialize_8">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>235</y>
-         <width>91</width>
-         <height>32</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>Initialize</string>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="btn_focus_initialize_9">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>265</y>
-         <width>91</width>
-         <height>32</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>Initialize</string>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="btn_focus_initialize_10">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>295</y>
-         <width>91</width>
-         <height>32</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>Initialize</string>
+        <string>Read All</string>
        </property>
       </widget>
      </widget>
