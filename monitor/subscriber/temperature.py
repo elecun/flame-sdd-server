@@ -11,6 +11,7 @@ except ImportError:
     from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
 
 import zmq
+import zmq.utils.monitor as zmq_monitor
 from util.logger.console import ConsoleLogger
 import json
 

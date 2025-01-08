@@ -139,12 +139,14 @@ class AppWindow(QMainWindow):
     
     def on_btn_focus_apply_1(self):
         focus_value = self.findChild(QLineEdit, name="edit_focus_value_1").text()
-        self.__lens_control_requester.focus_move(id=1, value)
+        self.__lens_control_requester.focus_move(id=1, value=int(focus_value))
     def on_btn_focus_apply_2(self):
         focus_value = self.findChild(QLineEdit, name="edit_focus_value_2").text()
-        self.__lens_control_requester.focus_move(id=2, value)
+        self.__lens_control_requester.focus_move(id=2, value=int(focus_value))
     def on_btn_focus_read_all(self):
         self.__lens_control_requester.read_focus()
+    def on_update_focus(self, data:dict):
+        pass
     
                 
     def closeEvent(self, event:QCloseEvent) -> None: 
@@ -153,6 +155,10 @@ class AppWindow(QMainWindow):
 
         # code here
         self.__trigger.stop_trigger()
+
+        # clear instance explicitly
+        self.__lens_control_requester.close()
+        self.__temperature_subscriber.close()
             
         return super().closeEvent(event)
 
