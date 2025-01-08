@@ -44,9 +44,12 @@ bool autonics_temp_controller::on_init(){
             return false;
         }
 
-        /* camera status ready with default profile */
+        /* read controll slaves */
         json slave_controllers = get_profile()->parameters()["slaves"];
         _slave_addrs = slave_controllers.get<std::vector<int>>();
+        for(int slave_addr:_slave_addrs){
+            last_temperature[slave_addr] = 9999.0;  //add dummy value
+        }
 
         /* component status monitoring subtask */
         thread status_monitor_worker = thread(&autonics_temp_controller::_subtask_status_publish, this, get_profile()->parameters());
@@ -66,6 +69,7 @@ void autonics_temp_controller::on_loop(){
     json data_pack;
     for(int slave_addr : _slave_addrs){
         modbus_set_slave(_modbus_ctx, slave_addr);
+       
 
         uint16_t reg[2];
         int rc = modbus_read_input_registers(_modbus_ctx, READ_PRESENT_VALUE, 2, reg); // read PV
@@ -77,7 +81,12 @@ void autonics_temp_controller::on_loop(){
         else {
             float temperature = (float)reg[0] + (float)reg[1] / 10.0;
             data_pack[fmt::format("{}", slave_addr)] = temperature;
-            logger::info("[{}] Slave({}) Temperature : {} ({},{})", get_name(), slave_addr, temperature, (int)reg[0], (int)reg[1]);
+
+            if(temperature!=last_temperature[slave_addr])
+                logger::info("[{}] Slave({}) Temperature : {} ({},{})", get_name(), slave_addr, temperature, (int)reg[0], (int)reg[1]);
+
+            /* save last temperature values */
+            last_temperature[slave_addr] = temperature;
         }
 
         usleep(70000); // 70ms

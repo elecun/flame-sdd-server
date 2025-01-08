@@ -11,7 +11,10 @@ void release(){ if(_instance){ delete _instance; _instance = nullptr; }}
 
 bool dk_remote_lens_linker::on_init(){
 
+	/* read parameters from profile */
     int n_devices = get_profile()->parameters().value("n_devices", 10);
+
+	/* scan connected lens */
     _lens_scan();
     
     //connect

@@ -52,7 +52,7 @@ endif
 
 # OS
 ifeq ($(OS),Linux) #for Linux
-	LDFLAGS = -Wl,--export-dynamic -Wl,-rpath,$(LIBDIR) -L$(LIBDIR)
+	LDFLAGS = -Wl,--export-dynamic -Wl,-rpath=. $(LIBDIR) -L$(LIBDIR)
 	LDLIBS = -pthread -lrt -ldl -lm -lzmq
 endif
 
@@ -171,28 +171,50 @@ dk_light_linker.comp:	$(BUILDDIR)dk.light.linker.o
 $(BUILDDIR)dk.light.linker.o:	$(CURRENT_DIR)/components/dk.light.linker/dk.light.linker.cc
 									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
 
+# autonics temperature controller component
 autonics_temp_controller.comp:	$(BUILDDIR)autonics.temp.controller.o
 							$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(BUILDDIR)$@ $^ $(LDLIBS) -lmodbus
 $(BUILDDIR)autonics.temp.controller.o:	$(CURRENT_DIR)/components/autonics.temp.controller/autonics.temp.controller.cc
 									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
 
-dk_remote_lens_linker.comp:	$(BUILDDIR)dk.remote.lens.linker.o \
-							$(BUILDDIR)UsbCtrl.o \
-							$(BUILDDIR)LensCtrl.o \
-							$(BUILDDIR)LensAccess.o \
-							$(BUILDDIR)LensConnect.o
-							$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(BUILDDIR)$@ $^ $(LDLIBS) -lslabhidtosmbus -lslabhiddevice -lusb-1.0 -ludev
-$(BUILDDIR)dk.remote.lens.linker.o:	$(CURRENT_DIR)/components/dk.remote.lens.linker/dk.remote.lens.linker.cc
+# focus lens module controller component
+computar_vlmpz_controller.comp:	$(BUILDDIR)computar_vlmpz_controller.o \
+									$(BUILDDIR)control_impl.o \
+									$(BUILDDIR)UsbCtrl.o \
+									$(BUILDDIR)LensCtrl.o \
+									$(BUILDDIR)LensAccess.o \
+									$(BUILDDIR)LensConnect.o
+									$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(BUILDDIR)$@ $^ $(LDLIBS) -lslabhidtosmbus -lslabhiddevice -lusb-1.0 -ludev
+$(BUILDDIR)computar_vlmpz_controller.o:	$(CURRENT_DIR)/components/computar.vlmpz.controller/computar.vlmpz.controller.cc
 									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
-$(BUILDDIR)UsbCtrl.o:$(CURRENT_DIR)/components/dk.remote.lens.linker/controller/UsbCtrl.c 
+$(BUILDDIR)control_impl.o:	$(CURRENT_DIR)/components/computar.vlmpz.controller/control_impl.cc
+									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
+$(BUILDDIR)UsbCtrl.o:$(CURRENT_DIR)/components/computar.vlmpz.controller/include/UsbCtrl.c 
+					$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -I./ -c $^ -o $@
+$(BUILDDIR)LensCtrl.o:$(CURRENT_DIR)/components/computar.vlmpz.controller/include/LensCtrl.c 
+					$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -I./ -c $^ -o $@
+$(BUILDDIR)LensAccess.o:$(CURRENT_DIR)/components/computar.vlmpz.controller/include/LensAccess.c 
+					$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -I./ -c $^ -o $@
+$(BUILDDIR)LensConnect.o:$(CURRENT_DIR)/components/computar.vlmpz.controller/include/LensConnect.c 
 					$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -I./ -c $^ -o $@
 
-$(BUILDDIR)LensCtrl.o:$(CURRENT_DIR)/components/dk.remote.lens.linker/controller/LensCtrl.c 
-					$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -I./ -c $^ -o $@
-$(BUILDDIR)LensAccess.o:$(CURRENT_DIR)/components/dk.remote.lens.linker/controller/LensAccess.c 
-					$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -I./ -c $^ -o $@
-$(BUILDDIR)LensConnect.o:$(CURRENT_DIR)/components/dk.remote.lens.linker/controller/LensConnect.c 
-					$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -I./ -c $^ -o $@
+
+# dk_remote_lens_linker.comp:	$(BUILDDIR)dk.remote.lens.linker.o \
+# 							$(BUILDDIR)UsbCtrl.o \
+# 							$(BUILDDIR)LensCtrl.o \
+# 							$(BUILDDIR)LensAccess.o \
+# 							$(BUILDDIR)LensConnect.o
+# 							$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(BUILDDIR)$@ $^ $(LDLIBS) -lslabhidtosmbus -lslabhiddevice -lusb-1.0 -ludev
+# $(BUILDDIR)dk.remote.lens.linker.o:	$(CURRENT_DIR)/components/dk.remote.lens.linker/dk.remote.lens.linker.cc
+# 									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
+# $(BUILDDIR)UsbCtrl.o:$(CURRENT_DIR)/components/dk.remote.lens.linker/controller/UsbCtrl.c 
+# 					$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -I./ -c $^ -o $@
+# $(BUILDDIR)LensCtrl.o:$(CURRENT_DIR)/components/dk.remote.lens.linker/controller/LensCtrl.c 
+# 					$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -I./ -c $^ -o $@
+# $(BUILDDIR)LensAccess.o:$(CURRENT_DIR)/components/dk.remote.lens.linker/controller/LensAccess.c 
+# 					$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -I./ -c $^ -o $@
+# $(BUILDDIR)LensConnect.o:$(CURRENT_DIR)/components/dk.remote.lens.linker/controller/LensConnect.c 
+# 					$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -I./ -c $^ -o $@
 
 dk_image_push_unittest.comp:	$(BUILDDIR)dk.image.push.unittest.o
 							$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(BUILDDIR)$@ $^ $(LDFLAGS) $(LDLIBS)
@@ -206,7 +228,7 @@ dk_h_inspector : basler_gige_cam_grabber.comp nas_file_stacker.comp ni_daq_pulse
 
 dk_h_inspector_perf_test : basler_gige_cam_grabber.comp ni_daq_pulse_generator.comp dk_level2_terminal.comp nas_file_stacker.comp
 
-dk_h_inspector_remote : dk_remote_lens_linker.comp
+dk_h_inspector_onsite : autonics_temp_controller.comp computar_vlmpz_controller.comp
 
 dk_h_inspector_monitor : dk_data_aggregator.comp
 

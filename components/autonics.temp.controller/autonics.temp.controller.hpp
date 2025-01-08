@@ -43,6 +43,10 @@ class autonics_temp_controller : public flame::component::object {
         modbus_t* _modbus_ctx { nullptr };
         vector<int> _slave_addrs;
 
+        /* log filter */
+        map<int, float> last_temperature;
+
+
 
 }; /* class */
 

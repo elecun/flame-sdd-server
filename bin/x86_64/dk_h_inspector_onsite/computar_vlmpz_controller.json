@@ -1,0 +1,29 @@
+{
+    "rt_cycle_ns" : 1000000000,
+    "verbose" : 1,
+
+    "parameters":{
+        "n_devices" : 10,
+        "devices":[
+            {"id":4, "sn":"00D99729"},
+            {"id":6, "sn":"00D9AA5C"}
+        ]
+    },
+
+    "dataport":{
+        "status" : {
+            "transport" : "tcp",
+            "host":"*",
+            "port" : 5004,
+            "socket_type" : "pub",
+            "queue_size" : 1000
+        },
+        "focus_control" : {
+            "transport" : "tcp",
+            "host":"*",
+            "port" : 5104,
+            "socket_type" : "rep",
+            "queue_size" : 1000
+        }
+    }
+}

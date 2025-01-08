@@ -37,3 +37,8 @@ $ sudo apt update & apt dist-upgrade
 $ sudo reboot
 $ sudo apt-get install ni-daqmx
 ```
+
+## focus.lens.controller
+```
+$ sudo apt-get install libusb-1.0.0-dev libudev-dev
+```

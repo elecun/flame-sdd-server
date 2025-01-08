@@ -2,6 +2,9 @@
 #define _LensConnect_h 1
 
 #include "defVal.h"
+
+typedef int BOOL;
+
 extern BOOL USBOpen_frag;
 extern int ItemNum;
 extern int fineNum;
