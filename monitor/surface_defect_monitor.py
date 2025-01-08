@@ -22,6 +22,9 @@ ROOT_PATH = pathlib.Path(__file__).parent.parent
 APP_NAME = pathlib.Path(__file__).stem
 sys.path.append(ROOT_PATH.as_posix())
 
+print(ROOT_PATH)
+print(APP_NAME)
+
 import argparse
 from surface_defect_monitor.window import AppWindow
 from util.logger.console import ConsoleLogger

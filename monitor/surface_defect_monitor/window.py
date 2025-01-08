@@ -34,7 +34,7 @@ except ImportError:
 from util.logger.console import ConsoleLogger
 from . import trigger
 from . import light
-from subscriber.temperature_subscriber import TemperatureSubscriber
+from subscriber.temperature import TemperatureSubscriber
 
 
 '''
@@ -106,6 +106,8 @@ class AppWindow(QMainWindow):
                 # create temperature monitoring subscriber
                 if config["temperature_stream_source"] and config["temperature_stream_topic"]:
                     self.__temperature_subscriber = TemperatureSubscriber(connection=config["temperature_stream_source"], topic=config["temperature_stream_topic"])
+                    self.__temperature_subscriber.temperature_update_signal.connect(self.on_update_temperature)
+                    self.__temperature_subscriber.start() # run in thread
 
 
         except Exception as e:
@@ -126,6 +128,10 @@ class AppWindow(QMainWindow):
         self.__trigger.stop_trigger()
             
         return super().closeEvent(event)
+
+    def on_update_temperature(self, values:dict):
+        self.label_temperature_value_1.setText(str(values["1"]))
+        self.label_temperature_value_2.setText(str(values["2"]))
     
 
     def on_btn_trigger_start(self):

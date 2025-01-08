@@ -47,10 +47,14 @@ void computar_vlmpz_controller::on_loop(){
 void computar_vlmpz_controller::on_close(){
 
     /* close usb */
-    for(map<int, unique_ptr<controlImpl>>::iterator it=_device_map.begin(); it!=_device_map.end(); ++it){
-        it->second->close();
-    }
-    _device_map.clear();
+    // for(map<int, unique_ptr<controlImpl>>::iterator it=_device_map.begin(); it!=_device_map.end(); ++it){
+    //     it->second->close();
+    // }
+    // _device_map.clear();
+
+    UsbClose();
+
+    logger::info("close computar_vlmpz_controller");
 }
 
 void computar_vlmpz_controller::on_message(){

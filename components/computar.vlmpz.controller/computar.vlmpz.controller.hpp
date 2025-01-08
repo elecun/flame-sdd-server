@@ -30,7 +30,7 @@ using namespace std;
 
 class controlImpl {
     public:
-        controlImpl(int id, string sn);
+        controlImpl(int id, string sn):_lens_id(id), _lens_device_sn(sn){ };
         virtual ~controlImpl() = default;
 
         /* functions */
@@ -42,19 +42,12 @@ class controlImpl {
         void iris_initialize();   //iris initialize
         void focus_move(int value); //focus move
         void iris_move(int value);  //iris move
-    
-
-        /* lens control functions */
-        void lens_device_connect(int n_devices);
-        void lens_device_disconnect();
-        void lens_initialize();
-        void lens_focus_move(int focus_value);
-
-        string get_lens_sn();       // get serial number
-        string get_len_modelname(); // get model name
 
         /* push the api in queue */
         bool caller(const json& api);
+
+        int get_id() { return _lens_id; }
+        string get_sn() { return _lens_device_sn; }
 
     private:
         void run_process(); /* run process in thread */
@@ -65,10 +58,11 @@ class controlImpl {
         mutex _mutex; /* mutex for thread */
         bool _is_running = true;
         queue<function<void()>> _f_queue;
+        condition_variable  _cv;
 
         /* scanned lens info. */
         string  _lens_device_sn; // id, lens serial number
-        int     _lens_id;
+        int     _lens_id = 0;
 
         map<string, int> function_code {
             {"focus_initialize", 1},

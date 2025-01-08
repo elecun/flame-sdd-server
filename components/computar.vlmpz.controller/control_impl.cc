@@ -2,11 +2,6 @@
 
 #define SATURATE(x, min, max) ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
 
-controlImpl::controlImpl(int id, string sn)
- : _lens_id(id), _lens_device_sn(sn) {
-
-}
-
 bool controlImpl::open(int device_idx){
     if(UsbOpen(device_idx))
         return false;
@@ -37,12 +32,15 @@ bool controlImpl::open(int device_idx){
 void controlImpl::close(){
 
 	_is_running = false;
+	this_thread::sleep_for(chrono::milliseconds(500));
 	if(_control_worker && _control_worker->joinable()){
 		_control_worker->join();
 	}
 
-	/* close USB */
-    UsbClose();
+	// /* close USB */
+    // UsbClose();
+
+	logger::info("close controlImpl");
 }
 
 void controlImpl::focus_initialize(){
@@ -130,6 +128,7 @@ void controlImpl::execute(const json& api){
 }
 
 void controlImpl::run_process(){
+
 	while(_is_running){
 		function<void()> task;
 		{
@@ -144,33 +143,7 @@ void controlImpl::run_process(){
 			task();
 		}
 		else{
-			this_thread::sleep_for(chrono::milliseconds(500));
+			this_thread::sleep_for(chrono::milliseconds(100));
 		}
 	}
-}
-
-void controlImpl::lens_device_connect(int n_devices){
-
-}
-/* close lens USB device */
-void controlImpl::lens_device_disconnect(){
-    UsbClose();
-    logger::info("Lens device is disconnected.");
-}
-
-void controlImpl::lens_focus_move(int focus_value){
-
-}
-
-/* selected lens initialize */
-void controlImpl::lens_initialize(){
-
-}
-
-string controlImpl::get_lens_sn(){
-
-}
-
-string controlImpl::get_len_modelname(){
-
 }

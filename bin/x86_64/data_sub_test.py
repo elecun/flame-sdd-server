@@ -5,7 +5,7 @@ import json
 
 context = zmq.Context()
 socket = context.socket(zmq.SUB)
-socket.connect("tcp://127.0.0.1:5103")
+socket.connect("tcp://192.168.100.7:5103")
 socket.setsockopt_string(zmq.SUBSCRIBE, "autonics_temp_controller/temp_stream")
 
 try:

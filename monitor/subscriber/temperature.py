@@ -3,12 +3,18 @@ Temperature subscriber
 @author Byunghun Hwang <bh.hwang@iae.re.kr>
 """
 
-from PyQt5.QtCore import QThread, pyqtSignal
+try:
+    # using PyQt5
+    from PyQt5.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
+except ImportError:
+    # using PyQt6
+    from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
+
 import zmq
 from util.logger.console import ConsoleLogger
 import json
 
-class TemperatureSubscriber(Qthread):
+class TemperatureSubscriber(QThread):
 
     temperature_update_signal = pyqtSignal(dict) # signal for temperature update
 
@@ -16,7 +22,7 @@ class TemperatureSubscriber(Qthread):
         super().__init__()
 
         self.__console = ConsoleLogger.get_logger()   # console logger
-        self.__console.info("Start Temperature Subscriber")
+        self.__console.info(f"Temperature node connection : {connection} with {topic}")
 
         # store parameters
         self.__connection = connection
@@ -24,23 +30,28 @@ class TemperatureSubscriber(Qthread):
 
         # initialize zmq
         self.__context = zmq.Context()
-        self.__socket = self.context.socket(zmq.SUB)
+        self.__socket = self.__context.socket(zmq.SUB)
         self.__socket.connect(connection)
-        self.__socket.setsockopt_string(zmq.SUBSCRIBE, topic)
+        self.__socket.subscribe(topic)
 
-    def __str__(self):
-        """ Return the string representation of the object """
-        return f"TemperatureSubscriber({self.__connection}, {self.__topic})"
+        self.__console.info("Start Temperature Subscriber")
 
     def run(self):
         """ Run the subscriber thread """
+        print("run")
         while True:
             if self.isInterruptionRequested():
                 break
-
-            data_str = self.__socket.recv_string()
-            data = json.loads(data_str)
-            self.temperature_update_signal.emit(data)
+            try:
+                data = self.__socket.recv_multipart()[1] # only data block
+                #jstr = data.decode('utf8').replace("'", '"')
+                data = json.loads(data.decode('utf8').replace("'", '"'))
+                self.temperature_update_signal.emit(data)
+                
+            except json.JSONDecodeError as e:
+                self.__console.critical(f"{e}")
+            except Exception as e:
+                self.__console.critical(f"{e}")
 
     def close(self) -> None:
         """ Close the socket and context """
