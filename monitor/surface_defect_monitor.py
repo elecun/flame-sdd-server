@@ -49,8 +49,9 @@ if __name__ == "__main__":
             configure["verbose"] = args.verbose
 
             if args.verbose:
-                console.info(f"Root Directory : {configure['root_path']}")
-                console.info(f"Application Directory : {configure['app_path']}")
+                console.info(f"Root Path : {configure["root_path"]}")
+                console.info(f"Application Path : {configure["app_path"]}")
+                console.info(f"Verbose Level : {configure["verbose"]}")
 
             app = QApplication(sys.argv)
             app_window = AppWindow(config=configure)
