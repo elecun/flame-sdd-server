@@ -81,10 +81,12 @@ class LensControlRequester(QObject):
             message = {
                 "function":"read_focus"
             }
-        request_string = json.dumps(message)
-        await self.__socket.send_string(request_string)
-        response = await self.__socket.recv_string()
-        self.focus_update_signal.emit(response)
+            request_string = json.dumps(message)
+            await self.__socket.send_string(request_string)
+            response = await self.__socket.recv_string()
+            self.focus_update_signal.emit(response)
+        finally:
+            pass
 
     async def socket_monitor_async(self):
         self.monitor_socket = self.socket.get_monitor_socket()

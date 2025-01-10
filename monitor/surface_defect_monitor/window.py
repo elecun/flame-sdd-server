@@ -16,6 +16,7 @@ import random
 import zmq
 import zmq.asyncio
 import json
+import cv2
 
 try:
     # using PyQt5
@@ -57,10 +58,6 @@ class AppWindow(QMainWindow):
         self.__frame_defect_grid_layout = QVBoxLayout()
         self.__frame_defect_grid_plot = graph.PlotWidget()
 
-        # map between camera device and windows
-        self.__frame_window_map = {}
-        for idx, id in enumerate(config["camera_ids"]):
-            self.__frame_window_map[id] = self.findChild(QLabel, config["camera_windows"][idx])
 
         # zmq subscribe for camera monitoring
         # self.__camera_monitor_context = zmq.Context()
@@ -79,6 +76,11 @@ class AppWindow(QMainWindow):
                     loadUi(ui_path, self)
                 else:
                     raise Exception(f"Cannot found UI file : {ui_path}")
+
+                # map between camera device and windows
+                self.__frame_window_map = {}
+                for idx, id in enumerate(config["camera_ids"]):
+                    self.__frame_window_map[id] = self.findChild(QLabel, config["camera_windows"][idx])
                 
                 # defect graphic view frame
                 self.__frame_defect_grid_frame = self.findChild(QFrame, name="frame_defect_grid_frame")
@@ -118,6 +120,9 @@ class AppWindow(QMainWindow):
                 # self.btn_focus_apply_10.clicked.connect(self.on_btn_focus_apply_10)
                 self.btn_focus_read_all.clicked.connect(self.on_btn_focus_read_all)
 
+                # for test tab
+                self.btn_camera_view_test.clicked.connect(self.on_btn_camera_view_test)
+
                 if "lens_control_source" in config:
                     self.__lens_control_requester = LensControlRequester(connection=config["lens_control_source"])
                     self.__lens_control_requester.focus_update_signal.connect(self.on_update_focus)
@@ -133,8 +138,6 @@ class AppWindow(QMainWindow):
 
         except Exception as e:
             self.__console.error(f"{e}")
-
-    async def run_lens_control_requester(self)
 
     def clear_all(self):
         """ clear graphic view """
@@ -155,6 +158,32 @@ class AppWindow(QMainWindow):
         pass
     def on_update_lens_control_status(self, msg:str): # update lens control pipeline status
         self.label_lens_control_pipeline_message.setText(msg)
+
+
+
+    def on_btn_camera_view_test(self):
+        frame_image = cv2.imread("./resource/1920_1200_test_image.jpg")
+        camera_id = 1
+        #frame_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        
+        # t = datetime.now()
+
+        # cv2.putText(frame_image, t.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], (10, 1070), cv2.FONT_HERSHEY_SIMPLEX, 2.0, (0,255,0), 2, cv2.LINE_AA)
+        # cv2.putText(frame_image, f"Camera #{camera_id}(fps:{fps:.1f})", (10,50), cv2.FONT_HERSHEY_SIMPLEX, 2.0, (1,255,0), 2, cv2.LINE_AA)
+
+        h, w, ch = frame_image.shape
+
+        cx = w//2
+        cy = h//2
+        cv2.line(frame_image, (cx, 0), (cx, cy), (0, 0, 255), 1)
+        
+        qt_image = QImage(frame_image.data, w, h, ch*w, QImage.Format.Format_RGB888)
+        pixmap = QPixmap.fromImage(qt_image)
+        try:
+            print(type(self.__frame_window_map[camera_id]))
+            self.__frame_window_map[camera_id].setPixmap(pixmap.scaled(self.__frame_window_map[camera_id].size(), Qt.AspectRatioMode.KeepAspectRatio))
+        except Exception as e:
+            self.__console.error(e)
 
     
                 
