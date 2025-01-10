@@ -14,6 +14,7 @@ from datetime import datetime
 import pyqtgraph as graph
 import random
 import zmq
+import zmq.asyncio
 import json
 
 try:
@@ -35,7 +36,7 @@ from util.logger.console import ConsoleLogger
 from . import trigger
 from . import light
 from subscriber.temperature import TemperatureSubscriber
-from requester.lens import LensControlRequester
+from requester.lens_async import LensControlRequester
 
 
 '''
@@ -47,12 +48,13 @@ class AppWindow(QMainWindow):
         """ initialization """
         super().__init__()
         
-        self.__console = ConsoleLogger.get_logger()
-        self.__config = config
-        self.__trigger = trigger.Trigger() # Trigger Controller
-        self.__light = light.LightController() # Light Controller
+        self.__console = ConsoleLogger.get_logger() # logger
+        self.__config = config  # copy configuration data
+        
+        #self.__trigger = trigger.Trigger() # Trigger Controller
+        #self.__light = light.LightController() # Light Controller
 
-        self.__frame_defect_grid_layout = QVBoxLayout(self)
+        self.__frame_defect_grid_layout = QVBoxLayout()
         self.__frame_defect_grid_plot = graph.PlotWidget()
 
         # map between camera device and windows
@@ -61,12 +63,12 @@ class AppWindow(QMainWindow):
             self.__frame_window_map[id] = self.findChild(QLabel, config["camera_windows"][idx])
 
         # zmq subscribe for camera monitoring
-        self.__camera_monitor_context = zmq.Context()
-        self.__camera_monitor_socket = self.__camera_monitor_context.socket(zmq.SUB)
-        self.__camera_monitor_socket.connect(f"tcp://{config['camera_monitoring_ip']}:{config['camera_monitoring_port']}")
-        self.__camera_monitor_socket.setsockopt_string(zmq.SUBSCRIBE, "image_stream_monitor")
-        self.__image_stream_thread = threading.Thread(target=self.__image_stream_subscribe)
-        self.__image_stream_thread.start()
+        # self.__camera_monitor_context = zmq.Context()
+        # self.__camera_monitor_socket = self.__camera_monitor_context.socket(zmq.SUB)
+        # self.__camera_monitor_socket.connect(f"tcp://{config['camera_monitoring_ip']}:{config['camera_monitoring_port']}")
+        # self.__camera_monitor_socket.setsockopt_string(zmq.SUBSCRIBE, "image_stream_monitor")
+        # self.__image_stream_thread = threading.Thread(target=self.__image_stream_subscribe)
+        # self.__image_stream_thread.start()
 
         try:            
             if "gui" in config:
@@ -116,19 +118,23 @@ class AppWindow(QMainWindow):
                 # self.btn_focus_apply_10.clicked.connect(self.on_btn_focus_apply_10)
                 self.btn_focus_read_all.clicked.connect(self.on_btn_focus_read_all)
 
-                if config["lens_control_source"]:
+                if "lens_control_source" in config:
                     self.__lens_control_requester = LensControlRequester(connection=config["lens_control_source"])
                     self.__lens_control_requester.focus_update_signal.connect(self.on_update_focus)
+                    self.__lens_control_requester.connection_status_message.connect(self.on_update_lens_control_status)
 
                 # create temperature monitoring subscriber
-                if config["temperature_stream_source"] and config["temperature_stream_topic"]:
+                if "temperature_stream_source" in config and "temperature_stream_topic" in config:
                     self.__temperature_subscriber = TemperatureSubscriber(connection=config["temperature_stream_source"], topic=config["temperature_stream_topic"])
                     self.__temperature_subscriber.temperature_update_signal.connect(self.on_update_temperature)
+                    self.__temperature_subscriber.connection_status_message.connect(self.on_update_temperature_status)
                     self.__temperature_subscriber.start() # run in thread
 
 
         except Exception as e:
             self.__console.error(f"{e}")
+
+    async def run_lens_control_requester(self)
 
     def clear_all(self):
         """ clear graphic view """
@@ -147,14 +153,16 @@ class AppWindow(QMainWindow):
         self.__lens_control_requester.read_focus()
     def on_update_focus(self, data:dict):
         pass
+    def on_update_lens_control_status(self, msg:str): # update lens control pipeline status
+        self.label_lens_control_pipeline_message.setText(msg)
+
     
                 
     def closeEvent(self, event:QCloseEvent) -> None: 
         """ terminate main window """
-        self.__console.info("Window is now terminated")
 
         # code here
-        self.__trigger.stop_trigger()
+        #self.__trigger.stop_trigger()
 
         # clear instance explicitly
         self.__lens_control_requester.close()
@@ -175,6 +183,10 @@ class AppWindow(QMainWindow):
             self.label_temperature_value_8.setText(str(values["8"]))
         except Exception as e:
             pass
+
+    def on_update_temperature_status(self, msg:str): # update temperature control monitoring pipeline status
+        self.label_temp_monitor_pipeline_message.setText(msg)
+
     
 
     def on_btn_trigger_start(self):

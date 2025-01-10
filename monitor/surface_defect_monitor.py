@@ -22,9 +22,6 @@ ROOT_PATH = pathlib.Path(__file__).parent.parent
 APP_NAME = pathlib.Path(__file__).stem
 sys.path.append(ROOT_PATH.as_posix())
 
-print(ROOT_PATH)
-print(APP_NAME)
-
 import argparse
 from surface_defect_monitor.window import AppWindow
 from util.logger.console import ConsoleLogger
@@ -49,9 +46,9 @@ if __name__ == "__main__":
             configure["verbose"] = args.verbose
 
             if args.verbose:
-                console.info(f"Root Path : {configure["root_path"]}")
-                console.info(f"Application Path : {configure["app_path"]}")
-                console.info(f"Verbose Level : {configure["verbose"]}")
+                console.info(f"+ Root Path : {configure["root_path"]}")
+                console.info(f"+ Application Path : {configure["app_path"]}")
+                console.info(f"+ Verbose Level : {configure["verbose"]}")
 
             app = QApplication(sys.argv)
             app_window = AppWindow(config=configure)

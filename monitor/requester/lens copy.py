@@ -17,17 +17,18 @@ import json
 import threading
 import time
 from typing import Any, Dict
+import zmq.asyncio
 
 EVENT_MAP = {}
 for name in dir(zmq):
     if name.startswith('EVENT_'):
         value = getattr(zmq, name)
-        # print(f"{name:21} : {value:4}")
         EVENT_MAP[value] = name
 
 class LensControlRequester(QObject):
 
     focus_update_signal = pyqtSignal(dict) # signal for focus value update
+    connection_status_message = pyqtSignal(str) # signal for connection status message
 
     def __init__(self, connection:str):
         super().__init__()
@@ -92,20 +93,26 @@ class LensControlRequester(QObject):
         try:
             monitor = socket.get_monitor_socket()
             while not self._stop_monitoring_event.is_set():
-                monitor.poll(500)
-                self.__console.info("read monitoring")
+                if not monitor.poll(timeout=1000):  # 1sec timeout
+                    continue
+
                 event: Dict[str, any] = {}
                 monitor_event = zmq_monitor.recv_monitor_message(monitor)
                 event.update(monitor_event)
                 event["description"] = EVENT_MAP[event["event"]]
-                print(event)
-                if event['event'] == zmq.EVENT_MONITOR_STOPPED:
-                    break
+                event_msg = event["description"].replace("EVENT_", "")
+                endpoint = event["endpoint"].decode('utf-8')
+
+                msg = f"[{endpoint}] {event_msg}" # message format
+                
+                # emit event message
+                self.connection_status_message.emit(msg)
+                
             monitor.close()
         except  zmq.error.ZMQError as e:
             self.__console.error(f"{e}")
         
-        print("terminated monitoring..")
+        self.__console.info(f"Stopped Lens socket monitoring...")
 
     def close(self):
         """ close the socket and context """
@@ -118,8 +125,6 @@ class LensControlRequester(QObject):
             self.__context.term()
         except zmq.error.ZMQError as e:
             self.__console.error(f"{e}")
-
-        # pushing status here
 
         
         
