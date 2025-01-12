@@ -68,6 +68,8 @@ class CameraMonitorSubscriber(QThread):
 
         self.__console.info("* Start Camera Monitor Subscriber")
 
+        self.start() # start thread
+
     def get_connection_info(self) -> str: # return connection address
         return self.__connection
     
@@ -80,13 +82,14 @@ class CameraMonitorSubscriber(QThread):
             if self.isInterruptionRequested():
                 break
             try:
+                print("?")
                 topic, id, image_data = self.__socket.recv_multipart()
                 if topic.decode() == self.__topic:
                     nparr = np.frombuffer(image_data, np.uint8)
                     decoded_image = cv2.imdecode(nparr, cv2.IMREAD_UNCHANGED)
                     h, w = decoded_image.shape[:2]  # height와 width
                     ch = decoded_image.shape[2] if len(decoded_image.shape) > 2 else 1
-                    self.frame_update_signal.emit(id, w, h, ch, decoded_image)
+                    self.frame_update_signal.emit(int(id), w, h, ch, decoded_image)
 
             except json.JSONDecodeError as e:
                 self.__console.critical(f"{e}")

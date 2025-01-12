@@ -55,6 +55,8 @@ class TemperatureSubscriber(QThread):
 
         self.__console.info("* Start Temperature Subscriber")
 
+        self.start()
+
     def get_connection_info(self) -> str: # return connection address
         return self.__connection
     
