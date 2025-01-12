@@ -157,7 +157,7 @@ class AppWindow(QMainWindow):
         """ call all focus value read (async) """
         #self.__lens_control_requester.read_focus()
         data = {"1":100}
-        self.on_update_focus
+        self.on_update_focus(data)
 
     def on_update_focus(self, data:dict):
         for id, value in data:
