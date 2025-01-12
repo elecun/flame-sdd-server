@@ -95,6 +95,7 @@ class AppWindow(QMainWindow):
                 self.btn_light_off.clicked.connect(self.on_btn_light_off)
 
                 self.btn_focus_apply_1.clicked.connect(partial(self.on_btn_focus_apply, 1))
+                self.btn_focus_apply_2.clicked.connect(partial(self.on_btn_focus_apply, 2))
                 
                 # self.btn_focus_apply_3.clicked.connect(self.on_btn_focus_apply_3)
                 # self.btn_focus_apply_4.clicked.connect(self.on_btn_focus_apply_4)
@@ -148,7 +149,7 @@ class AppWindow(QMainWindow):
             self.__console.error(f"{e}")
 
     def on_btn_focus_apply(self, id:int):
-        pass
+        self.__console.info(f"call {id}")
     
     def on_btn_focus_apply_1(self):
         focus_value = self.findChild(QLineEdit, name="edit_focus_value_1").text()
