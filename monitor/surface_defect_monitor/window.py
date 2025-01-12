@@ -94,17 +94,17 @@ class AppWindow(QMainWindow):
                 self.btn_light_on.clicked.connect(self.on_btn_light_on)
                 self.btn_light_off.clicked.connect(self.on_btn_light_off)
 
+                # focus control button event callback
                 self.btn_focus_apply_1.clicked.connect(partial(self.on_btn_focus_apply, 1))
                 self.btn_focus_apply_2.clicked.connect(partial(self.on_btn_focus_apply, 2))
-                
-                # self.btn_focus_apply_3.clicked.connect(self.on_btn_focus_apply_3)
-                # self.btn_focus_apply_4.clicked.connect(self.on_btn_focus_apply_4)
-                # self.btn_focus_apply_5.clicked.connect(self.on_btn_focus_apply_5)
-                # self.btn_focus_apply_6.clicked.connect(self.on_btn_focus_apply_6)
-                # self.btn_focus_apply_7.clicked.connect(self.on_btn_focus_apply_7)
-                # self.btn_focus_apply_8.clicked.connect(self.on_btn_focus_apply_8)
-                # self.btn_focus_apply_9.clicked.connect(self.on_btn_focus_apply_9)
-                # self.btn_focus_apply_10.clicked.connect(self.on_btn_focus_apply_10)
+                self.btn_focus_apply_3.clicked.connect(partial(self.on_btn_focus_apply, 3))
+                self.btn_focus_apply_4.clicked.connect(partial(self.on_btn_focus_apply, 4))
+                self.btn_focus_apply_5.clicked.connect(partial(self.on_btn_focus_apply, 5))
+                self.btn_focus_apply_6.clicked.connect(partial(self.on_btn_focus_apply, 6))
+                self.btn_focus_apply_7.clicked.connect(partial(self.on_btn_focus_apply, 7))
+                self.btn_focus_apply_8.clicked.connect(partial(self.on_btn_focus_apply, 8))
+                self.btn_focus_apply_9.clicked.connect(partial(self.on_btn_focus_apply, 9))
+                self.btn_focus_apply_10.clicked.connect(partial(self.on_btn_focus_apply, 10))
                 self.btn_focus_read_all.clicked.connect(self.on_btn_focus_read_all)
 
                 # for test tab
@@ -149,18 +149,21 @@ class AppWindow(QMainWindow):
             self.__console.error(f"{e}")
 
     def on_btn_focus_apply(self, id:int):
-        self.__console.info(f"call {id}")
+        """ focus move control """
+        focus_value = self.findChild(QLineEdit, name=f"edit_focus_value_{id}").text()
+        self.__lens_control_requester.focus_move(id=id, value=int(focus_value))
     
-    def on_btn_focus_apply_1(self):
-        focus_value = self.findChild(QLineEdit, name="edit_focus_value_1").text()
-        self.__lens_control_requester.focus_move(id=1, value=int(focus_value))
-    def on_btn_focus_apply_2(self):
-        focus_value = self.findChild(QLineEdit, name="edit_focus_value_2").text()
-        self.__lens_control_requester.focus_move(id=2, value=int(focus_value))
     def on_btn_focus_read_all(self):
-        self.__lens_control_requester.read_focus()
+        """ call all focus value read (async) """
+        #self.__lens_control_requester.read_focus()
+        data = {"1":100}
+        self.on_update_focus
+
     def on_update_focus(self, data:dict):
-        pass
+        for id, value in data:
+            self.findChild(QLineEdit, name=f"edit_focus_value_{id}").setText(str(value))
+        
+
     def on_update_lens_control_status(self, msg:str): # update lens control pipeline status
         self.label_lens_control_pipeline_message.setText(msg)
 
