@@ -17,6 +17,7 @@ import zmq
 import zmq.asyncio
 import json
 import cv2
+from functools import partial
 
 try:
     # using PyQt5
@@ -38,6 +39,8 @@ from . import trigger
 from . import light
 from subscriber.temperature import TemperatureSubscriber
 from requester.lens_async import LensControlRequester
+#from requester.light_control import LightControlRequester
+#from requester.trigger_control import TriggerControlRequester
 from subscriber.camera import CameraMonitorSubscriber
 
 
@@ -52,21 +55,9 @@ class AppWindow(QMainWindow):
         
         self.__console = ConsoleLogger.get_logger() # logger
         self.__config = config  # copy configuration data
-        
-        #self.__trigger = trigger.Trigger() # Trigger Controller
-        #self.__light = light.LightController() # Light Controller
 
         self.__frame_defect_grid_layout = QVBoxLayout()
         self.__frame_defect_grid_plot = graph.PlotWidget()
-
-
-        # zmq subscribe for camera monitoring
-        # self.__camera_monitor_context = zmq.Context()
-        # self.__camera_monitor_socket = self.__camera_monitor_context.socket(zmq.SUB)
-        # self.__camera_monitor_socket.connect(f"tcp://{config['camera_monitoring_ip']}:{config['camera_monitoring_port']}")
-        # self.__camera_monitor_socket.setsockopt_string(zmq.SUBSCRIBE, "image_stream_monitor")
-        # self.__image_stream_thread = threading.Thread(target=self.__image_stream_subscribe)
-        # self.__image_stream_thread.start()
 
         try:            
             if "gui" in config:
@@ -90,12 +81,11 @@ class AppWindow(QMainWindow):
                 self.__frame_defect_grid_frame.setLayout(self.__frame_defect_grid_layout)
 
                 # grid plot style
-                #self.__frame_defect_grid_plot.setTitle(f"{ch} Spectogram(Linear)", color="k", size="25pt")
+                #self.__frame_defect_grid_plot.setTitle(f"Defect Visualization", color="k", size="25pt")
                 styles = {"color": "#000", "font-size": "15px"}
                 self.__frame_defect_grid_plot.setLabel("left", "Camera Channels", **styles)
                 self.__frame_defect_grid_plot.setLabel("bottom", "Frame Counts", **styles)
                 self.__frame_defect_grid_plot.addLegend()
-                #self.__frame_defect_grid_plot.addItem(image)
                 
                 # register event callback function
                 self.btn_trigger_start.clicked.connect(self.on_btn_trigger_start)
@@ -104,8 +94,8 @@ class AppWindow(QMainWindow):
                 self.btn_light_on.clicked.connect(self.on_btn_light_on)
                 self.btn_light_off.clicked.connect(self.on_btn_light_off)
 
-                self.btn_focus_apply_1.clicked.connect(self.on_btn_focus_apply_1)
-                self.btn_focus_apply_2.clicked.connect(self.on_btn_focus_apply_2)
+                self.btn_focus_apply_1.clicked.connect(partial(self.on_btn_focus_apply, 1))
+                
                 # self.btn_focus_apply_3.clicked.connect(self.on_btn_focus_apply_3)
                 # self.btn_focus_apply_4.clicked.connect(self.on_btn_focus_apply_4)
                 # self.btn_focus_apply_5.clicked.connect(self.on_btn_focus_apply_5)
@@ -156,6 +146,9 @@ class AppWindow(QMainWindow):
             self.__frame_defect_grid_plot.clear()
         except Exception as e:
             self.__console.error(f"{e}")
+
+    def on_btn_focus_apply(self, id:int):
+        pass
     
     def on_btn_focus_apply_1(self):
         focus_value = self.findChild(QLineEdit, name="edit_focus_value_1").text()
