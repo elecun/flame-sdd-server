@@ -160,7 +160,7 @@ class AppWindow(QMainWindow):
         self.on_update_focus(data)
 
     def on_update_focus(self, data:dict):
-        for id, value in data:
+        for id, value in data.items():
             self.findChild(QLineEdit, name=f"edit_focus_value_{id}").setText(str(value))
         
 
