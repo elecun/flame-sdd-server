@@ -170,9 +170,15 @@ class AppWindow(QMainWindow):
     def on_update_lens_control_status(self, msg:str): # update lens control pipeline status
         self.label_lens_control_pipeline_message.setText(msg)
 
-    def on_update_camera_image(self, camera_id, w, h, c, image):
+    def on_update_camera_image(self, camera_id:int, w:int, h:int, c:int, image:np.ndarray):
         """ show image on window for each camera id """
-        qt_image = QImage(image.data, w, h, c*w, QImage.Format.Format_RGB888)
+        guided_image = image.copy()
+        cx = w//2
+        cy = h//2
+        cv2.line(guided_image, (cx, 0), (cx, h), (0, 255, 0), 5) #(960, 0) (960, 1920)
+        cv2.line(guided_image, (0, cy), (w, cy), (0, 255, 0), 5) # 
+
+        qt_image = QImage(guided_image.data, w, h, c*w, QImage.Format.Format_RGB888)
         pixmap = QPixmap.fromImage(qt_image)
         try:
             self.__frame_window_map[camera_id].setPixmap(pixmap.scaled(self.__frame_window_map[camera_id].size(), Qt.AspectRatioMode.KeepAspectRatio))
@@ -194,7 +200,8 @@ class AppWindow(QMainWindow):
 
         cx = w//2
         cy = h//2
-        cv2.line(frame_image, (cx, 0), (cx, cy), (0, 0, 255), 1)
+        cv2.line(frame_image, (cx, 0), (cx, h), (0, 255, 0), 5) #(960, 0) (960, 1920)
+        cv2.line(frame_image, (0, cy), (w, cy), (0, 255, 0), 5) # 
         
         qt_image = QImage(frame_image.data, w, h, ch*w, QImage.Format.Format_RGB888)
         pixmap = QPixmap.fromImage(qt_image)
