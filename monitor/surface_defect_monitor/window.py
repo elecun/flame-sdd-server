@@ -38,6 +38,7 @@ from . import trigger
 from . import light
 from subscriber.temperature import TemperatureSubscriber
 from requester.lens_async import LensControlRequester
+from subscriber.camera import CameraMonitorSubscriber
 
 
 '''
@@ -76,11 +77,6 @@ class AppWindow(QMainWindow):
                     loadUi(ui_path, self)
                 else:
                     raise Exception(f"Cannot found UI file : {ui_path}")
-
-                # map between camera device and windows
-                self.__frame_window_map = {}
-                for idx, id in enumerate(config["camera_ids"]):
-                    self.__frame_window_map[id] = self.findChild(QLabel, config["camera_windows"][idx])
                 
                 # defect graphic view frame
                 self.__frame_defect_grid_frame = self.findChild(QFrame, name="frame_defect_grid_frame")
@@ -123,17 +119,32 @@ class AppWindow(QMainWindow):
                 # for test tab
                 self.btn_camera_view_test.clicked.connect(self.on_btn_camera_view_test)
 
-                if "lens_control_source" in config:
-                    self.__lens_control_requester = LensControlRequester(connection=config["lens_control_source"])
-                    self.__lens_control_requester.focus_update_signal.connect(self.on_update_focus)
-                    self.__lens_control_requester.connection_status_message.connect(self.on_update_lens_control_status)
-
                 # create temperature monitoring subscriber
+                self.__temperature_subscriber = None
                 if "temperature_stream_source" in config and "temperature_stream_topic" in config:
-                    self.__temperature_subscriber = TemperatureSubscriber(connection=config["temperature_stream_source"], topic=config["temperature_stream_topic"])
+                    self.__console.info("Ready for temperature monitoring...")
+                    self.__temperature_subscriber = TemperatureSubscriber(connection=config["temperature_stream_source"], 
+                                                                          topic=config["temperature_stream_topic"])
                     self.__temperature_subscriber.temperature_update_signal.connect(self.on_update_temperature)
-                    self.__temperature_subscriber.connection_status_message.connect(self.on_update_temperature_status)
+                    self.__temperature_subscriber.status_msg_update_signal.connect(self.on_update_temperature_status)
                     self.__temperature_subscriber.start() # run in thread
+
+                self.__lens_control_requester = None
+                if "lens_control_source" in config:
+                    self.__console.info("Ready for Lens control...")
+                    self.__lens_control_requester = LensControlRequester(connection=config["lens_control_source"])
+                    self.__lens_control_requester.focus_read_update_signal.connect(self.on_update_focus)
+                    #self.__lens_control_requester.connection_status_message.connect(self.on_update_lens_control_status)
+
+                # map between camera device and windows
+                self.__frame_window_map = {}
+                self.__camera_image_subscriber_map = {}
+                for idx, id in enumerate(config["camera_ids"]):
+                    self.__frame_window_map[id] = self.findChild(QLabel, config["camera_windows"][idx])
+                    self.__console.info(f"Ready for camera grabber #{id} monitoring")
+                    self.__camera_image_subscriber_map[id] = CameraMonitorSubscriber(connection=config["image_stream_monitor_source"],
+                                                                                     topic=config["image_stream_monitor_topic"][idx])
+                    self.__camera_image_subscriber_map[id].frame_update_signal.connect(self.on_update_camera_image)
 
 
         except Exception as e:
@@ -159,6 +170,14 @@ class AppWindow(QMainWindow):
     def on_update_lens_control_status(self, msg:str): # update lens control pipeline status
         self.label_lens_control_pipeline_message.setText(msg)
 
+    def on_update_camera_image(self, camera_id, w, h, c, image):
+        """ show image on window for each camera id """
+        qt_image = QImage(image.data, w, h, c*w, QImage.Format.Format_RGB888)
+        pixmap = QPixmap.fromImage(qt_image)
+        try:
+            self.__frame_window_map[camera_id].setPixmap(pixmap.scaled(self.__frame_window_map[camera_id].size(), Qt.AspectRatioMode.KeepAspectRatio))
+        except Exception as e:
+            self.__console.error(e)
 
 
     def on_btn_camera_view_test(self):
@@ -194,8 +213,12 @@ class AppWindow(QMainWindow):
         #self.__trigger.stop_trigger()
 
         # clear instance explicitly
-        self.__lens_control_requester.close()
-        self.__temperature_subscriber.close()
+        if self.__lens_control_requester:
+            self.__console.info("Close lens control requester")
+            self.__lens_control_requester.close()
+        if self.__temperature_subscriber:
+            self.__console.info("Close temperature subscriber")
+            self.__temperature_subscriber.close()
             
         return super().closeEvent(event)
 

@@ -1,10 +1,20 @@
 """
-Camera Monitor subscriber
+Camera Image Monitor subscriber
 @author Byunghun Hwang <bh.hwang@iae.re.kr>
 """
 
-from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
-from PyQt6.QtGui import QImage
+
+try:
+    # using PyQt5
+    from PyQt5.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
+    from PyQt6.QtGui import QImage
+except ImportError:
+    # using PyQt6
+    from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
+    from PyQt6.QtGui import QImage
+
+
+
 import cv2
 from datetime import datetime
 import platform
@@ -13,29 +23,32 @@ import numpy as np
 from typing import Tuple
 import csv
 import pathlib
-
-
-try:
-    # using PyQt5
-    from PyQt5.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
-except ImportError:
-    # using PyQt6
-    from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
-
 import zmq
 import zmq.utils.monitor as zmq_monitor
 from util.logger.console import ConsoleLogger
 import json
+import threading
+import time
+from typing import Any, Dict
+
+# connection event message parsing
+EVENT_MAP = {}
+for name in dir(zmq):
+    if name.startswith('EVENT_'):
+        value = getattr(zmq, name)
+        EVENT_MAP[value] = name
+
 
 class CameraMonitorSubscriber(QThread):
     
-    frame_update_signal = pyqtSignal(int, np.ndarray, float)
+    frame_update_signal = pyqtSignal(int, int, int, int, np.ndarray) # camera images update signal : camera_id, width, height, channel, np.ndarray
+    status_msg_update_signal = pyqtSignal(str) # connection status message update signal
 
     def __init__(self, connection:str, topic:str):
         super().__init__()
 
         self.__console = ConsoleLogger.get_logger()   # console logger
-        self.__console.info(f"Camera Monitor node connection : {connection} with {topic}")
+        self.__console.info(f"Camera Monitor Connection : {connection} (topic:{topic})")
 
         # store parameters
         self.__connection = connection
@@ -47,16 +60,74 @@ class CameraMonitorSubscriber(QThread):
         self.__socket.connect(connection)
         self.__socket.subscribe(topic)
 
-        self.__console.info("Start Camera Monitor Subscriber")
+        # create socket connection status monitoring thread
+        self._monitor_thread_stop_event = threading.Event()
+        self._monitor_thread = threading.Thread(target=self.socket_monitor, args=(self.__socket,))
+        self._monitor_thread.daemon = True
+        self._monitor_thread.start()
+
+        self.__console.info("* Start Camera Monitor Subscriber")
+
+    def get_connection_info(self) -> str: # return connection address
+        return self.__connection
+    
+    def get_topic(self) -> str: # return subscriber topic
+        return self.__topic
 
     def run(self):
-        pass
+        """ Run subscriber thread """
+        while True:
+            if self.isInterruptionRequested():
+                break
+            try:
+                topic, id, image_data = self.__socket.recv_multipart()
+                if topic.decode() == self.__topic:
+                    nparr = np.frombuffer(image_data, np.uint8)
+                    decoded_image = cv2.imdecode(nparr, cv2.IMREAD_UNCHANGED)
+                    h, w = decoded_image.shape[:2]  # height와 width
+                    ch = decoded_image.shape[2] if len(decoded_image.shape) > 2 else 1
+                    self.frame_update_signal.emit(id, w, h, ch, decoded_image)
+
+            except json.JSONDecodeError as e:
+                self.__console.critical(f"{e}")
+            except Exception as e:
+                self.__console.critical(f"{e}")
+            except zmq.ZMQError as e:
+                self.__console.critical(f"{e}")
+
+    def socket_monitor(self, socket:zmq.SyncSocket):
+        """ socket monitoring """
+        try:
+            monitor = socket.get_monitor_socket()
+            while not self._monitor_thread_stop_event.is_set():
+                if not monitor.poll(timeout=1000):  # 1sec timeout
+                    continue
+
+                event: Dict[str, any] = {}
+                monitor_event = zmq_monitor.recv_monitor_message(monitor)
+                event.update(monitor_event)
+                event["description"] = EVENT_MAP[event["event"]]
+                event_msg = event["description"].replace("EVENT_", "")
+                endpoint = event["endpoint"].decode('utf-8')
+
+                msg = f"[{endpoint}] {event_msg}" # message format
+                self.status_msg_update_signal.emit(msg) # emit message to signal
+                
+            monitor.close()
+        except  zmq.error.ZMQError as e:
+            self.__console.error(f"{e}")
 
     def close(self) -> None:
         """ Close the socket and context """
+        # close monitoring thread
+        self._monitor_thread_stop_event.set()
+        self._monitor_thread.join()
+
         self.requestInterruption()
         self.quit()
-        self.wait(500)
 
-        self.__socket.close()
-        self.__context.term()
+        try:
+            self.__socket.close()
+            self.__context.term()
+        except zmq.error.ZMQError as e:
+            self.__console.error(f"{e}")

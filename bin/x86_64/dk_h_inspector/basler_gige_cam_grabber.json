@@ -28,17 +28,15 @@
     "dataport":{
         "status" : {
             "transport" : "tcp",
-            "host":"*",
+            "host" : "*",
             "port" : 5002,
             "socket_type" : "pub",
             "queue_size" : 1000
         },
         "image_stream_monitor":{
-            "transport" : "tcp",
-            "host":"*",
-            "port" : 5102,
+            "transport" : "inproc",
             "socket_type" : "pub",
-            "queue_size" : 5000
+            "queue_size" : 10000
         },
         "image_stream" : {
             "transport" : "inproc",

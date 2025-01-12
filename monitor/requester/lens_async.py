@@ -1,5 +1,5 @@
 """
-Lens Controller Requester
+Lens Controller Async Requester
 @author Byunghun Hwang <bh.hwang@iae.re.kr>
 """
 
@@ -11,13 +11,15 @@ except ImportError:
     from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
 
 import zmq
+import zmq.asyncio
+import asyncio
 import zmq.utils.monitor as zmq_monitor
 from util.logger.console import ConsoleLogger
 import json
 import threading
 import time
 from typing import Any, Dict
-import zmq.asyncio
+
 
 EVENT_MAP = {}
 for name in dir(zmq):
@@ -29,22 +31,23 @@ for name in dir(zmq):
 
 class LensControlRequester(QObject):
 
-    focus_update_signal = pyqtSignal(dict) # signal for focus value update
-    connection_status_message = pyqtSignal(str) # signal for connection status message
+    focus_read_update_signal = pyqtSignal(dict) # signal for focus value update
+    status_msg_update_signal = pyqtSignal(str) # signal for connection status message
+    focus_move_signal = pyqtSignal(bool) # signal for move focus
 
     def __init__(self, connection:str):
         super().__init__()
 
         self.__console = ConsoleLogger.get_logger()   # console logger
-        self.__console.info(f"Lens Control node connection : {connection}")
+        self.__console.info(f"Lens Controller connection : {connection}")
 
-        self.__connection = connection
+        self.__connection = connection # connection info.
 
         # initialize zmq
         self.__context = zmq.asyncio.Context()
         self.__socket = self.__context.socket(zmq.REQ)
         self.__socket.connect(connection)
-        self._evt_loop = asyncio.get_event_loop()
+        #self._evt_loop = asyncio.get_event_loop()
 
         # create socket monitoring thread
         # self._stop_monitoring_event = threading.Event()
@@ -55,6 +58,39 @@ class LensControlRequester(QObject):
         self._monitoring = False  # 종료 플래그
         self.monitor_socket = None
         self.__console.info("Start Lens Control Requester")
+
+    def read_focus_async(self):
+        """ read focus value """
+        asyncio.create_task(self._read_focus)
+
+
+    async def _read_focus(self):
+        focus_value = {}
+        try:
+            message = {
+                "function":"read_focus"
+            }
+            request_message = json.dumps(message)
+            await self.__socket.send_string(request_message)
+
+            poller = zmq.asyncio.Poller()
+            poller.register(self.__socket, zmq.POLLIN)
+            event = await poller.poll(1000) # 1000ms
+
+            if event:
+                response = await self.__socket.recv_string()
+                self.__console.info(f"{response}")
+
+                focus_value = json.loads(response)
+                self.focus_read_update_signal.emit(focus_value) # emit response
+            else:
+                self.__console.error(f"Response timeout!")
+                self.focus_read_update_signal.emit(focus_value)
+        except zmq.error.ZMQError as e:
+            self.__console.error(f"{e}")
+        except Exception as e:
+            self.__console.error(f"{e}")
+            self.focus_read_update_signal.emit(focus_value)
 
     def focus_move(self, id:int, value:int):
         """ set focus value """
@@ -76,17 +112,6 @@ class LensControlRequester(QObject):
         except zmq.error.ZMQError as e:
             self.__console.error(f"{e}")
 
-    async def read_focus_async(self):
-        try:
-            message = {
-                "function":"read_focus"
-            }
-            request_string = json.dumps(message)
-            await self.__socket.send_string(request_string)
-            response = await self.__socket.recv_string()
-            self.focus_update_signal.emit(response)
-        finally:
-            pass
 
     async def socket_monitor_async(self):
         self.monitor_socket = self.socket.get_monitor_socket()
@@ -111,7 +136,7 @@ class LensControlRequester(QObject):
                 print(f"Received data: {response}")
                 
                 # PyQt6 시그널로 연결된 슬롯에 데이터 전달
-                self.focus_update_signal.emit(response)
+                self.focus_read_update_signal.emit(response)
             except zmq.ZMQError:
                 break  # 소켓이 닫히거나 에러 발생 시 루프 종료
 
@@ -120,34 +145,13 @@ class LensControlRequester(QObject):
         if not self.monitor_socket:
             asyncio.create_task(self.monitor_socket_events())
         asyncio.create_task(self.receive_data())
-    
-    async def read_focus(self):
-        """ read all lens focus value """
-        try:
-            message = {
-                "function":"read_focus"
-            }
-            request_string = json.dumps(message)
-            await self.__socket.send_string(request_string, timeout=1000)
-            self.__console.info(f"Request : {request_string}")
 
-            # reply
-            response = await self.__socket.recv_string()
-            self.__console.info(f"Reply : {response}")
-
-            # trigger callback
-            await self.on_response_read_focus(response)
-
-        except zmq.error.ZMQError as e:
-            self.__console.error(f"{e}")
-        except asyncio.TimeoutError as e:
-            self.__console.warn(f"{e}")
 
     async def on_response_read_focus(self, response:str):
         """ received response data handling """
         #self.focus_update_signal.emit
         data = json.loads(response)
-        self.focus_update_signal.emit(data)
+        self.focus_read_update_signal.emit(data)
         print(data)
 
     def socket_monitor(self, socket:zmq.SyncSocket):
@@ -176,7 +180,7 @@ class LensControlRequester(QObject):
         
         self.__console.info(f"Stopped Lens socket monitoring...")
 
-    async def close(self):
+    def close(self):
         """ close the socket and context """
         self._monitoring = False
         if self.monitor_socket:
@@ -188,7 +192,7 @@ class LensControlRequester(QObject):
         try:
             self.__socket.close()
             self.__context.term()
-        except zmq.error.ZMQError as e:
+        except Exception as e:
             self.__console.error(f"{e}")
 
         
