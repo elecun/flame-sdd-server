@@ -280,12 +280,6 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                         // set topic
 
                         /* image stream monitoring */
-
-
-                        // string cid = fmt::format("{}",camera_id);
-                        // pipe_data idMessage(cid.size());
-                        // memcpy(idMessage.data(), cid.c_str(), cid.size());
-
                         pipe_data_multipart message_pack;
                         int  id = camera_id;
                         string topic = "image_stream_monitor";
