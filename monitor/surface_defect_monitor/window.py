@@ -121,7 +121,7 @@ class AppWindow(QMainWindow):
                     self.__temperature_subscriber.start() # run in thread
 
                 self.__lens_control_requester = None
-                if "lens_control_source" in config:
+                if "computar_vlmpz_controller_source" in config:
                     self.__console.info("Ready for Lens control...")
                     self.__lens_control_requester = LensControlRequester(connection=config["computar_vlmpz_controller_source"])
                     self.__lens_control_requester.focus_read_update_signal.connect(self.on_update_focus)
