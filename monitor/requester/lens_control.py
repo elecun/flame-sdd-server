@@ -65,6 +65,7 @@ class LensControlRequester(QObject):
 
     def read_focus(self):
         """ read focus value """
+        self.__console.info("read focus all")
         asyncio.run_coroutine_threadsafe(self._read_focus_request(-1), self.__lens_control_loop)
 
     async def _read_focus_request(self, id:int):
@@ -73,6 +74,7 @@ class LensControlRequester(QObject):
             await self.__socket.send_string(message)
             try:
                 response = await asyncio.wait_for(self.__socket.recv_string(), timeout=1.0)
+                self.__console.info(f"response : {response}")
                 focus_value = json.loads(response)
                 self.focus_read_update_signal.emit(focus_value)
             except asyncio.TimeoutError:
