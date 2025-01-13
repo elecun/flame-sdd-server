@@ -173,9 +173,9 @@ class LensControlRequester(QObject):
 
     def close(self):
         """ close the socket and context """
-        self._monitoring = False
-        if self.monitor_socket:
-            self.monitor_socket.close()
+        # self._monitoring = False
+        # if self.monitor_socket:
+        #     self.monitor_socket.close()
         # close monitoring thread
         # self._stop_monitoring_event.set()
         # self._monitor_thread.join()
