@@ -29,6 +29,10 @@ bool controlImpl::open(int device_idx){
     return true;
 }
 
+int controlImpl::read_focus_position(){
+	return FocusCurrentAddrReadSet();
+}
+
 void controlImpl::close(){
 
 	_is_running = false;
@@ -59,7 +63,7 @@ void controlImpl::iris_initialize(){
 
 void controlImpl::focus_move(int value){
 	json api = {
-		{"function","focus_move"},
+		{"function","move_focus"},
 		{"value", value}
 	};
 	caller(api);
@@ -109,6 +113,7 @@ void controlImpl::execute(const json& api){
 					int value = api["value"].get<int>();
 					value = SATURATE(value, 0, 9091);
 					FocusMove((uint16_t)value);
+					logger::info("Lens #{} move focus : {}", _lens_id, value);
 				}
 				break;
 

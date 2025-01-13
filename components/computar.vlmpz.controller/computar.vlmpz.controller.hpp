@@ -43,6 +43,7 @@ class controlImpl {
         void iris_initialize();   //iris initialize
         void focus_move(int value); //focus move
         void iris_move(int value);  //iris move
+        int read_focus_position(); //read focus position
 
         /* push the api in queue */
         bool caller(const json& api);
@@ -71,7 +72,7 @@ class controlImpl {
         map<string, int> function_code {
             {"focus_initialize", 1},
             {"iris_initialize", 2},
-            {"focus_move", 3},
+            {"move_focus", 3},
             {"iris_move", 4}
         };
 }; /* class */

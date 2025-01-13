@@ -21,8 +21,9 @@ bool computar_vlmpz_controller::on_init(){
                 logger::info("[{}] Lens #{} successfully opened", get_name(), it->first);
                 logger::info("[{}] Lens #{} Focus Initializing...", get_name(), it->first);
                 it->second->focus_initialize();
-                // logger::info("[{}] Lens #{} Iris Initializing...", get_name(), it->first);
-                // it->second->iris_initialize();
+            }
+            else{
+                logger::warn("[{}] Lens #{} cannot be opened", get_name(), it->first);
             }
         }
         
@@ -125,26 +126,42 @@ void computar_vlmpz_controller::_lens_control_responser(json parameters){
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
     pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, nullptr);
 
-    logger::info("start");
     while(!_thread_stop_signal.load()){
         try{
             pipe_data request;
-            logger::info("start thread");
             zmq::recv_result_t request_result = get_port("focus_control")->recv(request, zmq::recv_flags::none);
-            logger::info("recv");
             if(request_result){
                 std::string message(static_cast<char*>(request.data()), request.size());
                 auto json_data = json::parse(message);
 
-                logger::info("[{}] Received Message : {}", get_name(), json_data.dump());
+                // control processing
+                json reply_data;
+                if(json_data.contains("function")){
+                    if(!json_data["function"].get<string>().compare("read_focus")){
+                        for(map<int, unique_ptr<controlImpl>>::iterator it=_device_map.begin(); it != _device_map.end(); ++it) {
+                            string str_id = fmt::format("{}",it->second->get_id());
+                            reply_data[str_id] = it->second->read_focus_position();
+                        }
+                    }
+                    else if(!json_data["function"].get<string>().compare("move_focus")){
+                        int device_id = json_data["id"].get<int>();
+                        int value = json_data["value"].get<int>();
+                        for(map<int, unique_ptr<controlImpl>>::iterator it=_device_map.begin(); it != _device_map.end(); ++it){
+                            if(it->second->get_id()==device_id){
+                                logger::info("[{}] Lens #{}(device:{}) moves focus to {}", get_name(), device_id, it->first, value);
+                                _device_map[it->first]->focus_move(value);
+                                break;
+                            }
+
+                        }
+                        
+                    }
+                }
 
                 // reply
-                json reply_message = {
-                    {"1", 100}
-                };
-                pipe_data reply(reply_message.dump().size());
-                memcpy(reply.data(), reply_message.dump().data(), reply_message.dump().size());
-                get_port("manual_control")->send(reply, zmq::send_flags::none);
+                pipe_data reply(reply_data.dump().size());
+                memcpy(reply.data(), reply_data.dump().data(), reply_data.dump().size());
+                get_port("focus_control")->send(reply, zmq::send_flags::none);
             }
         }
         catch(const json::parse_error& e){
