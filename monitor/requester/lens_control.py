@@ -51,10 +51,10 @@ class LensControlRequester(QObject):
         #self._evt_loop = asyncio.get_event_loop()
 
         # create socket monitoring thread
-        self.__stop_monitoring_event = threading.Event()
-        self.__monitor_thread = threading.Thread(target=self.socket_monitor, args=(self.__socket,))
-        self.__monitor_thread.daemon = True
-        self.__monitor_thread.start()
+        # self.__stop_monitoring_event = threading.Event()
+        # self.__monitor_thread = threading.Thread(target=self.socket_monitor, args=(self.__socket,))
+        # self.__monitor_thread.daemon = True
+        # self.__monitor_thread.start()
 
         self._monitoring = False
         self.monitor_socket = None
