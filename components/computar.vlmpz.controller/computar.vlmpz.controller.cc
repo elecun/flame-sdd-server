@@ -125,6 +125,7 @@ void computar_vlmpz_controller::_lens_control_responser(json parameters){
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
     pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, nullptr);
 
+    logger::info("start");
     while(!_thread_stop_signal.load()){
         try{
             pipe_data request;

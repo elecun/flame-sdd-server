@@ -66,7 +66,8 @@ class LensControlRequester(QObject):
     def read_focus(self):
         """ read focus value """
         self.__console.info("read focus all")
-        asyncio.run_coroutine_threadsafe(self._read_focus_request(-1), self.__lens_control_loop)
+        self._read_focus_request(-1)
+        #asyncio.run_coroutine_threadsafe(self._read_focus_request(-1), self.__lens_control_loop)
 
     async def _read_focus_request(self, id:int):
         try:
