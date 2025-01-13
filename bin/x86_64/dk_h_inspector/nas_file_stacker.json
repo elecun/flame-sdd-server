@@ -3,7 +3,7 @@
     "verbose" : 1,
 
     "parameters":{
-        "mount_path" : "/mnt/sddnas"
+        "mount_path" : "/home/dk-sdd/nas_storage"
     },
 
     "dataport":{

@@ -246,10 +246,10 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                         cv::imencode(".jpg", image, buffer);
 
                         //save temporary
-                        std::string filename = "image_" + std::to_string(camera_id) + "_" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + ".jpg";
-                        cv::imwrite(fmt::format("/home/dk/sddnas/{}",filename), image);
+                        // std::string filename = "image_" + std::to_string(camera_id) + "_" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + ".jpg";
+                        // cv::imwrite(fmt::format("/home/dk/sddnas/{}",filename), image);
 
-                        // batch stream method
+                        // store images for batch stream method
                         if(_stream_method==0){
                             _image_container[camera_id].push_back(buffer);
                         }
@@ -278,24 +278,21 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                         
                         // image stream monitoring.. publish
                         // set topic
-                        string topic = fmt::format("{}", "image_stream_monitor");
-                        pipe_data topic_msg(topic.data(), topic.size());
+
+                        /* image stream monitoring */
+
 
                         // string cid = fmt::format("{}",camera_id);
                         // pipe_data idMessage(cid.size());
                         // memcpy(idMessage.data(), cid.c_str(), cid.size());
 
-                        json cam_id = {{"camera_id", camera_id}};
-                        string str_cam_id = cam_id.dump();
-                        pipe_data id_message(str_cam_id.size());
-                        memcpy(id_message.data(), str_cam_id.c_str(), str_cam_id.size());
-
-                        pipe_data image_message(buffer.size());
-                        memcpy(image_message.data(), buffer.data(), buffer.size());
-
-                        get_port("image_stream_monitor")->send(topic_msg, zmq::send_flags::sndmore);
-                        get_port("image_stream_monitor")->send(id_message, zmq::send_flags::sndmore);
-                        get_port("image_stream_monitor")->send(image_message, zmq::send_flags::dontwait);
+                        zmq::multipart_t message;
+                        int  id = camera_id;
+                        string topic = "image_stream_monitor";
+                        message.add(pipe_data(&id, sizeof(id)));
+                        message.add(pipe_data(topic.data(), topic.size()));
+                        message.add(pipe_data(buffer.data(), buffer.size()));
+                        message.send(*get_port("image_stream_monitor"));
 
                         logger::info("[{}] {}", camera_id, _camera_grab_counter[camera_id]);
 
