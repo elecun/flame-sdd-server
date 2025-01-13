@@ -91,7 +91,7 @@ class AppWindow(QMainWindow):
                 # register button event callback function
                 self.btn_trigger_start.clicked.connect(self.on_btn_trigger_start)
                 self.btn_trigger_stop.clicked.connect(self.on_btn_trigger_stop)
-                self.btn_light_control_on.clicked.connect(self.on_btn_light_control_on)
+                self.btn_light_control_set.clicked.connect(self.on_btn_light_control_set)
                 self.btn_light_control_off.clicked.connect(self.on_btn_light_control_off)
                 self.btn_focus_set_1.clicked.connect(partial(self.on_btn_focus_set, 1))
                 self.btn_focus_set_2.clicked.connect(partial(self.on_btn_focus_set, 2))
@@ -109,7 +109,6 @@ class AppWindow(QMainWindow):
 
                 # register dial event callback function
                 self.dial_light_control.valueChanged.connect(self.on_change_light_control)
-                self.dial_light_control.sliderReleased.connect(self.on_set_light_control)
 
                 # create temperature monitoring subscriber
                 self.__temp_monitor_subscriber = None
@@ -130,7 +129,10 @@ class AppWindow(QMainWindow):
                     self.__console.info("+ Create Light Control Requester")
                     self.__light_control_requester = LightControlRequester(connection=config["light_control_source"])
 
-                self.__pulse_generator_requester = PulseGeneratorRequester(connection=config["trigger_control_source"])
+                self.__pulse_generator_requester = None
+                if "trigger_control_source":
+                    self.__console.info("+ Create Trigger Control Requester")
+                    self.__pulse_generator_requester = PulseGeneratorRequester(connection=config["trigger_control_source"])
 
                 # map between camera device and windows
                 self.__frame_window_map = {}
@@ -141,6 +143,7 @@ class AppWindow(QMainWindow):
                     self.__camera_image_subscriber_map[id] = CameraMonitorSubscriber(connection=config["image_stream_monitor_source"],
                                                                                      topic=config["image_stream_monitor_topic"][idx])
                     self.__camera_image_subscriber_map[id].frame_update_signal.connect(self.on_update_camera_image)
+                    self.__camera_image_subscriber_map[id].start() # start thread for each
 
 
         except Exception as e:
@@ -156,14 +159,6 @@ class AppWindow(QMainWindow):
     def on_change_light_control(self, value):
         """ control value update """
         self.label_light_control_value.setText(str(value))
-    
-    def on_set_light_control(self):
-        """ light control """
-        if "dmx_ip" in self.__config and "dmx_port" in self.__config:
-            value = int(self.label_light_control_value.text())
-            self.__light_control_requester.set_control(self.__config["dmx_ip"], self.__config["dmx_port"], self.__config["light_ids"], value)
-        else:
-            QMessageBox.critical(self, "Error", f"DMX IP and Port is not defined")
         
 
     def on_btn_focus_set(self, id:int):
@@ -309,11 +304,11 @@ class AppWindow(QMainWindow):
         self.__frame_defect_grid_plot.enableAutoRange(axis=graph.ViewBox.XAxis)
         self.__frame_defect_grid_plot.show()
 
-    def on_btn_light_control_on(self):
+    def on_btn_light_control_set(self):
         """ event callback : light on """
         if "dmx_ip" in self.__config and "dmx_port" in self.__config:
-            print(type(self.__config["light_ids"]))
-            #self.__light_control_requester.set_control(self.__config["dmx_ip"], self.__config["dmx_port"], self.__config["light_ids"], 100)
+            value = int(self.label_light_control_value.text())
+            self.__light_control_requester.set_control(self.__config["dmx_ip"], self.__config["dmx_port"], self.__config["light_ids"], value)
         else:
             QMessageBox.critical(self, "Error", f"DMX IP and Port is not defined")
         
