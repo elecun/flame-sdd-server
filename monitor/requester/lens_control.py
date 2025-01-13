@@ -72,6 +72,7 @@ class LensControlRequester(QObject):
         try:
             message = {"function":"read_focus"}
             await self.__socket.send_string(message)
+            self.__console.info(f"send {message}")
             try:
                 response = await asyncio.wait_for(self.__socket.recv_string(), timeout=1.0)
                 self.__console.info(f"response : {response}")
