@@ -128,8 +128,9 @@ void computar_vlmpz_controller::_lens_control_responser(json parameters){
     while(!_thread_stop_signal.load()){
         try{
             pipe_data request;
+            logger::info("start thread");
             zmq::recv_result_t request_result = get_port("focus_control")->recv(request, zmq::recv_flags::none);
-
+            logger::info("recv");
             if(request_result){
                 std::string message(static_cast<char*>(request.data()), request.size());
                 auto json_data = json::parse(message);
