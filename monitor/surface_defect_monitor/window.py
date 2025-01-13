@@ -37,9 +37,9 @@ except ImportError:
 from util.logger.console import ConsoleLogger
 from . import trigger
 from . import light
-from subscriber.temperature import TemperatureSubscriber
+from subscriber.temperature import TemperatureMonitorSubscriber
 from requester.lens_control import LensControlRequester
-#from requester.light_control import LightControlRequester
+from requester.light_control import LightControlRequester
 #from requester.trigger_control import TriggerControlRequester
 from subscriber.camera import CameraMonitorSubscriber
 
@@ -87,45 +87,47 @@ class AppWindow(QMainWindow):
                 self.__frame_defect_grid_plot.setLabel("bottom", "Frame Counts", **styles)
                 self.__frame_defect_grid_plot.addLegend()
                 
-                # register event callback function
+                # register button event callback function
                 self.btn_trigger_start.clicked.connect(self.on_btn_trigger_start)
                 self.btn_trigger_stop.clicked.connect(self.on_btn_trigger_stop)
-                self.btn_defect_visualization_test.clicked.connect(self.on_btn_defect_visualization_test)
-                self.btn_light_on.clicked.connect(self.on_btn_light_on)
-                self.btn_light_off.clicked.connect(self.on_btn_light_off)
-
-                # focus control button event callback
-                self.btn_focus_apply_1.clicked.connect(partial(self.on_btn_focus_apply, 1))
-                self.btn_focus_apply_2.clicked.connect(partial(self.on_btn_focus_apply, 2))
-                self.btn_focus_apply_3.clicked.connect(partial(self.on_btn_focus_apply, 3))
-                self.btn_focus_apply_4.clicked.connect(partial(self.on_btn_focus_apply, 4))
-                self.btn_focus_apply_5.clicked.connect(partial(self.on_btn_focus_apply, 5))
-                self.btn_focus_apply_6.clicked.connect(partial(self.on_btn_focus_apply, 6))
-                self.btn_focus_apply_7.clicked.connect(partial(self.on_btn_focus_apply, 7))
-                self.btn_focus_apply_8.clicked.connect(partial(self.on_btn_focus_apply, 8))
-                self.btn_focus_apply_9.clicked.connect(partial(self.on_btn_focus_apply, 9))
-                self.btn_focus_apply_10.clicked.connect(partial(self.on_btn_focus_apply, 10))
+                self.btn_light_control_on.clicked.connect(self.on_btn_light_control_on)
+                self.btn_light_control_off.clicked.connect(self.on_btn_light_control_off)
+                self.btn_focus_set_1.clicked.connect(partial(self.on_btn_focus_set, 1))
+                self.btn_focus_set_2.clicked.connect(partial(self.on_btn_focus_set, 2))
+                self.btn_focus_set_3.clicked.connect(partial(self.on_btn_focus_set, 3))
+                self.btn_focus_set_4.clicked.connect(partial(self.on_btn_focus_set, 4))
+                self.btn_focus_set_5.clicked.connect(partial(self.on_btn_focus_set, 5))
+                self.btn_focus_set_6.clicked.connect(partial(self.on_btn_focus_set, 6))
+                self.btn_focus_set_7.clicked.connect(partial(self.on_btn_focus_set, 7))
+                self.btn_focus_set_8.clicked.connect(partial(self.on_btn_focus_set, 8))
+                self.btn_focus_set_9.clicked.connect(partial(self.on_btn_focus_set, 9))
+                self.btn_focus_set_10.clicked.connect(partial(self.on_btn_focus_set, 10))
                 self.btn_focus_read_all.clicked.connect(self.on_btn_focus_read_all)
-
-                # for test tab
+                self.btn_defect_visualization_test.clicked.connect(self.on_btn_defect_visualization_test)
                 self.btn_camera_view_test.clicked.connect(self.on_btn_camera_view_test)
 
+                # register dial event callback function
+                self.dial_light_control.valueChanged.connect(self.on_change_light_control)
+                self.dial_light_control.sliderReleased.connect(self.on_set_light_control)
+
                 # create temperature monitoring subscriber
-                self.__temperature_subscriber = None
-                if "temperature_stream_source" in config and "temperature_stream_topic" in config:
-                    self.__console.info("Ready for temperature monitoring...")
-                    self.__temperature_subscriber = TemperatureSubscriber(connection=config["temperature_stream_source"], 
-                                                                          topic=config["temperature_stream_topic"])
-                    self.__temperature_subscriber.temperature_update_signal.connect(self.on_update_temperature)
-                    self.__temperature_subscriber.status_msg_update_signal.connect(self.on_update_temperature_status)
-                    self.__temperature_subscriber.start() # run in thread
+                self.__temp_monitor_subscriber = None
+                if "temp_stream_source" in config and "temp_stream_topic" in config:
+                    self.__console.info("+ Create Temperature Monitoring Subscriber...")
+                    self.__temp_monitor_subscriber = TemperatureMonitorSubscriber(connection=config["temp_stream_source"], topic=config["temp_stream_topic"])
+                    self.__temp_monitor_subscriber.temperature_update_signal.connect(self.on_update_temperature)
+                    self.__temp_monitor_subscriber.start() # run in thread
 
                 self.__lens_control_requester = None
-                if "computar_vlmpz_controller_source" in config:
-                    self.__console.info("Ready for Lens control...")
-                    self.__lens_control_requester = LensControlRequester(connection=config["computar_vlmpz_controller_source"])
+                if "lens_control_source" in config:
+                    self.__console.info("+ Create Lens Control Requester...")
+                    self.__lens_control_requester = LensControlRequester(connection=config["lens_control_source"])
                     self.__lens_control_requester.focus_read_update_signal.connect(self.on_update_focus)
-                    #self.__lens_control_requester.connection_status_message.connect(self.on_update_lens_control_status)
+
+                self.__light_control_requester = None
+                if "light_control_source" in config:
+                    self.__console.info("+ Create Light Control Requester")
+                    self.__light_control_requester = LightControlRequester(connection=config["light_control_source"])
 
                 # map between camera device and windows
                 self.__frame_window_map = {}
@@ -148,7 +150,20 @@ class AppWindow(QMainWindow):
         except Exception as e:
             self.__console.error(f"{e}")
 
-    def on_btn_focus_apply(self, id:int):
+    def on_change_light_control(self, value):
+        """ control value update """
+        self.label_light_control_value.setText(str(value))
+    
+    def on_set_light_control(self):
+        """ light control """
+        if "dmx_ip" in self.__config and "dmx_port" in self.__config:
+            value = int(self.label_light_control_value.text())
+            self.__light_control_requester.set_control(self.__config["dmx_ip"], self.__config["dmx_port"], self.__config["light_ids"], value)
+        else:
+            QMessageBox.critical(self, "Error", f"DMX IP and Port is not defined")
+        
+
+    def on_btn_focus_set(self, id:int):
         """ focus move control """
         focus_value = self.findChild(QLineEdit, name=f"edit_focus_value_{id}").text()
         self.__lens_control_requester.focus_move(id=id, value=int(focus_value))
@@ -288,19 +303,19 @@ class AppWindow(QMainWindow):
         self.__frame_defect_grid_plot.enableAutoRange(axis=graph.ViewBox.XAxis)
         self.__frame_defect_grid_plot.show()
 
-    def on_btn_light_on(self):
+    def on_btn_light_control_on(self):
         """ event callback : light on """
         if "dmx_ip" in self.__config and "dmx_port" in self.__config:
-            self.__light.light_on(self.__config["dmx_ip"], self.__config["dmx_port"])
-            self.__console.info(f"Light ON")
+            print(type(self.__config["light_ids"]))
+            #self.__light_control_requester.set_control(self.__config["dmx_ip"], self.__config["dmx_port"], self.__config["light_ids"], 100)
         else:
             QMessageBox.critical(self, "Error", f"DMX IP and Port is not defined")
         
 
-    def on_btn_light_off(self):
-        """ event callback : light off """
+    def on_btn_light_control_off(self):
+        """ event callback : light on """
         if "dmx_ip" in self.__config and "dmx_port" in self.__config:
-            self.__light.light_off(self.__config["dmx_ip"], self.__config["dmx_port"])
+            self.__light_control_requester.set_control(self.__config["dmx_ip"], self.__config["dmx_port"], self.__config["light_ids"], 0)
         else:
             QMessageBox.critical(self, "Error", f"DMX IP and Port is not defined")
 

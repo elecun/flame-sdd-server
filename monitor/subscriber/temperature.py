@@ -26,7 +26,7 @@ for name in dir(zmq):
         EVENT_MAP[value] = name
 # event_description, event_value = zmq.utils.monitor.parse_monitor_message(event)
 
-class TemperatureSubscriber(QThread):
+class TemperatureMonitorSubscriber(QThread):
 
     temperature_update_signal = pyqtSignal(dict) # signal for temperature update
     status_msg_update_signal = pyqtSignal(str) # signal for connection status message
