@@ -177,6 +177,12 @@ autonics_temp_controller.comp:	$(BUILDDIR)autonics.temp.controller.o
 $(BUILDDIR)autonics.temp.controller.o:	$(CURRENT_DIR)/components/autonics.temp.controller/autonics.temp.controller.cc
 									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
 
+# system status(usage) monitoring component
+system_status_monitor.comp:	$(BUILDDIR)system.status.monitor.o
+							$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(BUILDDIR)$@ $^ $(LDLIBS)
+$(BUILDDIR)system.status.monitor.o:	$(CURRENT_DIR)/components/system.status.monitor/system.status.monitor.cc
+									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
+
 # focus lens module controller component
 computar_vlmpz_controller.comp:	$(BUILDDIR)computar_vlmpz_controller.o \
 									$(BUILDDIR)control_impl.o \
@@ -224,13 +230,9 @@ $(BUILDDIR)dk.image.push.unittest.o:	$(CURRENT_DIR)/components/dk.image.push.uni
 
 all : flame
 
-dk_h_inspector : basler_gige_cam_grabber.comp nas_file_stacker.comp ni_daq_pulse_generator.comp
+dk_h_inspector : flame system_status_monitor.comp basler_gige_cam_grabber.comp nas_file_stacker.comp ni_daq_pulse_generator.comp
 
-dk_h_inspector_perf_test : basler_gige_cam_grabber.comp ni_daq_pulse_generator.comp dk_level2_terminal.comp nas_file_stacker.comp
-
-dk_h_inspector_onsite : autonics_temp_controller.comp computar_vlmpz_controller.comp
-
-dk_h_inspector_monitor : dk_data_aggregator.comp
+dk_h_inspector_onsite : flame system_status_monitor.comp autonics_temp_controller.comp computar_vlmpz_controller.comp
 
 dk_h_unittest : dk_image_push_unittest.comp
 
