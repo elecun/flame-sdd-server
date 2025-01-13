@@ -10,6 +10,7 @@ except ImportError:
     # using PyQt6
     from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
 
+import nidaqmx.errors
 import zmq
 import zmq.asyncio
 import asyncio
@@ -43,27 +44,31 @@ class PulseGeneratorRequester(QObject):
         self.__worker = None
         self.__running = False
         self.__connection = connection
+        self.__task = nidaqmx.Task()
 
     def get_connection_info(self) -> str:
         return self.__connection
     
     def close(self):
         self.stop_generation()
+        self.__task.close()
+        self.__console.info("Closed Pulse Generator Requester")
     
     def __run(self, freq, duty):
-        with nidaqmx.Task() as task:
-            task.co_channels.add_co_pulse_chan_freq("Dev1/ctr0","",units=FrequencyUnits.HZ, idle_state=Level.LOW, initial_delay=0.0, freq=freq, duty_cycle=duty)
-            task.timing.cfg_implicit_timing(sample_mode=AcquisitionType.CONTINUOUS)
-            task.start()
-            try:
-                while self.__running:
-                    if task.is_task_done():
-                        break
-            except KeyboardInterrupt:
-                Break
-
-            task.stop()
-            self.__running = False
+        self.__task.co_channels.add_co_pulse_chan_freq("Dev1/ctr0","",units=FrequencyUnits.HZ, idle_state=Level.LOW, initial_delay=0.0, freq=freq, duty_cycle=duty)
+        self.__task.timing.cfg_implicit_timing(sample_mode=AcquisitionType.CONTINUOUS)
+        self.__task.start()
+        try:
+            while self.__running:
+                if self.__task.is_task_done():
+                    time.sleep(0.1)
+                    break
+        except nidaqmx.errors.DaqError as e:
+            self.__console.error("DAQ Pulse Generator Error")
+        finally:
+            self.__task.stop()
+            self.__task.close()
+        self.__running = False
     
     def start_generation(self, freq:float, duty:float):
         if self.__running:
