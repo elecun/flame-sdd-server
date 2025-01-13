@@ -41,6 +41,7 @@ from subscriber.temperature import TemperatureMonitorSubscriber
 from requester.lens_control import LensControlRequester
 from requester.light_control import LightControlRequester
 #from requester.trigger_control import TriggerControlRequester
+from requester.pulse_generator import PulseGeneratorRequester
 from subscriber.camera import CameraMonitorSubscriber
 
 
@@ -128,6 +129,8 @@ class AppWindow(QMainWindow):
                 if "light_control_source" in config:
                     self.__console.info("+ Create Light Control Requester")
                     self.__light_control_requester = LightControlRequester(connection=config["light_control_source"])
+
+                self.__pulse_generator_requester = PulseGeneratorRequester(connection=config["trigger_control_source"])
 
                 # map between camera device and windows
                 self.__frame_window_map = {}
@@ -231,15 +234,18 @@ class AppWindow(QMainWindow):
         """ terminate main window """
 
         # code here
-        #self.__trigger.stop_trigger()
+        
 
         # clear instance explicitly
         if self.__lens_control_requester:
             self.__console.info("Close lens control requester")
             self.__lens_control_requester.close()
-        if self.__temperature_subscriber:
+        if self.__temp_monitor_subscriber:
             self.__console.info("Close temperature subscriber")
-            self.__temperature_subscriber.close()
+            self.__temp_monitor_subscriber.close()
+        if self.__pulse_generator_requester:
+            self.__console.info("Close Pulse Generator Requester")
+            self.__pulse_generator_requester.close()
             
         return super().closeEvent(event)
 
