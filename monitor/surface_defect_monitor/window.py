@@ -170,6 +170,7 @@ class AppWindow(QMainWindow):
 
     def on_update_camera_image(self, camera_id:int, w:int, h:int, c:int, image:np.ndarray):
         """ show image on window for each camera id """
+        self.__console.info("update image")
         guided_image = image.copy()
         cx = w//2
         cy = h//2

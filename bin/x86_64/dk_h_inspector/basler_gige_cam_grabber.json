@@ -34,9 +34,11 @@
             "queue_size" : 1000
         },
         "image_stream_monitor":{
-            "transport" : "ipc",
+            "transport" : "tcp",
+            "host":"*",
+            "port":5006,
             "socket_type" : "pub",
-            "queue_size" : 10000
+            "queue_size" : 1000
         },
         "image_stream" : {
             "transport" : "inproc",
