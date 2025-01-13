@@ -21,18 +21,17 @@ import time
 from typing import Any, Dict
 from functools import partial
 
-
+# zmq socket monitoring event map
 EVENT_MAP = {}
 for name in dir(zmq):
     if name.startswith('EVENT_'):
         value = getattr(zmq, name)
         EVENT_MAP[value] = name
-# alternative
-# event_description, event_value = zmq.utils.monitor.parse_monitor_message(event)
+
 
 class LensControlRequester(QObject):
 
-    focus_read_update_signal = pyqtSignal(dict) # signal for focus value update
+    focus_read_update_signal = pyqtSignal(dict) # signal for focus value read reuslt update
     status_msg_update_signal = pyqtSignal(str) # signal for connection status message
     focus_move_signal = pyqtSignal(bool) # signal for move focus
 
@@ -40,15 +39,16 @@ class LensControlRequester(QObject):
         super().__init__()
 
         self.__console = ConsoleLogger.get_logger()   # console logger
-        self.__console.info(f"Lens Controller connection : {connection}")
+        self.__console.info(f"+ Lens Controller connection : {connection}")
 
         self.__connection = connection # connection info.
 
-        # initialize zmq
-        self.__context = zmq.asyncio.Context()
+        # create context for zmq requester
+        self.__context = zmq.Context()
         self.__socket = self.__context.socket(zmq.REQ)
         self.__socket.connect(connection)
-        #self._evt_loop = asyncio.get_event_loop()
+        self.__lens_control_loop = asyncio.get_event_loop()
+
 
         # create socket monitoring thread
         # self.__stop_monitoring_event = threading.Event()
@@ -63,44 +63,24 @@ class LensControlRequester(QObject):
     def get_connection_info(self) -> str:
         return self.__connection
 
-    def read_focus(self, id:int):
+    def read_focus(self):
         """ read focus value """
-        self.__console.info("call read_focus {id}")
-        asyncio.create_task(self._read_focus(id))
+        asyncio.run_coroutine_threadsafe(self._read_focus_request(-1), self.__lens_control_loop)
 
-
-    async def _read_focus(self, id:int): # -1 = all
-        focus_value = {}
-
+    async def _read_focus_request(self, id:int):
         try:
-            message = {
-                "function":"read_focus"
-            }
-            
-            if id<0: # for all lens
-                print("start poller")
-                poller = zmq.asyncio.Poller()
-                poller.register(self.__socket, zmq.POLLIN)
-                event = await poller.poll(1000) # 1000ms
-
-                if event:
-                    response = await self.__socket.recv_string()
-                    self.__console.info(f"{response}")
-
-                    focus_value = json.loads(response)
-                    self.focus_read_update_signal.emit(focus_value) # emit response
-                else:
-                    self.__console.error(f"Response timeout!")
-                    self.focus_read_update_signal.emit(focus_value)
-
-            else: # for each lens
-                self.__console.warning(f"Not implemented yet")
-
+            message = {"function":"read_focus"}
+            await self.__socket.send_string(message)
+            try:
+                response = await asyncio.wait_for(self.__socket.recv_string(), timeout=1.0)
+                focus_value = json.loads(response)
+                self.focus_read_update_signal.emit(focus_value)
+            except asyncio.TimeoutError:
+                self.__console.warning(f"Timeout Error")
         except zmq.error.ZMQError as e:
             self.__console.error(f"{e}")
         except Exception as e:
-            self.__console.error(f"{e}")
-            self.focus_read_update_signal.emit(focus_value)
+            self.__console.warning(f"Error Exception")
 
 
     def focus_move(self, id:int, value:int):
