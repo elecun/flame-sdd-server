@@ -286,13 +286,13 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                         // pipe_data idMessage(cid.size());
                         // memcpy(idMessage.data(), cid.c_str(), cid.size());
 
-                        zmq::multipart_t message;
+                        pipe_data_multipart message_pack;
                         int  id = camera_id;
                         string topic = "image_stream_monitor";
-                        message.add(pipe_data(&id, sizeof(id)));
-                        message.add(pipe_data(topic.data(), topic.size()));
-                        message.add(pipe_data(buffer.data(), buffer.size()));
-                        message.send(*get_port("image_stream_monitor"));
+                        message_pack.add(pipe_data(&id, sizeof(id)));
+                        message_pack.add(pipe_data(topic.data(), topic.size()));
+                        message_pack.add(pipe_data(buffer.data(), buffer.size()));
+                        message_pack.send(*get_port("image_stream_monitor"));
 
                         logger::info("[{}] {}", camera_id, _camera_grab_counter[camera_id]);
 
