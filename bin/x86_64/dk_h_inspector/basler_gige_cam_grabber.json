@@ -3,7 +3,7 @@
     "verbose" : 1,
 
     "parameters":{
-        "stream_method":"batch",
+        "stream_method":"realtime",
         "stream_batch_reserved":10000,
         "acqusition_mode":"Continuous",
         "trigger_selector":"FrameStart",
