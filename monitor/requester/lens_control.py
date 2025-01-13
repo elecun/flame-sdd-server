@@ -92,7 +92,7 @@ class LensControlRequester(QObject):
         try:
             message = {
                 "id":id,
-                "function":"focus_move",
+                "function":"move_focus",
                 "value":value
             }
 
