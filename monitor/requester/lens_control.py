@@ -1,5 +1,5 @@
 """
-Lens Controller Async Requester
+Lens Controller Requester (Async)
 @author Byunghun Hwang <bh.hwang@iae.re.kr>
 """
 
@@ -19,6 +19,7 @@ import json
 import threading
 import time
 from typing import Any, Dict
+from functools import partial
 
 
 EVENT_MAP = {}
@@ -50,47 +51,55 @@ class LensControlRequester(QObject):
         #self._evt_loop = asyncio.get_event_loop()
 
         # create socket monitoring thread
-        # self._stop_monitoring_event = threading.Event()
-        # self._monitor_thread = threading.Thread(target=self.socket_monitor, args=(self.__socket,))
-        # self._monitor_thread.daemon = True
-        # self._monitor_thread.start()
+        self.__stop_monitoring_event = threading.Event()
+        self.__monitor_thread = threading.Thread(target=self.socket_monitor, args=(self.__socket,))
+        self.__monitor_thread.daemon = True
+        self.__monitor_thread.start()
 
-        self._monitoring = False  # 종료 플래그
+        self._monitoring = False
         self.monitor_socket = None
-        self.__console.info("Start Lens Control Requester")
+        self.__console.info("* Start Lens Control Requester")
 
-    def read_focus_async(self):
+    def get_connection_info(self) -> str:
+        return self.__connection
+
+    def read_focus(self, id:int):
         """ read focus value """
-        asyncio.create_task(self._read_focus)
+        asyncio.create_task(self._read_focus(id))
 
 
-    async def _read_focus(self):
+    async def _read_focus(self, id:int): # -1 = all
         focus_value = {}
+
         try:
             message = {
                 "function":"read_focus"
             }
-            request_message = json.dumps(message)
-            await self.__socket.send_string(request_message)
+            
+            if id<0: # for all lens
+                poller = zmq.asyncio.Poller()
+                poller.register(self.__socket, zmq.POLLIN)
+                event = await poller.poll(1000) # 1000ms
 
-            poller = zmq.asyncio.Poller()
-            poller.register(self.__socket, zmq.POLLIN)
-            event = await poller.poll(1000) # 1000ms
+                if event:
+                    response = await self.__socket.recv_string()
+                    self.__console.info(f"{response}")
 
-            if event:
-                response = await self.__socket.recv_string()
-                self.__console.info(f"{response}")
+                    focus_value = json.loads(response)
+                    self.focus_read_update_signal.emit(focus_value) # emit response
+                else:
+                    self.__console.error(f"Response timeout!")
+                    self.focus_read_update_signal.emit(focus_value)
 
-                focus_value = json.loads(response)
-                self.focus_read_update_signal.emit(focus_value) # emit response
-            else:
-                self.__console.error(f"Response timeout!")
-                self.focus_read_update_signal.emit(focus_value)
+            else: # for each lens
+                self.__console.warning(f"Not implemented yet")
+
         except zmq.error.ZMQError as e:
             self.__console.error(f"{e}")
         except Exception as e:
             self.__console.error(f"{e}")
             self.focus_read_update_signal.emit(focus_value)
+
 
     def focus_move(self, id:int, value:int):
         """ set focus value """

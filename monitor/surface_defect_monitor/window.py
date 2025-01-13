@@ -38,7 +38,7 @@ from util.logger.console import ConsoleLogger
 from . import trigger
 from . import light
 from subscriber.temperature import TemperatureSubscriber
-from requester.lens_async import LensControlRequester
+from requester.lens_control import LensControlRequester
 #from requester.light_control import LightControlRequester
 #from requester.trigger_control import TriggerControlRequester
 from subscriber.camera import CameraMonitorSubscriber
@@ -155,13 +155,14 @@ class AppWindow(QMainWindow):
     
     def on_btn_focus_read_all(self):
         """ call all focus value read (async) """
-        #self.__lens_control_requester.read_focus()
-        data = {"1":100}
-        self.on_update_focus(data)
+        self.__lens_control_requester.read_focus(id=-1)
 
     def on_update_focus(self, data:dict):
+        """ update focus value for all lens """
         for id, value in data.items():
-            self.findChild(QLineEdit, name=f"edit_focus_value_{id}").setText(str(value))
+            component = self.findChild(QLineEdit, name=f"edit_focus_value_{id}")
+            if component !=  None:
+                component.setText(str(value))
         
 
     def on_update_lens_control_status(self, msg:str): # update lens control pipeline status

@@ -32,6 +32,12 @@ bool computar_vlmpz_controller::on_init(){
         // _subtask_status_publisher = status_monitor_worker.native_handle();
         // status_monitor_worker.detach();
 
+        /* lens control with req/rep processing */
+        thread lens_control_responser = thread(&computar_vlmpz_controller::_lens_control_responser, this, get_profile()->parameters());
+        _lens_control_responser_handle = lens_control_response.native_handle();
+        lens_control_responser.detach()
+
+
     }
     catch(json::exception& e){
         logger::error("[{}] Profile Error : {}", get_name(), e.what());
@@ -52,6 +58,12 @@ void computar_vlmpz_controller::on_close(){
     // }
     // _device_map.clear();
 
+    /* terminate len control responser */
+    _thread_stop_signal.store(true);
+    pthread_cancel(_lens_control_responser_handle);
+    pthread_join(_lens_control_responser_handle, nullptr);
+
+    /* close usb connection */
     UsbClose();
 
     logger::info("close computar_vlmpz_controller");
@@ -109,3 +121,38 @@ void computar_vlmpz_controller::_usb_device_scan(){
     }
 }
 
+void computar_vlpmz_controller::_lens_control_responser(json parameters){
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
+    pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, nullptr);
+
+    while(!_thread_stop_signal.load()){
+        try{
+            pipe_data request;
+            zmq::recv_result_t request_result = get_port("focus_control")->recv(request, zmq::recv_flags::none);
+
+            if(request_result){
+                std::string message(static_cast<char*>(request.data()), request.size());
+                auto json_data = json::parse(message);
+
+                logger::info("[{}] Received Message : {}", get_name(), json_data.dump());
+
+                // reply
+                json reply_message = {
+                    {"1", 100}
+                };
+                pipe_data reply(reply_message.dump().size());
+                memcpy(reply.data(), reply_message.dump().data(), reply_message.dump().size());
+                get_port("manual_control")->send(reply, zmq::send_flags::none);
+            }
+        }
+        catch(const json::parse_error& e){
+            logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());
+        }
+        catch(const std::runtime_error& e){
+            logger::error("[{}] Runtime error occurred!", get_name());
+        }
+        catch(const zmq::error_t& e){
+            logger::error("[{}] Pipeline error : {}", get_name(), e.what());
+        }
+    }
+}

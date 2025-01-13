@@ -82,7 +82,6 @@ class CameraMonitorSubscriber(QThread):
             if self.isInterruptionRequested():
                 break
             try:
-                print("?")
                 topic, id, image_data = self.__socket.recv_multipart()
                 if topic.decode() == self.__topic:
                     nparr = np.frombuffer(image_data, np.uint8)

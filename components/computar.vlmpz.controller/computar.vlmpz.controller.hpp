@@ -21,6 +21,7 @@
 #include <mutex>
 #include <functional>
 #include <queue>
+#include <thread>
 
 /* lens controller */
 #include "include/LensConnect.h"
@@ -52,8 +53,11 @@ class controlImpl {
     private:
         void run_process(); /* run process in thread */
         void execute(const json& api);
+
+
        
     private:
+
         unique_ptr<thread> _control_worker; /* control process in thread */
         mutex _mutex; /* mutex for thread */
         bool _is_running = true;
@@ -84,6 +88,10 @@ class computar_vlmpz_controller : public flame::component::object {
         void on_message() override;
 
     private:
+        /* pipieline processing */
+        void _lens_control_responser(json parameters); // lens control port
+
+    private:
         /* task impl. of status publisher for every 1 sec */
         void _subtask_status_publish(json parameters);
 
@@ -91,6 +99,11 @@ class computar_vlmpz_controller : public flame::component::object {
         void _usb_device_scan();
 
     private:
+
+        /* pipeline processing handle*/
+        std::atomic<bool> _thread_stop_signal { false };
+        pthread_t _lens_control_responser_handle;
+
         /* scanned lens info. */
         vector<string> _lens_device_sn; // id, lens serial number
         map<int, unique_ptr<controlImpl>> _device_map;
