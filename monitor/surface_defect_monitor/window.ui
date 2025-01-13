@@ -43,7 +43,7 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>0</number>
     </property>
     <property name="tabBarAutoHide">
      <bool>false</bool>
@@ -670,8 +670,8 @@ color: rgb(0, 255, 0);</string>
        <rect>
         <x>10</x>
         <y>110</y>
-        <width>191</width>
-        <height>251</height>
+        <width>481</width>
+        <height>131</height>
        </rect>
       </property>
       <property name="title">
@@ -722,8 +722,8 @@ color: rgb(0, 255, 0);</string>
       <widget class="QLabel" name="label_30">
        <property name="geometry">
         <rect>
-         <x>10</x>
-         <y>120</y>
+         <x>200</x>
+         <y>30</y>
          <width>81</width>
          <height>21</height>
         </rect>
@@ -743,8 +743,8 @@ color: rgb(0, 255, 0);</string>
       <widget class="QLabel" name="label_31">
        <property name="geometry">
         <rect>
-         <x>10</x>
-         <y>150</y>
+         <x>200</x>
+         <y>60</y>
          <width>81</width>
          <height>21</height>
         </rect>
@@ -764,8 +764,8 @@ color: rgb(0, 255, 0);</string>
       <widget class="QLabel" name="label_32">
        <property name="geometry">
         <rect>
-         <x>10</x>
-         <y>180</y>
+         <x>200</x>
+         <y>90</y>
          <width>81</width>
          <height>21</height>
         </rect>
@@ -881,8 +881,8 @@ color: rgb(0, 255, 0);</string>
       <widget class="QLabel" name="label_onsite_status_value_5">
        <property name="geometry">
         <rect>
-         <x>100</x>
-         <y>120</y>
+         <x>290</x>
+         <y>30</y>
          <width>71</width>
          <height>21</height>
         </rect>
@@ -906,8 +906,8 @@ color: rgb(0, 255, 0);</string>
       <widget class="QLabel" name="label_onsite_status_value_6">
        <property name="geometry">
         <rect>
-         <x>100</x>
-         <y>150</y>
+         <x>290</x>
+         <y>60</y>
          <width>71</width>
          <height>21</height>
         </rect>
@@ -931,8 +931,8 @@ color: rgb(0, 255, 0);</string>
       <widget class="QLabel" name="label_onsite_status_value_7">
        <property name="geometry">
         <rect>
-         <x>100</x>
-         <y>180</y>
+         <x>290</x>
+         <y>90</y>
          <width>71</width>
          <height>21</height>
         </rect>
@@ -956,8 +956,8 @@ color: rgb(0, 255, 0);</string>
       <widget class="QLabel" name="label_34">
        <property name="geometry">
         <rect>
-         <x>10</x>
-         <y>210</y>
+         <x>380</x>
+         <y>24</y>
          <width>81</width>
          <height>21</height>
         </rect>
@@ -968,24 +968,24 @@ color: rgb(0, 255, 0);</string>
         </font>
        </property>
        <property name="text">
-        <string>합계 :</string>
+        <string>총 결함 수</string>
        </property>
        <property name="alignment">
-        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        <set>Qt::AlignCenter</set>
        </property>
       </widget>
       <widget class="QLabel" name="label_onsite_status_value_8">
        <property name="geometry">
         <rect>
-         <x>100</x>
-         <y>210</y>
-         <width>71</width>
-         <height>21</height>
+         <x>380</x>
+         <y>50</y>
+         <width>81</width>
+         <height>61</height>
         </rect>
        </property>
        <property name="font">
         <font>
-         <pointsize>16</pointsize>
+         <pointsize>26</pointsize>
         </font>
        </property>
        <property name="styleSheet">
@@ -1071,7 +1071,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <pointsize>16</pointsize>
+         <pointsize>15</pointsize>
         </font>
        </property>
        <property name="text">
@@ -1137,7 +1137,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <pointsize>16</pointsize>
+         <pointsize>15</pointsize>
         </font>
        </property>
        <property name="text">
@@ -1174,7 +1174,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <pointsize>16</pointsize>
+         <pointsize>15</pointsize>
         </font>
        </property>
        <property name="text">
@@ -1288,7 +1288,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <pointsize>16</pointsize>
+         <pointsize>15</pointsize>
         </font>
        </property>
        <property name="text">
@@ -1357,7 +1357,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <pointsize>16</pointsize>
+         <pointsize>15</pointsize>
         </font>
        </property>
        <property name="text">
@@ -1394,7 +1394,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <pointsize>16</pointsize>
+         <pointsize>15</pointsize>
         </font>
        </property>
        <property name="text">
@@ -1673,10 +1673,10 @@ background-color: rgb(212, 212, 212);</string>
      <widget class="QGroupBox" name="groupBox_7">
       <property name="geometry">
        <rect>
-        <x>1010</x>
+        <x>810</x>
         <y>10</y>
-        <width>231</width>
-        <height>361</height>
+        <width>431</width>
+        <height>241</height>
        </rect>
       </property>
       <property name="title">
@@ -1765,8 +1765,8 @@ background-color: rgb(212, 212, 212);</string>
       <widget class="QLabel" name="label_lens_6">
        <property name="geometry">
         <rect>
-         <x>10</x>
-         <y>180</y>
+         <x>222</x>
+         <y>31</y>
          <width>71</width>
          <height>16</height>
         </rect>
@@ -1781,8 +1781,8 @@ background-color: rgb(212, 212, 212);</string>
       <widget class="QLabel" name="label_lens_7">
        <property name="geometry">
         <rect>
-         <x>10</x>
-         <y>210</y>
+         <x>222</x>
+         <y>61</y>
          <width>71</width>
          <height>16</height>
         </rect>
@@ -1797,8 +1797,8 @@ background-color: rgb(212, 212, 212);</string>
       <widget class="QLabel" name="label_lens_8">
        <property name="geometry">
         <rect>
-         <x>10</x>
-         <y>240</y>
+         <x>222</x>
+         <y>91</y>
          <width>71</width>
          <height>16</height>
         </rect>
@@ -1813,8 +1813,8 @@ background-color: rgb(212, 212, 212);</string>
       <widget class="QLabel" name="label_lens_9">
        <property name="geometry">
         <rect>
-         <x>10</x>
-         <y>270</y>
+         <x>222</x>
+         <y>121</y>
          <width>71</width>
          <height>16</height>
         </rect>
@@ -1829,8 +1829,8 @@ background-color: rgb(212, 212, 212);</string>
       <widget class="QLabel" name="label_lens_10">
        <property name="geometry">
         <rect>
-         <x>10</x>
-         <y>300</y>
+         <x>222</x>
+         <y>151</y>
          <width>71</width>
          <height>16</height>
         </rect>
@@ -1950,8 +1950,8 @@ background-color: rgb(212, 212, 212);</string>
       <widget class="QLineEdit" name="edit_focus_value_6">
        <property name="geometry">
         <rect>
-         <x>90</x>
-         <y>180</y>
+         <x>302</x>
+         <y>31</y>
          <width>61</width>
          <height>21</height>
         </rect>
@@ -1971,8 +1971,8 @@ background-color: rgb(212, 212, 212);</string>
       <widget class="QLineEdit" name="edit_focus_value_7">
        <property name="geometry">
         <rect>
-         <x>90</x>
-         <y>210</y>
+         <x>302</x>
+         <y>61</y>
          <width>61</width>
          <height>21</height>
         </rect>
@@ -1992,8 +1992,8 @@ background-color: rgb(212, 212, 212);</string>
       <widget class="QLineEdit" name="edit_focus_value_8">
        <property name="geometry">
         <rect>
-         <x>90</x>
-         <y>240</y>
+         <x>302</x>
+         <y>91</y>
          <width>61</width>
          <height>21</height>
         </rect>
@@ -2013,8 +2013,8 @@ background-color: rgb(212, 212, 212);</string>
       <widget class="QLineEdit" name="edit_focus_value_9">
        <property name="geometry">
         <rect>
-         <x>90</x>
-         <y>270</y>
+         <x>302</x>
+         <y>121</y>
          <width>61</width>
          <height>21</height>
         </rect>
@@ -2034,8 +2034,8 @@ background-color: rgb(212, 212, 212);</string>
       <widget class="QLineEdit" name="edit_focus_value_10">
        <property name="geometry">
         <rect>
-         <x>90</x>
-         <y>300</y>
+         <x>302</x>
+         <y>151</y>
          <width>61</width>
          <height>21</height>
         </rect>
@@ -2120,8 +2120,8 @@ background-color: rgb(212, 212, 212);</string>
       <widget class="QPushButton" name="btn_focus_apply_6">
        <property name="geometry">
         <rect>
-         <x>158</x>
-         <y>175</y>
+         <x>370</x>
+         <y>26</y>
          <width>61</width>
          <height>32</height>
         </rect>
@@ -2133,8 +2133,8 @@ background-color: rgb(212, 212, 212);</string>
       <widget class="QPushButton" name="btn_focus_apply_7">
        <property name="geometry">
         <rect>
-         <x>158</x>
-         <y>205</y>
+         <x>370</x>
+         <y>56</y>
          <width>61</width>
          <height>32</height>
         </rect>
@@ -2146,8 +2146,8 @@ background-color: rgb(212, 212, 212);</string>
       <widget class="QPushButton" name="btn_focus_apply_8">
        <property name="geometry">
         <rect>
-         <x>158</x>
-         <y>235</y>
+         <x>370</x>
+         <y>86</y>
          <width>61</width>
          <height>32</height>
         </rect>
@@ -2159,8 +2159,8 @@ background-color: rgb(212, 212, 212);</string>
       <widget class="QPushButton" name="btn_focus_apply_9">
        <property name="geometry">
         <rect>
-         <x>158</x>
-         <y>265</y>
+         <x>370</x>
+         <y>116</y>
          <width>61</width>
          <height>32</height>
         </rect>
@@ -2172,8 +2172,8 @@ background-color: rgb(212, 212, 212);</string>
       <widget class="QPushButton" name="btn_focus_apply_10">
        <property name="geometry">
         <rect>
-         <x>158</x>
-         <y>295</y>
+         <x>370</x>
+         <y>146</y>
          <width>61</width>
          <height>32</height>
         </rect>
@@ -2185,14 +2185,27 @@ background-color: rgb(212, 212, 212);</string>
       <widget class="QPushButton" name="btn_focus_read_all">
        <property name="geometry">
         <rect>
-         <x>86</x>
-         <y>324</y>
-         <width>131</width>
+         <x>330</x>
+         <y>200</y>
+         <width>91</width>
          <height>32</height>
         </rect>
        </property>
        <property name="text">
         <string>Read All</string>
+       </property>
+      </widget>
+      <widget class="Line" name="line">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>180</y>
+         <width>411</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
        </property>
       </widget>
      </widget>
