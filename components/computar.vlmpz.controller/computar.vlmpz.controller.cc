@@ -34,8 +34,8 @@ bool computar_vlmpz_controller::on_init(){
 
         /* lens control with req/rep processing */
         thread lens_control_responser = thread(&computar_vlmpz_controller::_lens_control_responser, this, get_profile()->parameters());
-        _lens_control_responser_handle = lens_control_response.native_handle();
-        lens_control_responser.detach()
+        _lens_control_responser_handle = lens_control_responser.native_handle();
+        lens_control_responser.detach();
 
 
     }
@@ -121,7 +121,7 @@ void computar_vlmpz_controller::_usb_device_scan(){
     }
 }
 
-void computar_vlpmz_controller::_lens_control_responser(json parameters){
+void computar_vlmpz_controller::_lens_control_responser(json parameters){
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
     pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, nullptr);
 
