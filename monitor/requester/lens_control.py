@@ -56,8 +56,8 @@ class LensControlRequester(QObject):
         # self.__monitor_thread.daemon = True
         # self.__monitor_thread.start()
 
-        self._monitoring = False
-        self.monitor_socket = None
+        # self._monitoring = False
+        # self.monitor_socket = None
         self.__console.info("* Start Lens Control Requester")
 
     def get_connection_info(self) -> str:
@@ -65,6 +65,7 @@ class LensControlRequester(QObject):
 
     def read_focus(self, id:int):
         """ read focus value """
+        self.__console.info("call read_focus {id}")
         asyncio.create_task(self._read_focus(id))
 
 
@@ -77,6 +78,7 @@ class LensControlRequester(QObject):
             }
             
             if id<0: # for all lens
+                print("start poller")
                 poller = zmq.asyncio.Poller()
                 poller.register(self.__socket, zmq.POLLIN)
                 event = await poller.poll(1000) # 1000ms
