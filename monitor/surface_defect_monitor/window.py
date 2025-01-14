@@ -105,7 +105,6 @@ class AppWindow(QMainWindow):
                 self.btn_focus_set_10.clicked.connect(partial(self.on_btn_focus_set, 10))
                 self.btn_focus_read_all.clicked.connect(self.on_btn_focus_read_all)
                 self.btn_defect_visualization_test.clicked.connect(self.on_btn_defect_visualization_test)
-                self.btn_camera_view_test.clicked.connect(self.on_btn_camera_view_test)
 
                 # register dial event callback function
                 self.dial_light_control.valueChanged.connect(self.on_change_light_control)
@@ -141,7 +140,7 @@ class AppWindow(QMainWindow):
                     self.__frame_window_map[id] = self.findChild(QLabel, config["camera_windows"][idx])
                     self.__console.info(f"Ready for camera grabber #{id} monitoring")
                     self.__camera_image_subscriber_map[id] = CameraMonitorSubscriber(connection=config["image_stream_monitor_source"],
-                                                                                     topic=config["image_stream_monitor_topic"][idx])
+                                                                                     topic=f"{config['image_stream_monitor_topic_prefix']}{id}")
                     self.__camera_image_subscriber_map[id].frame_update_signal.connect(self.on_update_camera_image)
                     self.__camera_image_subscriber_map[id].start() # start thread for each
 
@@ -181,66 +180,41 @@ class AppWindow(QMainWindow):
     def on_update_lens_control_status(self, msg:str): # update lens control pipeline status
         self.label_lens_control_pipeline_message.setText(msg)
 
-    def on_update_camera_image(self, camera_id:int, w:int, h:int, c:int, image:np.ndarray):
+    def on_update_camera_image(self, camera_id:int, image:np.ndarray):
         """ show image on window for each camera id """
-        self.__console.info("update image")
-        guided_image = image.copy()
-        cx = w//2
-        cy = h//2
-        cv2.line(guided_image, (cx, 0), (cx, h), (0, 255, 0), 5) #(960, 0) (960, 1920)
-        cv2.line(guided_image, (0, cy), (w, cy), (0, 255, 0), 5) # 
+        h, w, ch = image.shape
+        check = self.findChild(QCheckBox, "chk_show_alignment_line")
+        if check and check.isChecked():
+            cx = w//2
+            cy = h//2
+            cv2.line(image, (cx, 0), (cx, h), (0, 255, 0), 5) #(960, 0) (960, 1920)
+            cv2.line(image, (0, cy), (w, cy), (0, 255, 0), 5) # 
 
-        qt_image = QImage(guided_image.data, w, h, c*w, QImage.Format.Format_RGB888)
+        qt_image = QImage(image.data, w, h, ch*w, QImage.Format.Format_RGB888)
         pixmap = QPixmap.fromImage(qt_image)
         try:
             self.__frame_window_map[camera_id].setPixmap(pixmap.scaled(self.__frame_window_map[camera_id].size(), Qt.AspectRatioMode.KeepAspectRatio))
+            self.__frame_window_map[camera_id].show()
         except Exception as e:
             self.__console.error(e)
-
-
-    def on_btn_camera_view_test(self):
-        frame_image = cv2.imread("./resource/1920_1200_test_image.jpg")
-        camera_id = 1
-        #frame_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        
-        # t = datetime.now()
-
-        # cv2.putText(frame_image, t.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], (10, 1070), cv2.FONT_HERSHEY_SIMPLEX, 2.0, (0,255,0), 2, cv2.LINE_AA)
-        # cv2.putText(frame_image, f"Camera #{camera_id}(fps:{fps:.1f})", (10,50), cv2.FONT_HERSHEY_SIMPLEX, 2.0, (1,255,0), 2, cv2.LINE_AA)
-
-        h, w, ch = frame_image.shape
-
-        cx = w//2
-        cy = h//2
-        cv2.line(frame_image, (cx, 0), (cx, h), (0, 255, 0), 5) #(960, 0) (960, 1920)
-        cv2.line(frame_image, (0, cy), (w, cy), (0, 255, 0), 5) # 
-        
-        qt_image = QImage(frame_image.data, w, h, ch*w, QImage.Format.Format_RGB888)
-        pixmap = QPixmap.fromImage(qt_image)
-        try:
-            print(type(self.__frame_window_map[camera_id]))
-            self.__frame_window_map[camera_id].setPixmap(pixmap.scaled(self.__frame_window_map[camera_id].size(), Qt.AspectRatioMode.KeepAspectRatio))
-        except Exception as e:
-            self.__console.error(e)
-
     
                 
     def closeEvent(self, event:QCloseEvent) -> None: 
-        """ terminate main window """
-
-        # code here
-        
+        """ terminate main window """      
 
         # clear instance explicitly
+        if self.__light_control_requester:
+            self.__light_control_requester.close()
+            self.__console.info("Close light control requester")
         if self.__lens_control_requester:
-            self.__console.info("Close lens control requester")
             self.__lens_control_requester.close()
+            self.__console.info("Close lens control requester")
         if self.__temp_monitor_subscriber:
-            self.__console.info("Close temperature subscriber")
             self.__temp_monitor_subscriber.close()
+            self.__console.info("Close temperature subscriber")
         if self.__pulse_generator_requester:
-            self.__console.info("Close Pulse Generator Requester")
             self.__pulse_generator_requester.close()
+            self.__console.info("Close Pulse Generator Requester")
             
         return super().closeEvent(event)
 
@@ -319,57 +293,57 @@ class AppWindow(QMainWindow):
         else:
             QMessageBox.critical(self, "Error", f"DMX IP and Port is not defined")
 
-    def __image_stream_subscribe(self):
-        """ zmq subscribe for camera monitoring """
-        while True:
-            try:
+    # def __image_stream_subscribe(self):
+    #     """ zmq subscribe for camera monitoring """
+    #     while True:
+    #         try:
 
-                parts = self.__camera_monitor_socket.recv_multipart()
-                self.__console.info(f"Received data part {parts}")
+    #             parts = self.__camera_monitor_socket.recv_multipart()
+    #             self.__console.info(f"Received data part {parts}")
 
-                if len(parts) < 3:
-                    self.__console.error(f"Invalid multipart message received")
-                else:
-                    topic = parts[0].decode("utf-8")
-                    camera_id = int(json.loads(parts[1].decode("utf-8"))["camera_id"])
-                    image_data = parts[2]
-                    self.__console.info(f"Received data from Camera ID : {camera_id}")
+    #             if len(parts) < 3:
+    #                 self.__console.error(f"Invalid multipart message received")
+    #             else:
+    #                 topic = parts[0].decode("utf-8")
+    #                 camera_id = int(json.loads(parts[1].decode("utf-8"))["camera_id"])
+    #                 image_data = parts[2]
+    #                 self.__console.info(f"Received data from Camera ID : {camera_id}")
 
-                if topic == "image_stream_monitor" and image_data is not None:
-                    np_array = np.frombuffer(image_data, np.uint8)
-                    image = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
-                    # display image
-                    rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                    h, w, ch = rgb_image.shape
-                    bytes_per_line = ch * w
-                    qt_image = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
-                    pixmap = QPixmap.fromImage(qt_image)
+    #             if topic == "image_stream_monitor" and image_data is not None:
+    #                 np_array = np.frombuffer(image_data, np.uint8)
+    #                 image = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
+    #                 # display image
+    #                 rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    #                 h, w, ch = rgb_image.shape
+    #                 bytes_per_line = ch * w
+    #                 qt_image = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
+    #                 pixmap = QPixmap.fromImage(qt_image)
 
-                    try:
-                        self.__frame_window_map[camera_id].setPixmap(pixmap.scaled(self.__frame_window_map[camera_id].size(), Qt.KeepAspectRatio))
-                    except Exception as e:
-                        self.__console.error(f"Frame display error : {e}")
-                else:
-                    self.__console.error(f"Invalid topic received: {topic}")
+    #                 try:
+    #                     self.__frame_window_map[camera_id].setPixmap(pixmap.scaled(self.__frame_window_map[camera_id].size(), Qt.KeepAspectRatio))
+    #                 except Exception as e:
+    #                     self.__console.error(f"Frame display error : {e}")
+    #             else:
+    #                 self.__console.error(f"Invalid topic received: {topic}")
 
-            except Exception as e:
-                self.__console.critical(f"Error receiving image: {e}")
+    #         except Exception as e:
+    #             self.__console.critical(f"Error receiving image: {e}")
 
-            time.sleep(0.1) # for context switching
+    #         time.sleep(0.1) # for context switching
 
-    # show camera grabbed image
-    def __camera_frame_update(self, camera_id, frame, fps):
-        """ show camera image from subscriber"""
-        frame_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    # # show camera grabbed image
+    # def __camera_frame_update(self, camera_id, frame, fps):
+    #     """ show camera image from subscriber"""
+    #     frame_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         
-        t = datetime.now()
-        cv2.putText(frame_image, t.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], (10, 1070), cv2.FONT_HERSHEY_SIMPLEX, 2.0, (0,255,0), 2, cv2.LINE_AA)
-        cv2.putText(frame_image, f"Camera #{camera_id}(fps:{fps:.1f})", (10,50), cv2.FONT_HERSHEY_SIMPLEX, 2.0, (1,255,0), 2, cv2.LINE_AA)
+    #     t = datetime.now()
+    #     cv2.putText(frame_image, t.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], (10, 1070), cv2.FONT_HERSHEY_SIMPLEX, 2.0, (0,255,0), 2, cv2.LINE_AA)
+    #     cv2.putText(frame_image, f"Camera #{camera_id}(fps:{fps:.1f})", (10,50), cv2.FONT_HERSHEY_SIMPLEX, 2.0, (1,255,0), 2, cv2.LINE_AA)
 
-        h, w, ch = frame_image.shape
-        qt_image = QImage(frame_image.data, w, h, ch*w, QImage.Format.Format_RGB888)
-        pixmap = QPixmap.fromImage(qt_image)
-        try:
-            self.__frame_window_map[camera_id].setPixmap(pixmap.scaled(self.__frame_window_map[camera_id].size(), Qt.AspectRatioMode.KeepAspectRatio))
-        except Exception as e:
-            self.__console.error(e)
+    #     h, w, ch = frame_image.shape
+    #     qt_image = QImage(frame_image.data, w, h, ch*w, QImage.Format.Format_RGB888)
+    #     pixmap = QPixmap.fromImage(qt_image)
+    #     try:
+    #         self.__frame_window_map[camera_id].setPixmap(pixmap.scaled(self.__frame_window_map[camera_id].size(), Qt.AspectRatioMode.KeepAspectRatio))
+    #     except Exception as e:
+    #         self.__console.error(e)

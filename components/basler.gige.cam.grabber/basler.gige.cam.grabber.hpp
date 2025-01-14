@@ -32,6 +32,7 @@ TriggerSource = Line1
 #include <string>
 #include <atomic>
 #include <pthread.h>
+#include <atomic>
 
 #include <pylon/PylonIncludes.h>
 #include <pylon/BaslerUniversalInstantCamera.h>
@@ -56,6 +57,7 @@ class basler_gige_cam_grabber : public flame::component::object {
         void _subtask_status_publish(json parameters);
 
         void _image_stream_task(int camera_id, CBaslerUniversalInstantCamera* camera, json parameters);
+        void _test_image_stream_task(int camera_id, json parameters);
         void _status_monitor_task(json parameters);
         void _status_publish();
 
@@ -80,6 +82,7 @@ class basler_gige_cam_grabber : public flame::component::object {
             {"realtime", 1}
         };
         int _stream_method = 0; //batch mode default
+        atomic<bool> _monitoring = false;
         int _stream_batch_buffer_size = 1000;
         typedef vector<unsigned char> image_data;
         map<int, vector<image_data>> _image_container;

@@ -100,6 +100,9 @@ class TemperatureMonitorSubscriber(QThread):
             monitor.close()
         except  zmq.error.ZMQError as e:
             self.__console.error(f"{e}")
+        finally:
+            self.__socket.close()
+            self.__context.term()
 
     def close(self) -> None:
         """ Close the socket and context """
@@ -109,9 +112,3 @@ class TemperatureMonitorSubscriber(QThread):
 
         self.requestInterruption()
         self.quit()
-
-        try:
-            self.__socket.close()
-            self.__context.term()
-        except zmq.error.ZMQError as e:
-            self.__console.error(f"{e}")

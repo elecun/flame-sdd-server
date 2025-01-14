@@ -26,6 +26,11 @@ bool basler_gige_cam_grabber::on_init(){
             _stream_method = _method_type[_set_method];
         }
 
+        /* publish image for monitoring in realtime */
+        if(param.contains("realtime_monitoring")){
+            _monitoring.store(param["realtime_monitoring"].get<bool>());
+        }
+
         /* if stream method is 'batch' mode, buffer reservation is required for memory optimization */
         if(_stream_method==_method_type["batch"]){
             if(param.contains("stream_batch_reserved")){
@@ -208,25 +213,41 @@ void basler_gige_cam_grabber::_status_publish(){
     }
 }
 
+void basler_gige_cam_grabber::_test_image_stream_task(int camera_id, json parameters){
+
+}
+
 void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversalInstantCamera* camera, json parameters){
     try{
         pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
         pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, nullptr);
 
         camera->Open();
-        string acqusition_mode = parameters.value("acqusition_mode", "Continuous");
+        string acquisition_mode = parameters.value("acquisition_mode", "Continuous"); // Continuous, SingleFrame, MultiFrame
+        double acquisition_fps = parameters.value("acquisition_fps", 30.0);
         string trigger_selector = parameters.value("trigger_selector", "FrameStart");
         string trigger_mode = parameters.value("trigger_mode", "On");
         string trigger_source = parameters.value("trigger_source", "Line2");
         string trigger_activation = parameters.value("trigger_activation", "RisingEdge");
         int heartbeat_timeout = parameters.value("heartbeat_timeout", 5000);
 
-        camera->AcquisitionMode.SetValue(acqusition_mode.c_str());
+        /* camera setting parameters notification */
+        logger::info("[{}]* Cmaera Acquisition Mode : {} (Continuous|SingleFrame)", get_name(), acquisition_mode);
+        logger::info("[{}]* Camera Acqusition Framerate : {}", get_name(), acquisition_fps);
+        logger::info("[{}]* Camera Trigger Mode : {}", get_name(), trigger_mode);
+        logger::info("[{}]* Camera Trigger Selector : {}", get_name(), trigger_selector);
+        logger::info("[{}]* Camera Trigger Activation : {}", get_name(), trigger_activation);
+        
+        /* set camera parameters */
+        camera->AcquisitionMode.SetValue(acquisition_mode.c_str());
+        camera->AcquisitionFrameRate.SetValue(acquisition_fps);
         camera->TriggerSelector.SetValue(trigger_selector.c_str());
         camera->TriggerMode.SetValue(trigger_mode.c_str());
         camera->TriggerSource.SetValue(trigger_source.c_str());
         camera->TriggerActivation.SetValue(trigger_activation.c_str());
         camera->GevHeartbeatTimeout.SetValue(heartbeat_timeout);
+
+        /* start grabbing */
         camera->StartGrabbing(Pylon::GrabStrategy_OneByOne, Pylon::GrabLoop_ProvidedByUser);
         CGrabResultPtr ptrGrabResult;
 
@@ -235,15 +256,35 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                 camera->RetrieveResult(5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException); //trigger mode makes it blocked
                 if(ptrGrabResult.IsValid()){
                     if(ptrGrabResult->GrabSucceeded()){
+
+                        /* grabbed imgae stores into buffer */
                         const uint8_t* pImageBuffer = (uint8_t*)ptrGrabResult->GetBuffer();
                         _camera_grab_counter[camera_id]++;
 
-                        size_t size = ptrGrabResult->GetWidth() * ptrGrabResult->GetHeight() * 1;
+                        /* get image properties */
+                        size_t size = ptrGrabResult->GetWidth() * ptrGrabResult->GetHeight();
                         cv::Mat image(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC1, (void*)pImageBuffer);
 
                         //jpg encoding
                         std::vector<unsigned char> buffer;
                         cv::imencode(".jpg", image, buffer);
+
+                        // save into image data container
+                        if(_stream_method==0) // batch mode
+                            _image_container[camera_id].emplace_back(buffer);
+
+                        /* publish for monitoring */
+                        if(_monitoring.load()){
+                            string id_str = fmt::format("{}",camera_id);
+                            string topic_str = fmt::format("camera_{}", camera_id);
+                            pipe_data msg_id(id_str.data(), id_str.size());
+                            pipe_data msg_topic(topic_str.data(), topic_str.size());
+                            pipe_data msg_image(buffer.data(), buffer.size());
+                            get_port("image_stream_monitor")->send(msg_topic, zmq::send_flags::sndmore); //first
+                            get_port("image_stream_monitor")->send(msg_id, zmq::send_flags::sndmore);
+                            get_port("image_stream_monitor")->send(msg_image, zmq::send_flags::dontwait);
+                        }
+
 
                         //save temporary
                         // std::string filename = "image_" + std::to_string(camera_id) + "_" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + ".jpg";
@@ -270,20 +311,8 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
 
                         //     //2. real image bytearray
                         //     pipe_data image_data(buffer.data(), buffer.size());
-                        //     get_port("image_stream")->send(image_data, zmq::send_flags::none);
+                        // get_port("image_stream")->send(image_data, zmq::send_flags::none);
                         // }
-
-
-                        /* image stream monitoring */
-                        // pipe_data_multipart message_pack;
-                        // int  id = camera_id;
-                        // string topic = fmt::format("image_stream_monitor_{}", camera_id);
-                        // message_pack.add(pipe_data(&id, sizeof(id)));
-                        // message_pack.add(pipe_data(topic.data(), topic.size()));
-                        // message_pack.add(pipe_data(buffer.data(), buffer.size()));
-                        // message_pack.send(*get_port("image_stream_monitor"));
-
-                        logger::info("[{}] {}", camera_id, _camera_grab_counter[camera_id]);
 
                     }
                     else{
@@ -296,6 +325,9 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
             catch(Pylon::TimeoutException& e){
                 logger::error("[{}] Camera {} Timeout exception occurred! {}", get_name(), camera_id, e.GetDescription());
                 break;
+            }
+            catch(Pylon::RuntimeException& e){
+                logger::error("[{}] Camera {} Runtime Exception ({})", get_name(), camera_id, e.what());
             }
         }
 

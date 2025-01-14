@@ -3,9 +3,11 @@
     "verbose" : 1,
 
     "parameters":{
-        "stream_method":"realtime",
+        "realtime_monitoring":true,
+        "stream_method":"batch",
         "stream_batch_reserved":10000,
-        "acqusition_mode":"Continuous",
+        "acquisition_mode":"SingleFrame",
+        "acquisition_fps":30.0,
         "trigger_selector":"FrameStart",
         "trigger_mode":"On",
         "trigger_source":"Line2",
@@ -34,9 +36,9 @@
             "queue_size" : 1000
         },
         "image_stream_monitor":{
-            "transport" : "tcp",
+            "transport":"tcp",
             "host":"127.0.0.1",
-            "port":5006,
+            "port":5102,
             "socket_type" : "pub",
             "queue_size" : 1000
         },

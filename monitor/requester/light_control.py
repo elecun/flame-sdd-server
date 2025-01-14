@@ -40,6 +40,9 @@ class LightControlRequester(QObject):
 
         self.__connection = connection
 
+    def close(self):
+        pass
+
     def get_connection_info(self) -> str:
         return self.__connection
     

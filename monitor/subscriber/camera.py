@@ -41,7 +41,7 @@ for name in dir(zmq):
 
 class CameraMonitorSubscriber(QThread):
     
-    frame_update_signal = pyqtSignal(int, int, int, int, np.ndarray) # camera images update signal : camera_id, width, height, channel, np.ndarray
+    frame_update_signal = pyqtSignal(int, np.ndarray) # camera images update signal : camera_id, np.ndarray
     status_msg_update_signal = pyqtSignal(str) # connection status message update signal
 
     def __init__(self, connection:str, topic:str):
@@ -83,13 +83,14 @@ class CameraMonitorSubscriber(QThread):
                 break
             try:
                 topic, id, image_data = self.__socket.recv_multipart()
-                self.__console.info("recv multipart")
                 if topic.decode() == self.__topic:
                     nparr = np.frombuffer(image_data, np.uint8)
                     decoded_image = cv2.imdecode(nparr, cv2.IMREAD_UNCHANGED)
-                    h, w = decoded_image.shape[:2]  # height와 width
-                    ch = decoded_image.shape[2] if len(decoded_image.shape) > 2 else 1
-                    self.frame_update_signal.emit(int(id), w, h, ch, decoded_image)
+                    if decoded_image is not None:
+                        color_image = cv2.cvtColor(decoded_image, cv2.COLOR_BGR2RGB)
+                        h, w = color_image.shape[:2]  # height와 width
+                        ch = color_image.shape[2] if len(color_image.shape) > 2 else 1
+                        self.frame_update_signal.emit(int(id), color_image)
 
             except json.JSONDecodeError as e:
                 self.__console.critical(f"{e}")
