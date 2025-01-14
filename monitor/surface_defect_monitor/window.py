@@ -271,16 +271,15 @@ class AppWindow(QMainWindow):
         continuous_mode = self.findChild(QCheckBox, name="chk_trigger_mode_continuous").isChecked()
 
         if continuous_mode:
-            if not self.__trigger.start_trigger_continuous("Dev1/ctr0", float(freq), float(duty)):
-                QMessageBox.critical(self, "Error", f"Trigger is already running..")
-        else:
-            self.__trigger.start_trigger_finite("Dev1/ctr0", float(freq), int(samples), float(duty))
+            self.__pulse_generator_requester.start_generation(float(freq), float(duty))
+        # else:
+        #     self.__trigger.start_trigger_finite("Dev1/ctr0", float(freq), int(samples), float(duty))
             
         self.statusBar().showMessage(f"Trigger is now started")
 
     def on_btn_trigger_stop(self):
         """ event callback : trigger stop """
-        self.__trigger.stop_trigger()
+        self.__pulse_generator_requester.stop_generation()
         self.statusBar().showMessage(f"Trigger is now stopped")
         
     

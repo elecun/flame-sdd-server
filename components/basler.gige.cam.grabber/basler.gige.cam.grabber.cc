@@ -250,43 +250,38 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                         // cv::imwrite(fmt::format("/home/dk/sddnas/{}",filename), image);
 
                         // store images for batch stream method
-                        if(_stream_method==0){
-                            _image_container[camera_id].push_back(buffer);
-                        }
-                        // realtime stream method with multipart
-                        else {
+                        // if(_stream_method==0){
+                        //     _image_container[camera_id].push_back(buffer);
+                        // }
+                        // // realtime stream method with multipart
+                        // else {
 
-                            //1. image information (camera id, timestamp)
-                            auto now = std::chrono::system_clock::now();
-                            long long timestamp = chrono::duration_cast<chrono::milliseconds>(now.time_since_epoch()).count();
-                            json image_info = {
-                                {"camera_id", camera_id},
-                                {"timestamp", timestamp}
-                            };
-                            string image_info_dump = image_info.dump();
-                            pipe_data image_info_msg(image_info_dump.size());
-                            memcpy(image_info_msg.data(), image_info_dump.c_str(), image_info_dump.size());
-                            get_port("image_stream")->send(image_info_msg, zmq::send_flags::sndmore);
+                        //     //1. image information (camera id, timestamp)
+                        //     auto now = std::chrono::system_clock::now();
+                        //     long long timestamp = chrono::duration_cast<chrono::milliseconds>(now.time_since_epoch()).count();
+                        //     json image_info = {
+                        //         {"camera_id", camera_id},
+                        //         {"timestamp", timestamp}
+                        //     };
+                        //     string image_info_dump = image_info.dump();
+                        //     pipe_data image_info_msg(image_info_dump.size());
+                        //     memcpy(image_info_msg.data(), image_info_dump.c_str(), image_info_dump.size());
+                        //     get_port("image_stream")->send(image_info_msg, zmq::send_flags::sndmore);
 
-                            //2. real image bytearray
-                            pipe_data image_data(buffer.data(), buffer.size());
-                            get_port("image_stream")->send(image_data, zmq::send_flags::none);
-                        }
+                        //     //2. real image bytearray
+                        //     pipe_data image_data(buffer.data(), buffer.size());
+                        //     get_port("image_stream")->send(image_data, zmq::send_flags::none);
+                        // }
 
-
-                        //logger::info("Captured image resolution : {}x{}({})", image.cols, image.rows, image.channels());
-                        
-                        // image stream monitoring.. publish
-                        // set topic
 
                         /* image stream monitoring */
-                        pipe_data_multipart message_pack;
-                        int  id = camera_id;
-                        string topic = fmt::format("basler_gige_cam_grabber/image_stream_monitor_{}", camera_id);
-                        message_pack.add(pipe_data(&id, sizeof(id)));
-                        message_pack.add(pipe_data(topic.data(), topic.size()));
-                        message_pack.add(pipe_data(buffer.data(), buffer.size()));
-                        message_pack.send(*get_port("image_stream_monitor"));
+                        // pipe_data_multipart message_pack;
+                        // int  id = camera_id;
+                        // string topic = fmt::format("image_stream_monitor_{}", camera_id);
+                        // message_pack.add(pipe_data(&id, sizeof(id)));
+                        // message_pack.add(pipe_data(topic.data(), topic.size()));
+                        // message_pack.add(pipe_data(buffer.data(), buffer.size()));
+                        // message_pack.send(*get_port("image_stream_monitor"));
 
                         logger::info("[{}] {}", camera_id, _camera_grab_counter[camera_id]);
 
