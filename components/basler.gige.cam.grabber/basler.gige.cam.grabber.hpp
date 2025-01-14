@@ -57,7 +57,6 @@ class basler_gige_cam_grabber : public flame::component::object {
         void _subtask_status_publish(json parameters);
 
         void _image_stream_task(int camera_id, CBaslerUniversalInstantCamera* camera, json parameters);
-        void _test_image_stream_task(int camera_id, json parameters);
         void _status_monitor_task(json parameters);
         void _status_publish();
 

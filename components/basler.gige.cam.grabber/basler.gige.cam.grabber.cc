@@ -111,6 +111,9 @@ void basler_gige_cam_grabber::on_loop(){
 
 void basler_gige_cam_grabber::on_close(){
 
+    /* thread stop */
+    _thread_stop_signal.store(true);
+
     /* show container size */
     for (map<int, vector<vector<unsigned char>>>::iterator it = _image_container.begin(); it != _image_container.end(); ++it){
         logger::info("[{}] Image Container size : {}", it->first, _image_container[it->first].size());
@@ -213,9 +216,6 @@ void basler_gige_cam_grabber::_status_publish(){
     }
 }
 
-void basler_gige_cam_grabber::_test_image_stream_task(int camera_id, json parameters){
-
-}
 
 void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversalInstantCamera* camera, json parameters){
     try{
@@ -270,20 +270,26 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                         cv::imencode(".jpg", image, buffer);
 
                         // save into image data container
-                        if(_stream_method==0) // batch mode
-                            _image_container[camera_id].emplace_back(buffer);
+                        // if(_stream_method==0) // batch mode
+                        //     _image_container[camera_id].emplace_back(buffer);
+
+                        /* transport parameters */
+                        string id_str = fmt::format("{}",camera_id);
+                        pipe_data msg_id(id_str.data(), id_str.size());
+                        pipe_data msg_image(buffer.data(), buffer.size());
 
                         /* publish for monitoring */
                         if(_monitoring.load()){
-                            string id_str = fmt::format("{}",camera_id);
                             string topic_str = fmt::format("camera_{}", camera_id);
-                            pipe_data msg_id(id_str.data(), id_str.size());
                             pipe_data msg_topic(topic_str.data(), topic_str.size());
-                            pipe_data msg_image(buffer.data(), buffer.size());
                             get_port("image_stream_monitor")->send(msg_topic, zmq::send_flags::sndmore); //first
                             get_port("image_stream_monitor")->send(msg_id, zmq::send_flags::sndmore);
                             get_port("image_stream_monitor")->send(msg_image, zmq::send_flags::dontwait);
                         }
+
+                        /* push image data */
+                        get_port("image_stream")->send(msg_id, zmq::send_flags::sndmore);
+                        get_port("image_stream")->send(msg_image, zmq::send_flags::dontwait);
 
 
                         //save temporary

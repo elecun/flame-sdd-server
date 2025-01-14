@@ -3,6 +3,8 @@
 #include <flame/log.hpp>
 #include <flame/config_def.hpp>
 #include <chrono>
+#include <sstream>
+#include <ctime>
 #include <opencv2/opencv.hpp>
 
 using namespace flame;
@@ -21,7 +23,6 @@ bool nas_file_stacker::on_init(){
     _stacker_handle = stacking_worker.native_handle();
     stacking_worker.detach();
 
-    
     return true;
 }
 
@@ -51,75 +52,59 @@ void nas_file_stacker::on_message(){
 }
 
 void nas_file_stacker::_image_stacker(json parameters){
+    try{
+        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
+        pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, nullptr);
 
-    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
-    pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, nullptr);
+        get_port("image_stream")->set(zmq::sockopt::rcvtimeo, 1000); // 1sec timeout
+        string save_dir = parameters["mount_path"].get<string>();
+        while(!_thread_stop_signal.load()){
 
-    while(!_thread_stop_signal.load()){
-        try{
+            /* receive data pack from pipeline */
+            pipe_data msg_id;
+            pipe_data msg_image;
+            auto result = get_port("image_stream")->recv(msg_id, zmq::recv_flags::none);
+            if(result){
+                bool more = get_port("image_stream")->get(zmq::sockopt::rcvmore);
+                if(more){
+                    string camera_id = msg_id.to_string();
+                    auto ret = get_port("image_stream")->recv(msg_image, zmq::recv_flags::none);
+                    vector<unsigned char> image(msg_image.size());
+                    std::memcpy(image.data(), msg_image.data(), msg_image.size());
 
-            /* waiting for lot number from level2 terminal */
-            pipe_data lot_info;
-            string lot_number = "";
-            auto level2_terminal_result = get_port("level2_terminal_out")->recv(lot_info, zmq::recv_flags::none);
-            if(level2_terminal_result){
-                std::string message(static_cast<char*>(lot_info.data()), lot_info.size());
-                auto json_data = json::parse(message);
-                if(json_data.contains("LOT")){
-                    lot_number = json_data["LOT"].get<string>();
-                    _mount_path.append(lot_number);
-                    fs::create_directories(_mount_path);
-                    logger::info("[{}] Changed NAS Path by LOT Number({}) : {}", get_name(), lot_number, _mount_path.string());
+                    /* save to file */
+                    if(!get_port("image_stream")->get(zmq::sockopt::rcvmore)){
+                        
+                        /* get current time */
+                        auto now = std::chrono::system_clock::now();
+                        auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+                        time_t now_time = std::chrono::system_clock::to_time_t(now);
+                        tm local_time = *std::localtime(&now_time);
+
+                        /* time formatted filename */
+                        std::ostringstream oss;
+                        oss << std::put_time(&local_time, "%Y%m%d_%H%M%S");
+                        oss << "_" << std::setfill('0') << std::setw(3) << milliseconds.count();
+
+                        /* save into directory */
+                        string filename = fmt::format("{}_{}.jpg", camera_id, oss.str());
+
+                        /* decode image & save */
+                        cv::Mat decoded = cv::imdecode(image, cv::IMREAD_UNCHANGED);                        
+                        cv::imwrite(fmt::format("{}/{}",save_dir, filename), decoded);
+                    }
+    
                 }
             }
-
-
-            if(!_mount_path.empty()){
-                get_port("image_stream")->set(zmq::sockopt::rcvtimeo, 1000); // 1sec timeout
-                while(true){
-                    //1. rcv image info
-                    pipe_data image_info;
-                    auto result = get_port("image_stream")->recv(image_info, zmq::recv_flags::none);
-                    if(result){
-                        std::string message(static_cast<char*>(image_info.data()), image_info.size());
-                        auto json_data = json::parse(message);
-
-                        int camera_id = 0;
-                        long long t_stamp = 0;
-                        if(json_data.contains("camera_id") & json_data.contains("timestamp")){
-                            camera_id = json_data["camera_id"].get<int>();
-                            t_stamp = json_data["timestamp"].get<long long>();
-
-                            // rcv image
-                            bool more = get_port("image_stream")->get(zmq::sockopt::rcvmore);
-                            if(more){
-                                pipe_data image;
-                                get_port("image_stream")->recv(image, zmq::recv_flags::none);
-                                std::vector<uchar> serialized(static_cast<unsigned char*>(image.data()),static_cast<unsigned char*>(image.data()) + image.size());
-                                cv::Mat deserialized = cv::imdecode(serialized, cv::IMREAD_GRAYSCALE);
-                                if(!deserialized.empty()){
-                                    cv::imwrite((_mount_path/fmt::format("{}_{}.jpg", camera_id, t_stamp)).string(), deserialized);
-                                }
-                            }
-                        }
-                    }
-                    else {
-                        // timeout
-                        logger::warn("[{}] there is no more data coming into the port.", get_name());
-                        _mount_path.clear();
-                        break;
-                    }
-                } //while
-            }
         }
-        catch(const json::parse_error& e){
-            logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());
-        }
-        catch(const std::runtime_error& e){
-            logger::error("[{}] Runtime error occurred!", get_name());
-        }
-        catch(const zmq::error_t& e){
-            logger::error("[{}] Pipeline error : {}", get_name(), e.what());
-        }
+    }
+    catch(const json::parse_error& e){
+        logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());
+    }
+    catch(const std::runtime_error& e){
+        logger::error("[{}] Runtime error occurred!", get_name());
+    }
+    catch(const zmq::error_t& e){
+        logger::error("[{}] Pipeline error : {}", get_name(), e.what());
     }
 }
