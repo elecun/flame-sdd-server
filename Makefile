@@ -230,7 +230,7 @@ $(BUILDDIR)dk.image.push.unittest.o:	$(CURRENT_DIR)/components/dk.image.push.uni
 
 all : flame
 
-dk_h_inspector : flame system_status_monitor.comp basler_gige_cam_grabber.comp nas_file_stacker.comp ni_daq_pulse_generator.comp
+dk_h_inspector : flame basler_gige_cam_grabber.comp nas_file_stacker.comp ni_daq_pulse_generator.comp
 
 dk_h_inspector_onsite : flame system_status_monitor.comp autonics_temp_controller.comp computar_vlmpz_controller.comp
 
@@ -241,7 +241,7 @@ components : device.uvccam.multi.comp data_push.comp data_pull_test.comp basler_
 deploy : FORCE
 	cp $(BUILDDIR)/*.comp $(BUILDDIR)/flame $(BINDIR)
 clean : FORCE 
-		$(RM) $(BUILDDIR)/*.o $(BUILDDIR)/flame
+		$(RM) $(BUILDDIR)/*.o $(BUILDDIR)/*.comp $(BUILDDIR)/flame
 debug:
 	@echo "Building for Architecture : $(ARCH)"
 	@echo "Building for OS : $(OS)"
