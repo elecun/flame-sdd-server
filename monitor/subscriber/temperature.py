@@ -44,6 +44,7 @@ class TemperatureMonitorSubscriber(QThread):
         # initialize zmq
         self.__context = zmq.Context()
         self.__socket = self.__context.socket(zmq.SUB)
+        self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 1000)
         self.__socket.connect(connection)
         self.__socket.subscribe(topic)
 

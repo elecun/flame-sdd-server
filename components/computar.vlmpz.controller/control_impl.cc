@@ -2,8 +2,27 @@
 
 #define SATURATE(x, min, max) ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
 
-bool controlImpl::open(int device_idx){
-    if(UsbOpen(device_idx))
+controlImpl::controlImpl(string parent_name, int device_id, json param)
+:_parent_name(parent_name), _lens_device_id(device_id){
+
+	char serial_number[260] = {0, };
+	int retval = UsbGetSnDevice(device_id, serial_number);
+
+	if(!retval){
+		_lens_device_sn = serial_number;
+
+		// find user id
+		for(auto& device:param){
+			if(!device["sn"].get<string>().compare(_lens_device_sn)){ // found
+				_lens_user_id = device["id"].get<int>();
+				logger::info("[{}] + Registered. Lens #{}({}) : S/N({})", _parent_name, device_id, _lens_user_id, _lens_device_sn);
+			}
+		}
+	}
+}
+
+bool controlImpl::open(){
+    if(UsbOpen(_lens_device_id))
         return false;
     if(UsbSetConfig())
         return false;

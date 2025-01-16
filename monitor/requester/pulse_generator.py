@@ -55,11 +55,14 @@ class PulseGeneratorRequester(QObject):
         self.__console.info("Closed Pulse Generator Requester")
     
     def __run(self, freq, duty):
-        self.__task.co_channels.add_co_pulse_chan_freq("Dev1/ctr0","",units=FrequencyUnits.HZ, idle_state=Level.LOW, initial_delay=0.0, freq=freq, duty_cycle=duty)
+        self.__task.co_channels.add_co_pulse_chan_freq("Dev1/ctr0:1","",units=FrequencyUnits.HZ, idle_state=Level.LOW, initial_delay=0.0, freq=freq, duty_cycle=duty)
         self.__task.timing.cfg_implicit_timing(sample_mode=AcquisitionType.CONTINUOUS)
         self.__task.start()
         try:
             while self.__running:
+                if self.isInterruptionRequested():
+                    break
+
                 if self.__task.is_task_done():
                     time.sleep(0.1)
                     break

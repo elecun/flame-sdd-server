@@ -61,7 +61,6 @@ class basler_gige_cam_grabber : public flame::component::object {
         void _status_publish();
 
         void _publish_status(); //publish camera work status for every seconds
-        void _update_status();
 
     private:
 

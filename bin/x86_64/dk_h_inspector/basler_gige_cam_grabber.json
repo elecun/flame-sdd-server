@@ -6,8 +6,7 @@
         "realtime_monitoring":true,
         "stream_method":"batch",
         "stream_batch_reserved":10000,
-        "acquisition_mode":"SingleFrame",
-        "acquisition_fps":30.0,
+        "acquisition_mode":"Continuous",
         "trigger_selector":"FrameStart",
         "trigger_mode":"On",
         "trigger_source":"Line2",
@@ -40,7 +39,7 @@
             "host":"127.0.0.1",
             "port":5102,
             "socket_type" : "pub",
-            "queue_size" : 1000
+            "queue_size" : 5000
         },
         "image_stream" : {
             "transport" : "inproc",

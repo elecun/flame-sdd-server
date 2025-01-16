@@ -57,6 +57,7 @@ class CameraMonitorSubscriber(QThread):
         # initialize zmq
         self.__context = zmq.Context()
         self.__socket = self.__context.socket(zmq.SUB)
+        self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 5000)
         self.__socket.connect(connection)
         self.__socket.subscribe(topic)
 

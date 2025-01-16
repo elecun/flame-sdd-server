@@ -29,13 +29,14 @@
 
 using namespace std;
 
+
 class controlImpl {
     public:
-        controlImpl(int id, string sn):_lens_id(id), _lens_device_sn(sn){ };
+        controlImpl(string parent_name, int device_id, json param);
         virtual ~controlImpl() = default;
 
         /* functions */
-        bool open(int device_idx);    //open device
+        bool open();    //open device
         void close();   //close device
 
         /* function supports (working in thread)*/
@@ -48,14 +49,13 @@ class controlImpl {
         /* push the api in queue */
         bool caller(const json& api);
 
-        int get_id() { return _lens_id; }
+        int get_device_id() { return _lens_device_id; }
+        int get_user_id() { return _lens_user_id; }
         string get_sn() { return _lens_device_sn; }
 
     private:
         void run_process(); /* run process in thread */
         void execute(const json& api);
-
-
        
     private:
 
@@ -64,10 +64,12 @@ class controlImpl {
         bool _is_running = true;
         queue<function<void()>> _f_queue;
         condition_variable  _cv;
+        string _parent_name;
 
         /* scanned lens info. */
-        string  _lens_device_sn; // id, lens serial number
-        int     _lens_id = 0;
+        string  _lens_device_sn;    // lens serial number
+        int     _lens_device_id = -1;// lens device id
+        int     _lens_user_id = -1; //lens user id
 
         map<string, int> function_code {
             {"focus_initialize", 1},
@@ -107,7 +109,8 @@ class computar_vlmpz_controller : public flame::component::object {
 
         /* scanned lens info. */
         vector<string> _lens_device_sn; // id, lens serial number
-        map<int, unique_ptr<controlImpl>> _device_map;
+        map<int, unique_ptr<controlImpl>> _device_map; // device id, controller instance
+        map<int, int> _device_id_mapper; // device id : user id
 
     private:
         /* sub-tasks */

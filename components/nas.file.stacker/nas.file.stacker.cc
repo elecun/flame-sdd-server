@@ -92,6 +92,8 @@ void nas_file_stacker::_image_stacker(json parameters){
                         /* decode image & save */
                         cv::Mat decoded = cv::imdecode(image, cv::IMREAD_UNCHANGED);                        
                         cv::imwrite(fmt::format("{}/{}",save_dir, filename), decoded);
+
+                        logger::info("[{}] Saved image : {}", get_name(), filename);
                     }
     
                 }

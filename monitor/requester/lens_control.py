@@ -46,8 +46,9 @@ class LensControlRequester(QObject):
         # create context for zmq requester
         self.__context = zmq.Context()
         self.__socket = self.__context.socket(zmq.REQ)
+        self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 1000)
         self.__socket.connect(connection)
-        self.__lens_control_loop = asyncio.get_event_loop()
+        #self.__lens_control_loop = asyncio.get_event_loop()
 
 
         # create socket monitoring thread
@@ -87,11 +88,11 @@ class LensControlRequester(QObject):
             self.__console.warning(f"Error Exception")
 
 
-    def focus_move(self, id:int, value:int):
+    def focus_move(self, user_id:int, value:int):
         """ set focus value """
         try:
             message = {
-                "id":id,
+                "id":user_id,
                 "function":"move_focus",
                 "value":value
             }

@@ -163,7 +163,7 @@ class AppWindow(QMainWindow):
     def on_btn_focus_set(self, id:int):
         """ focus move control """
         focus_value = self.findChild(QLineEdit, name=f"edit_focus_value_{id}").text()
-        self.__lens_control_requester.focus_move(id=id, value=int(focus_value))
+        self.__lens_control_requester.focus_move(user_id=id, value=int(focus_value))
     
     def on_btn_focus_read_all(self):
         """ call all focus value read (async) """

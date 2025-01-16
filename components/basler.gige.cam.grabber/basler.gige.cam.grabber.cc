@@ -7,6 +7,7 @@
 
 using namespace flame;
 using namespace std;
+using namespace cv;
 
 /* create component instance */
 static basler_gige_cam_grabber* _instance = nullptr;
@@ -98,8 +99,7 @@ bool basler_gige_cam_grabber::on_init(){
 /* status publisher subtask impl. */
 void basler_gige_cam_grabber::_subtask_status_publish(json parameters){
     while(!_thread_stop_signal.load()){
-        _update_status();
-
+        _publish_status();
         this_thread::sleep_for(chrono::seconds(1));
     }
 }
@@ -147,20 +147,6 @@ void basler_gige_cam_grabber::on_message(){
     
 }
 
-/* update status */
-void basler_gige_cam_grabber::_update_status(){
-
-    /* update the camera working status */
-    for(auto& camera:_device_map){
-        if(camera.second->IsGrabbing())
-            _camera_status[camera.first]["status"] = "working";
-        else {
-            _camera_status[camera.first]["status"] = "not working";
-        }
-    }
-
-}
-
 void basler_gige_cam_grabber::_publish_status(){
 
     /* update the camera working status */
@@ -186,13 +172,13 @@ void basler_gige_cam_grabber::_publish_status(){
     /* transfer(publish) status data */
     try{
         string status_message = combined_status.dump();
-        string topic = fmt::format("{}/{}", get_name(), "status");
+        string topic = fmt::format("{}", get_name(), "status");
         pipe_data topic_msg(topic.data(), topic.size());
         pipe_data end_msg(status_message.data(), status_message.size());
         get_port("status")->send(topic_msg, zmq::send_flags::sndmore);
         get_port("status")->send(end_msg, zmq::send_flags::dontwait);
 
-        //logger::info("published the camera status ({})", topic);
+        logger::info("published the camera status ({})", topic);
     }
     catch(std::runtime_error& e){
         logger::error("{}", e.what());
@@ -224,7 +210,7 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
 
         camera->Open();
         string acquisition_mode = parameters.value("acquisition_mode", "Continuous"); // Continuous, SingleFrame, MultiFrame
-        double acquisition_fps = parameters.value("acquisition_fps", 30.0);
+        // double acquisition_fps = parameters.value("acquisition_fps", 30.0);
         string trigger_selector = parameters.value("trigger_selector", "FrameStart");
         string trigger_mode = parameters.value("trigger_mode", "On");
         string trigger_source = parameters.value("trigger_source", "Line2");
@@ -232,15 +218,16 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
         int heartbeat_timeout = parameters.value("heartbeat_timeout", 5000);
 
         /* camera setting parameters notification */
-        logger::info("[{}]* Cmaera Acquisition Mode : {} (Continuous|SingleFrame)", get_name(), acquisition_mode);
-        logger::info("[{}]* Camera Acqusition Framerate : {}", get_name(), acquisition_fps);
+        logger::info("[{}]* Camera Acquisition Mode : {} (Continuous|SingleFrame)", get_name(), acquisition_mode);
+        //logger::info("[{}]* Camera Acqusition Framerate : {}", get_name(), acquisition_fps);
         logger::info("[{}]* Camera Trigger Mode : {}", get_name(), trigger_mode);
         logger::info("[{}]* Camera Trigger Selector : {}", get_name(), trigger_selector);
         logger::info("[{}]* Camera Trigger Activation : {}", get_name(), trigger_activation);
         
         /* set camera parameters */
         camera->AcquisitionMode.SetValue(acquisition_mode.c_str());
-        camera->AcquisitionFrameRate.SetValue(acquisition_fps);
+        //camera->AcquisitionFrameRate.SetValue(acquisition_fps);
+        //camera->AcquisitionFrameRateEnable.setValue(false);
         camera->TriggerSelector.SetValue(trigger_selector.c_str());
         camera->TriggerMode.SetValue(trigger_mode.c_str());
         camera->TriggerSource.SetValue(trigger_source.c_str());
@@ -266,60 +253,36 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                         cv::Mat image(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC1, (void*)pImageBuffer);
 
                         //jpg encoding
-                        std::vector<unsigned char> buffer;
-                        cv::imencode(".jpg", image, buffer);
+                        std::vector<unsigned char> serialized_image;
+                        cv::imencode(".jpg", image, serialized_image);
 
                         // save into image data container
                         // if(_stream_method==0) // batch mode
                         //     _image_container[camera_id].emplace_back(buffer);
 
-                        /* transport parameters */
+                        /* common transport parameters */
                         string id_str = fmt::format("{}",camera_id);
                         pipe_data msg_id(id_str.data(), id_str.size());
-                        pipe_data msg_image(buffer.data(), buffer.size());
-
-                        /* publish for monitoring */
-                        if(_monitoring.load()){
-                            string topic_str = fmt::format("camera_{}", camera_id);
-                            pipe_data msg_topic(topic_str.data(), topic_str.size());
-                            get_port("image_stream_monitor")->send(msg_topic, zmq::send_flags::sndmore); //first
-                            get_port("image_stream_monitor")->send(msg_id, zmq::send_flags::sndmore);
-                            get_port("image_stream_monitor")->send(msg_image, zmq::send_flags::dontwait);
-                        }
+                        pipe_data msg_image(serialized_image.data(), serialized_image.size());
 
                         /* push image data */
                         get_port("image_stream")->send(msg_id, zmq::send_flags::sndmore);
                         get_port("image_stream")->send(msg_image, zmq::send_flags::dontwait);
 
+                        /* publish for monitoring (size reduction for performance)*/
+                        if(_monitoring.load()){
+                            string topic_str = fmt::format("camera_{}", camera_id);
+                            pipe_data msg_topic(topic_str.data(), topic_str.size());
+                            cv::Mat monitor_image;
+                            cv::resize(image, monitor_image, cv::Size(image.cols/6, image.rows/6));
+                            std::vector<unsigned char> serialized_monitor_image;
+                            cv::imencode(".jpg", monitor_image, serialized_monitor_image);
+                            pipe_data msg_monitor_image(serialized_monitor_image.data(), serialized_monitor_image.size());
 
-                        //save temporary
-                        // std::string filename = "image_" + std::to_string(camera_id) + "_" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + ".jpg";
-                        // cv::imwrite(fmt::format("/home/dk/sddnas/{}",filename), image);
-
-                        // store images for batch stream method
-                        // if(_stream_method==0){
-                        //     _image_container[camera_id].push_back(buffer);
-                        // }
-                        // // realtime stream method with multipart
-                        // else {
-
-                        //     //1. image information (camera id, timestamp)
-                        //     auto now = std::chrono::system_clock::now();
-                        //     long long timestamp = chrono::duration_cast<chrono::milliseconds>(now.time_since_epoch()).count();
-                        //     json image_info = {
-                        //         {"camera_id", camera_id},
-                        //         {"timestamp", timestamp}
-                        //     };
-                        //     string image_info_dump = image_info.dump();
-                        //     pipe_data image_info_msg(image_info_dump.size());
-                        //     memcpy(image_info_msg.data(), image_info_dump.c_str(), image_info_dump.size());
-                        //     get_port("image_stream")->send(image_info_msg, zmq::send_flags::sndmore);
-
-                        //     //2. real image bytearray
-                        //     pipe_data image_data(buffer.data(), buffer.size());
-                        // get_port("image_stream")->send(image_data, zmq::send_flags::none);
-                        // }
-
+                            get_port("image_stream_monitor")->send(msg_topic, zmq::send_flags::sndmore); //first
+                            get_port("image_stream_monitor")->send(msg_id, zmq::send_flags::sndmore);
+                            get_port("image_stream_monitor")->send(msg_monitor_image, zmq::send_flags::dontwait);
+                        }
                     }
                     else{
                         logger::warn("[{}] Error-code({}) : {}", get_name(), ptrGrabResult->GetErrorCode(), ptrGrabResult->GetErrorDescription().c_str());
@@ -334,6 +297,9 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
             }
             catch(Pylon::RuntimeException& e){
                 logger::error("[{}] Camera {} Runtime Exception ({})", get_name(), camera_id, e.what());
+            }
+            catch(const zmq::error_t& e){
+                logger::error("[{}] {}", get_name(), e.what());
             }
         }
 
