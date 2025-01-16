@@ -221,14 +221,14 @@ class AppWindow(QMainWindow):
     def on_update_temperature(self, values:dict):
         """ update temperature value in GUI """
         try:        
-            self.label_temperature_value_1.setText(str(values["1"]))
-            self.label_temperature_value_2.setText(str(values["2"]))
-            self.label_temperature_value_3.setText(str(values["3"]))
-            self.label_temperature_value_4.setText(str(values["4"]))
-            self.label_temperature_value_5.setText(str(values["5"]))
-            self.label_temperature_value_6.setText(str(values["6"]))
-            self.label_temperature_value_7.setText(str(values["7"]))
-            self.label_temperature_value_8.setText(str(values["8"]))
+            self.label_temperature_value_1.setText(str(int(values["1"]*0.1)))
+            self.label_temperature_value_2.setText(str(int(values["2"]*0.1)))
+            self.label_temperature_value_3.setText(str(int(values["3"]*0.1)))
+            self.label_temperature_value_4.setText(str(int(values["4"]*0.1)))
+            self.label_temperature_value_5.setText(str(int(values["5"]*0.1)))
+            self.label_temperature_value_6.setText(str(int(values["6"]*0.1)))
+            self.label_temperature_value_7.setText(str(int(values["7"]*0.1)))
+            self.label_temperature_value_8.setText(str(int(values["8"]*0.1)))
         except Exception as e:
             pass
 
