@@ -221,14 +221,14 @@ class AppWindow(QMainWindow):
     def on_update_temperature(self, values:dict):
         """ update temperature value in GUI """
         try:        
-            self.label_temperature_value_1.setText(str(int(values["1"]*0.1)))
-            self.label_temperature_value_2.setText(str(int(values["2"]*0.1)))
-            self.label_temperature_value_3.setText(str(int(values["3"]*0.1)))
-            self.label_temperature_value_4.setText(str(int(values["4"]*0.1)))
-            self.label_temperature_value_5.setText(str(int(values["5"]*0.1)))
-            self.label_temperature_value_6.setText(str(int(values["6"]*0.1)))
-            self.label_temperature_value_7.setText(str(int(values["7"]*0.1)))
-            self.label_temperature_value_8.setText(str(int(values["8"]*0.1)))
+            self.label_temperature_value_1.setText(str(int(values["1"])*0.1))
+            self.label_temperature_value_2.setText(str(int(values["2"])*0.1))
+            self.label_temperature_value_3.setText(str(int(values["3"])*0.1))
+            self.label_temperature_value_4.setText(str(int(values["4"])*0.1))
+            self.label_temperature_value_5.setText(str(int(values["5"])*0.1))
+            self.label_temperature_value_6.setText(str(int(values["6"])*0.1))
+            self.label_temperature_value_7.setText(str(int(values["7"])*0.1))
+            self.label_temperature_value_8.setText(str(int(values["8"])*0.1))
         except Exception as e:
             pass
 
@@ -289,6 +289,7 @@ class AppWindow(QMainWindow):
     def on_btn_light_control_off(self):
         """ event callback : light on """
         if "dmx_ip" in self.__config and "dmx_port" in self.__config:
+            self.label_light_control_value.setText("0")
             self.__light_control_requester.set_control(self.__config["dmx_ip"], self.__config["dmx_port"], self.__config["light_ids"], 0)
         else:
             QMessageBox.critical(self, "Error", f"DMX IP and Port is not defined")
