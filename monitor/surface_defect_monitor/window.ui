@@ -189,7 +189,7 @@ color: rgb(0, 255, 0);</string>
         </rect>
        </property>
        <property name="text">
-        <string>Addr #1 :</string>
+        <string>TIC #1 :</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -205,7 +205,7 @@ color: rgb(0, 255, 0);</string>
         </rect>
        </property>
        <property name="text">
-        <string>Addr #2 :</string>
+        <string>TIC #2 :</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -221,7 +221,7 @@ color: rgb(0, 255, 0);</string>
         </rect>
        </property>
        <property name="text">
-        <string>Addr #3 :</string>
+        <string>TIC #3 :</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -237,7 +237,7 @@ color: rgb(0, 255, 0);</string>
         </rect>
        </property>
        <property name="text">
-        <string>Addr #4 :</string>
+        <string>TIC #4 :</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -253,7 +253,7 @@ color: rgb(0, 255, 0);</string>
         </rect>
        </property>
        <property name="text">
-        <string>Addr #5 :</string>
+        <string>TIC #5 :</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -269,7 +269,7 @@ color: rgb(0, 255, 0);</string>
         </rect>
        </property>
        <property name="text">
-        <string>Addr #6 :</string>
+        <string>TIC #6 :</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -285,7 +285,7 @@ color: rgb(0, 255, 0);</string>
         </rect>
        </property>
        <property name="text">
-        <string>Addr #7 :</string>
+        <string>TIC #7 :</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -301,7 +301,7 @@ color: rgb(0, 255, 0);</string>
         </rect>
        </property>
        <property name="text">
-        <string>Addr #8 :</string>
+        <string>TIC #8 :</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1273,7 +1273,7 @@ background-color: rgb(212, 212, 212);</string>
         </rect>
        </property>
        <property name="text">
-        <string>Continuous sample mode</string>
+        <string>Continuous Acquisition Mode</string>
        </property>
        <property name="checked">
         <bool>true</bool>
