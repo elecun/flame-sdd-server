@@ -50,7 +50,8 @@ class LightControlRequester(QObject):
         """ turn on the light """
         dmx_data = bytearray(512)
         for id in device_ids:
-            dmx_data[id] = brightness.to_bytes(1, byteorder="big")
+            dmx_data[id] = brightness# .to_bytes(1, byteorder="big")
+            print(f"Set DMX ID #{id} : {brightness}")
         packet = self.__create_artnet_dmx_packet(sequence=0, physical=0, universe=0, data=dmx_data)
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.sendto(packet, (ip, port))
