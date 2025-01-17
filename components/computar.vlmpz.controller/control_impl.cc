@@ -118,13 +118,13 @@ void controlImpl::execute(const json& api){
 			switch(fcode){
 				case 1: { //focus initialize
 					FocusInit();
-					logger::info("Lens #{} Focus is initialized",_lens_id);
+					logger::info("Lens #{} Focus is initialized",_lens_device_id);
 				}
 				break;
 
 				case 2: { //iris initialize
 					IrisInit();
-					logger::info("Lens #{} Iris is initialized",_lens_id);
+					logger::info("Lens #{} Iris is initialized",_lens_device_id);
 				}
 				break;
 
@@ -132,7 +132,7 @@ void controlImpl::execute(const json& api){
 					int value = api["value"].get<int>();
 					value = SATURATE(value, 0, 9091);
 					FocusMove((uint16_t)value);
-					logger::info("Lens #{} move focus : {}", _lens_id, value);
+					logger::info("Lens #{} move focus : {}", _lens_device_id, value);
 				}
 				break;
 

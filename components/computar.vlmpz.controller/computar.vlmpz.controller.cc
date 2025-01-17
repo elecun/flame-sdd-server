@@ -83,7 +83,7 @@ void computar_vlmpz_controller::_subtask_status_publish(json parameters){
 void computar_vlmpz_controller::_usb_device_scan(){
 
     // 0. clear device map
-    _device_map.clear();
+    _lens_control_map.clear();
 
     // 1. get number of connected devices
     unsigned long _n_devices = 0;
@@ -91,42 +91,29 @@ void computar_vlmpz_controller::_usb_device_scan(){
     logger::info("[{}] Found {} Lens connected", get_name(), _n_devices);
 
     // 2. get device information
-    char serial_number[260] = {0, }; // device name is 260bytes according to the instructions of the USB IC
     json defined_devices = get_profile()->parameters()["devices"];
     if(_n_devices>0){
-        for(uint16_t device_id=0; device_id<_n_devices; device_id++){
+        for(uint16_t device_id=0; device_id<_n_devices; device_id++){ //start index from 0
+            char serial_number[260] = {0, }; // device name is 260bytes according to the instructions of the USB IC
             int retval = UsbGetSnDevice(device_id, serial_number);
-            if(!retval){ //success
-                // UsbOpen(idx);
-                // char model_name[25] = {0,};
-                // ModelName(model_name);
-                // // UserIDRead(); // not used, read user registered device name
-                // UsbClose();
-
-                _device_map.insert({device_id, make_unique<controlImpl>(get_name(), device_id, defined_devices)});
-                _device_id_mapper.insert({device_id, -1}); //default = -1
-
-                // string sn(serial_number);
-                // bool found = false;
-                // for(auto& device:defined_devices){
-                //     if(!device["sn"].get<string>().compare(sn)){ // found
-                //         found = true;
-                //         int id = device["id"].get<int>();
-                //         _device_map.insert({idx, make_unique<controlImpl>(id, sn)});
-                //         logger::info("[{}] + Register Lens #{} : S/N({}), Model({}))", get_name(), id, serial_number, model_name);
-                //     }   
-                // }
-
-                // if(!found){
-                //     logger::warn("[{}] - Undefined Lens found : S/N({}), Model({}))", get_name(), serial_number, model_name);
-                // }
+            if(!retval){
+                // found camera id with device id
+                if(defined_devices.contains("sn")){
+                    for(auto& device:defined_devices){ // find in parameters
+                        string sn = string(serial_number);
+                        if(!device["sn"].get<string>().compare(sn)){
+                            _lens_control_map.insert({device["camera_id"].get<int>(), make_unique<controlImpl>(get_name(), (int)device_id)});
+                            _device_id_mapper.insert({device["camera_id"].get<int>(), device_id});
+                            logger::info("[{}] Registered Lens Controller, User ID({})-Device ID({})",get_name(), device["camera_id"].get<int>(), (int)device_id);
+                            break;
+                        }
+                    }
+                }
             }
         }
-
-        // id mapping
-        for(const auto& device:_device_map){
-            _device_id_mapper[device.first] = device.second->get_user_id();
-        }
+    }
+    else{
+        logger::error("[{}] No device found");
     }
 }
 
@@ -150,26 +137,21 @@ void computar_vlmpz_controller::_lens_control_responser(json parameters){
 
                         // read lens focus value
                         for(map<int,int>::iterator it=_device_id_mapper.begin(); it!=_device_id_mapper.end(); ++it){
-                            string str_user_id = fmt::format("{}",it->second);
-                            reply_data[str_user_id] = _device_map[it->first]->read_focus_position();
+                            string str_camera_id = fmt::format("{}",it->first);
+                            reply_data[str_camera_id] = _lens_control_map[it->second]->read_focus_position();
                         }
                     }
+
                     /* 2. for move focus function processing */
                     else if(!json_data["function"].get<string>().compare("move_focus")){
-                        int user_id = json_data["id"].get<int>();
+                        int camera_id = json_data["id"].get<int>();
                         int value = json_data["value"].get<int>();
+                        logger::info("[{}] Move focus ID:{} (Device ID : {})",get_name(), camera_id, _device_id_mapper[camera_id]);
+                        _lens_control_map[_device_id_mapper[camera_id]]->focus_move(value);
 
-                        for(map<int,int>::iterator it=_device_id_mapper.begin(); it!=_device_id_mapper.end(); ++it){
-                            if(it->second==user_id){
-                                logger::info("[{}] Lens #{}(device:{}) moves focus to {}", get_name(), user_id, it->first, value);
-                                _device_map[it->first]->focus_move(value);
-                                reply_data["response"] = "ok";
-                                break;
-                            }
-                            else{
-                                logger::warn("[{}] Not found Lens ID #{}", get_name(), user_id);
-                            }
-                        }
+                        // response
+                        string str_camera_id = fmt::format("{}", camera_id);
+                        reply_data["message"] = fmt::format("{} works done.",str_camera_id);
                     }
                 }
 

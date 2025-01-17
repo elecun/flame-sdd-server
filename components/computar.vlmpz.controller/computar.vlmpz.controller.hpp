@@ -108,9 +108,9 @@ class computar_vlmpz_controller : public flame::component::object {
         pthread_t _lens_control_responser_handle;
 
         /* scanned lens info. */
-        vector<string> _lens_device_sn; // id, lens serial number
-        map<int, unique_ptr<controlImpl>> _device_map; // device id, controller instance
-        map<int, int> _device_id_mapper; // device id : user id
+        vector<string> _lens_device_sn; // lens serial number
+        map<int, unique_ptr<controlImpl>> _lens_control_map; // device id, controller instance
+        map<int, int> _device_id_mapper; // user id : device id
 
     private:
         /* sub-tasks */
