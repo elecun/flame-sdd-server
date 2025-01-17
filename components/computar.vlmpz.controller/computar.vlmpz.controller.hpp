@@ -32,7 +32,7 @@ using namespace std;
 
 class controlImpl {
     public:
-        controlImpl(string parent_name, int device_id, json param);
+        controlImpl(string parent_name, int device_id, int camera_id);
         virtual ~controlImpl() = default;
 
         /* functions */
@@ -50,7 +50,7 @@ class controlImpl {
         bool caller(const json& api);
 
         int get_device_id() { return _lens_device_id; }
-        int get_user_id() { return _lens_user_id; }
+        int get_camera_id() { return _lens_camera_id; }
         string get_sn() { return _lens_device_sn; }
 
     private:
@@ -69,7 +69,7 @@ class controlImpl {
         /* scanned lens info. */
         string  _lens_device_sn;    // lens serial number
         int     _lens_device_id = -1;// lens device id
-        int     _lens_user_id = -1; //lens user id
+        int     _lens_camera_id = -1; //lens user id
 
         map<string, int> function_code {
             {"focus_initialize", 1},

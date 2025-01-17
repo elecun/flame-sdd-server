@@ -3,7 +3,7 @@
     "verbose" : 1,
 
     "parameters":{
-        "device" : "/dev/ttyS0",
+        "device" : "/dev/ttyS5",
         "baudrate" : 9600,
         "parity" : "N",
         "data_bit" : 8,

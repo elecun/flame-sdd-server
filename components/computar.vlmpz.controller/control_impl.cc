@@ -2,23 +2,23 @@
 
 #define SATURATE(x, min, max) ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
 
-controlImpl::controlImpl(string parent_name, int device_id, json param)
-:_parent_name(parent_name), _lens_device_id(device_id){
+controlImpl::controlImpl(string parent_name, int device_id, int camera_id)
+:_parent_name(parent_name), _lens_device_id(device_id), _lens_camera_id(camera_id){
 
-	char serial_number[260] = {0, };
-	int retval = UsbGetSnDevice(device_id, serial_number);
+	// char serial_number[260] = {0, };
+	// int retval = UsbGetSnDevice(device_id, serial_number);
 
-	if(!retval){
-		_lens_device_sn = serial_number;
+	// if(!retval){
+	// 	_lens_device_sn = serial_number;
 
-		// find user id
-		for(auto& device:param){
-			if(!device["sn"].get<string>().compare(_lens_device_sn)){ // found
-				_lens_user_id = device["id"].get<int>();
-				logger::info("[{}] + Registered. Lens #{}({}) : S/N({})", _parent_name, device_id, _lens_user_id, _lens_device_sn);
-			}
-		}
-	}
+	// 	// find user id
+	// 	for(auto& device:param){
+	// 		if(!device["sn"].get<string>().compare(_lens_device_sn)){ // found
+	// 			_lens_camera_id = device["id"].get<int>();
+	// 			logger::info("[{}] + Registered. Lens #{}({}) : S/N({})", _parent_name, device_id, _lens_user_id, _lens_device_sn);
+	// 		}
+	// 	}
+	// }
 }
 
 bool controlImpl::open(){

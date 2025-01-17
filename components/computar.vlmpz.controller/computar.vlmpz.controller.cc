@@ -16,14 +16,14 @@ bool computar_vlmpz_controller::on_init(){
         /* usb device scan and insert into container */
         _usb_device_scan();
 
-        for (map<int, unique_ptr<controlImpl>>::iterator it=_device_map.begin(); it != _device_map.end(); ++it) {
+        for (map<int, unique_ptr<controlImpl>>::iterator it=_lens_control_map.begin(); it != _lens_control_map.end(); ++it) {
             if(it->second->open()){
-                logger::info("[{}] Lens #{} successfully opened", get_name(), it->first);
-                logger::info("[{}] Lens #{} Focus Initializing...", get_name(), it->first);
+                logger::info("[{}] Lens #{} successfully opened", get_name(), it->second->get_camera_id());
+                logger::info("[{}] Lens #{} Focus Initializing...", get_name(), it->second->get_camera_id());
                 it->second->focus_initialize();
             }
             else{
-                logger::warn("[{}] Lens #{} cannot be opened", get_name(), it->first);
+                logger::warn("[{}] Lens #{} cannot be opened", get_name(), it->second->get_camera_id());
             }
         }
         
@@ -86,7 +86,7 @@ void computar_vlmpz_controller::_usb_device_scan(){
     _lens_control_map.clear();
 
     // 1. get number of connected devices
-    unsigned long _n_devices = 0;
+    unsigned int _n_devices = 0;
     UsbGetNumDevices(&_n_devices);
     logger::info("[{}] Found {} Lens connected", get_name(), _n_devices);
 
@@ -102,9 +102,9 @@ void computar_vlmpz_controller::_usb_device_scan(){
                     for(auto& device:defined_devices){ // find in parameters
                         string sn = string(serial_number);
                         if(!device["sn"].get<string>().compare(sn)){
-                            _lens_control_map.insert({device["camera_id"].get<int>(), make_unique<controlImpl>(get_name(), (int)device_id)});
+                            _lens_control_map.insert({device["camera_id"].get<int>(), make_unique<controlImpl>(get_name(), (int)device_id, device["camera_id"].get<int>())});
                             _device_id_mapper.insert({device["camera_id"].get<int>(), device_id});
-                            logger::info("[{}] Registered Lens Controller, User ID({})-Device ID({})",get_name(), device["camera_id"].get<int>(), (int)device_id);
+                            logger::info("[{}] Registered Lens Controller, User ID({})-Device ID({})-SN({})",get_name(), device["camera_id"].get<int>(), (int)device_id, sn);
                             break;
                         }
                     }
