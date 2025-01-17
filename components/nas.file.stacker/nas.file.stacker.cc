@@ -42,7 +42,7 @@ void nas_file_stacker::on_loop(){
 
 void nas_file_stacker::on_close(){
 
-    _thread_stop_signal.store(true);
+    _thread_stop_signal = true;
     pthread_cancel(_stacker_handle);
     pthread_join(_stacker_handle, nullptr);
 }
@@ -53,50 +53,47 @@ void nas_file_stacker::on_message(){
 
 void nas_file_stacker::_image_stacker(json parameters){
     try{
-        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
-        pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, nullptr);
+        //pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
+        //pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, nullptr);
 
-        get_port("image_stream")->set(zmq::sockopt::rcvtimeo, 1000); // 1sec timeout
+        //get_port("image_stream")->set(zmq::sockopt::rcvtimeo, 1000); // 1sec timeout
         string save_dir = parameters["mount_path"].get<string>();
-        while(!_thread_stop_signal.load()){
+        while(!_thread_stop_signal){
 
             /* receive data pack from pipeline */
             pipe_data msg_id;
             pipe_data msg_image;
-            auto result = get_port("image_stream")->recv(msg_id, zmq::recv_flags::none);
-            if(result){
-                bool more = get_port("image_stream")->get(zmq::sockopt::rcvmore);
-                if(more){
-                    string camera_id = msg_id.to_string();
-                    auto ret = get_port("image_stream")->recv(msg_image, zmq::recv_flags::none);
-                    vector<unsigned char> image(msg_image.size());
-                    std::memcpy(image.data(), msg_image.data(), msg_image.size());
 
-                    /* save to file */
-                    if(!get_port("image_stream")->get(zmq::sockopt::rcvmore)){
-                        
-                        /* get current time */
-                        auto now = std::chrono::system_clock::now();
-                        auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
-                        time_t now_time = std::chrono::system_clock::to_time_t(now);
-                        tm local_time = *std::localtime(&now_time);
+            zmq::multipart_t msg_multipart;
+            bool ret = msg_multipart.recv(*get_port("image_stream"));
+            logger::info("[{}] recv from image_stream ({})", get_name(), ret);
 
-                        /* time formatted filename */
-                        std::ostringstream oss;
-                        oss << std::put_time(&local_time, "%Y%m%d_%H%M%S");
-                        oss << "_" << std::setfill('0') << std::setw(3) << milliseconds.count();
+            if(ret){
+                string camera_id = msg_multipart.popstr();
+                zmq::message_t msg_image = msg_multipart.pop();
+                vector<unsigned char> image(static_cast<unsigned char*>(msg_image.data()), static_cast<unsigned char*>(msg_image.data())+msg_image.size());
 
-                        /* save into directory */
-                        string filename = fmt::format("{}_{}.jpg", camera_id, oss.str());
+                logger::info("[{}] received image : {}", get_name(), camera_id);
 
-                        /* decode image & save */
-                        cv::Mat decoded = cv::imdecode(image, cv::IMREAD_UNCHANGED);                        
-                        cv::imwrite(fmt::format("{}/{}",save_dir, filename), decoded);
+                /* get current time */
+                auto now = std::chrono::system_clock::now();
+                auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+                time_t now_time = std::chrono::system_clock::to_time_t(now);
+                tm local_time = *std::localtime(&now_time);
 
-                        logger::info("[{}] Saved image : {}", get_name(), filename);
-                    }
-    
-                }
+                /* time formatted filename */
+                std::ostringstream oss;
+                oss << std::put_time(&local_time, "%Y%m%d_%H%M%S");
+                oss << "_" << std::setfill('0') << std::setw(3) << milliseconds.count();
+
+                /* save into directory */
+                string filename = fmt::format("{}_{}.jpg", camera_id, oss.str());
+
+                /* decode image & save */
+                cv::Mat decoded = cv::imdecode(image, cv::IMREAD_UNCHANGED);                        
+                //cv::imwrite(fmt::format("{}/{}",save_dir, filename), decoded);
+
+                logger::info("[{}] Saved image : {}", get_name(), filename);
             }
         }
     }

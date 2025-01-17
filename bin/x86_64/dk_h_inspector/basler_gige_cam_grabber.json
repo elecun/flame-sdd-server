@@ -41,6 +41,76 @@
             "socket_type" : "pub",
             "queue_size" : 5000
         },
+        "image_stream_monitor_1":{
+            "transport":"tcp",
+            "host":"127.0.0.1",
+            "port":5201,
+            "socket_type" : "pub",
+            "queue_size" : 5000
+        },
+        "image_stream_monitor_2":{
+            "transport":"tcp",
+            "host":"127.0.0.1",
+            "port":5202,
+            "socket_type" : "pub",
+            "queue_size" : 5000
+        },
+        "image_stream_monitor_3":{
+            "transport":"tcp",
+            "host":"127.0.0.1",
+            "port":5203,
+            "socket_type" : "pub",
+            "queue_size" : 5000
+        },
+        "image_stream_monitor_4":{
+            "transport":"tcp",
+            "host":"127.0.0.1",
+            "port":5204,
+            "socket_type" : "pub",
+            "queue_size" : 5000
+        },
+        "image_stream_monitor_5":{
+            "transport":"tcp",
+            "host":"127.0.0.1",
+            "port":5205,
+            "socket_type" : "pub",
+            "queue_size" : 5000
+        },
+        "image_stream_monitor_6":{
+            "transport":"tcp",
+            "host":"127.0.0.1",
+            "port":5206,
+            "socket_type" : "pub",
+            "queue_size" : 5000
+        },
+        "image_stream_monitor_7":{
+            "transport":"tcp",
+            "host":"127.0.0.1",
+            "port":5207,
+            "socket_type" : "pub",
+            "queue_size" : 5000
+        },
+        "image_stream_monitor_8":{
+            "transport":"tcp",
+            "host":"127.0.0.1",
+            "port":5208,
+            "socket_type" : "pub",
+            "queue_size" : 5000
+        },
+        "image_stream_monitor_9":{
+            "transport":"tcp",
+            "host":"127.0.0.1",
+            "port":5209,
+            "socket_type" : "pub",
+            "queue_size" : 5000
+        },
+        "image_stream_monitor_10":{
+            "transport":"tcp",
+            "host":"127.0.0.1",
+            "port":5210,
+            "socket_type" : "pub",
+            "queue_size" : 5000
+        },
         "image_stream" : {
             "transport" : "inproc",
             "socket_type" : "push",

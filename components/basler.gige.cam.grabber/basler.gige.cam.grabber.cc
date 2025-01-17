@@ -29,7 +29,7 @@ bool basler_gige_cam_grabber::on_init(){
 
         /* publish image for monitoring in realtime */
         if(param.contains("realtime_monitoring")){
-            _monitoring.store(param["realtime_monitoring"].get<bool>());
+            _monitoring = param["realtime_monitoring"].get<bool>();
         }
 
         /* if stream method is 'batch' mode, buffer reservation is required for memory optimization */
@@ -53,6 +53,7 @@ bool basler_gige_cam_grabber::on_init(){
         for(int idx=0;idx<(int)devices.size();idx++){
             _device_map.insert(make_pair(stoi(devices[idx].GetUserDefinedName().c_str()), 
                             new CBaslerUniversalInstantCamera(tlFactory.CreateDevice(devices[idx]))));
+            // _monitoring[stoi(devices[idx].GetUserDefinedName().c_str())].store(false);
             logger::info("[{}] Found User ID {}, (SN:{}, Address : {})", get_name(), devices[idx].GetUserDefinedName().c_str(), devices[idx].GetSerialNumber().c_str(), devices[idx].GetIpAddress().c_str());
         }
 
@@ -62,6 +63,7 @@ bool basler_gige_cam_grabber::on_init(){
             _camera_grab_worker[camera.first] = worker.native_handle();
             _camera_grab_counter[camera.first] = 0;
             worker.detach();
+            logger::info("[{}] worker #{} detached", get_name(), camera.first);
         }
 
         /* camera status ready with default profile */
@@ -79,9 +81,9 @@ bool basler_gige_cam_grabber::on_init(){
         }
 
         /* component status monitoring subtask */
-        thread status_monitor_worker = thread(&basler_gige_cam_grabber::_subtask_status_publish, this, get_profile()->parameters());
-        _subtask_status_publisher = status_monitor_worker.native_handle();
-        status_monitor_worker.detach();
+        // thread status_monitor_worker = thread(&basler_gige_cam_grabber::_subtask_status_publish, this, get_profile()->parameters());
+        // _subtask_status_publisher = status_monitor_worker.native_handle();
+        // status_monitor_worker.detach();
 
     }
     catch(const GenericException& e){
@@ -98,7 +100,7 @@ bool basler_gige_cam_grabber::on_init(){
 
 /* status publisher subtask impl. */
 void basler_gige_cam_grabber::_subtask_status_publish(json parameters){
-    while(!_thread_stop_signal.load()){
+    while(!_thread_stop_signal){
         _publish_status();
         this_thread::sleep_for(chrono::seconds(1));
     }
@@ -112,7 +114,7 @@ void basler_gige_cam_grabber::on_loop(){
 void basler_gige_cam_grabber::on_close(){
 
     /* thread stop */
-    _thread_stop_signal.store(true);
+    _thread_stop_signal = true;
 
     /* show container size */
     for (map<int, vector<vector<unsigned char>>>::iterator it = _image_container.begin(); it != _image_container.end(); ++it){
@@ -186,7 +188,7 @@ void basler_gige_cam_grabber::_publish_status(){
 }
 
 void basler_gige_cam_grabber::_status_monitor_task(json parameters){
-    while(!_thread_stop_signal.load()){
+    while(!_thread_stop_signal){
         this_thread::sleep_for(chrono::milliseconds(1000));
     }
 }
@@ -205,12 +207,12 @@ void basler_gige_cam_grabber::_status_publish(){
 
 void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversalInstantCamera* camera, json parameters){
     try{
-        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
-        pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, nullptr);
+        //pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
+        //pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, nullptr);
 
         camera->Open();
         string acquisition_mode = parameters.value("acquisition_mode", "Continuous"); // Continuous, SingleFrame, MultiFrame
-        // double acquisition_fps = parameters.value("acquisition_fps", 30.0);
+        double acquisition_fps = parameters.value("acquisition_fps", 30.0);
         string trigger_selector = parameters.value("trigger_selector", "FrameStart");
         string trigger_mode = parameters.value("trigger_mode", "On");
         string trigger_source = parameters.value("trigger_source", "Line2");
@@ -226,23 +228,28 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
         
         /* set camera parameters */
         camera->AcquisitionMode.SetValue(acquisition_mode.c_str());
-        //camera->AcquisitionFrameRate.SetValue(acquisition_fps);
+        camera->AcquisitionFrameRate.SetValue(acquisition_fps);
         //camera->AcquisitionFrameRateEnable.setValue(false);
         camera->TriggerSelector.SetValue(trigger_selector.c_str());
         camera->TriggerMode.SetValue(trigger_mode.c_str());
         camera->TriggerSource.SetValue(trigger_source.c_str());
         camera->TriggerActivation.SetValue(trigger_activation.c_str());
-        camera->GevHeartbeatTimeout.SetValue(heartbeat_timeout);
+        //camera->GevHeartbeatTimeout.SetValue(heartbeat_timeout);
 
         /* start grabbing */
         camera->StartGrabbing(Pylon::GrabStrategy_OneByOne, Pylon::GrabLoop_ProvidedByUser);
         CGrabResultPtr ptrGrabResult;
 
-        while(camera->IsGrabbing() && !_thread_stop_signal.load()){
+        while(camera->IsGrabbing() && !_thread_stop_signal){
+            //logger::info("[{}] worker #{} start", get_name(), camera_id);
             try{
                 camera->RetrieveResult(5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException); //trigger mode makes it blocked
                 if(ptrGrabResult.IsValid()){
                     if(ptrGrabResult->GrabSucceeded()){
+
+                        //logger::info("[{}] worker #{} grabbed", get_name(), camera_id);
+
+                        auto start = std::chrono::system_clock::now();
 
                         /* grabbed imgae stores into buffer */
                         const uint8_t* pImageBuffer = (uint8_t*)ptrGrabResult->GetBuffer();
@@ -265,12 +272,24 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                         pipe_data msg_id(id_str.data(), id_str.size());
                         pipe_data msg_image(serialized_image.data(), serialized_image.size());
 
-                        /* push image data */
-                        get_port("image_stream")->send(msg_id, zmq::send_flags::sndmore);
-                        get_port("image_stream")->send(msg_image, zmq::send_flags::dontwait);
+                        // /* push image data */
+                        if(get_port("image_stream")->handle()!=nullptr){
+                            zmq::multipart_t msg_multipart_image;
+                            msg_multipart_image.addstr(id_str);
+                            msg_multipart_image.addmem(serialized_image.data(), serialized_image.size());
+                            msg_multipart_image.send(*get_port("image_stream"), ZMQ_DONTWAIT);
+                            logger::info("[{}] {} sent image to pipieline ", get_name(), camera_id);
+                        }
+                        else{
+                            logger::warn("[{}] {} socket handle is not valid ", get_name(), camera_id);
+                        }
+                        // get_port("image_stream")->send(msg_id, zmq::send_flags::sndmore);
+                        // get_port("image_stream")->send(msg_image, zmq::send_flags::dontwait);
+
+
 
                         /* publish for monitoring (size reduction for performance)*/
-                        if(_monitoring.load()){
+                        if(_monitoring){
                             string topic_str = fmt::format("camera_{}", camera_id);
                             pipe_data msg_topic(topic_str.data(), topic_str.size());
                             cv::Mat monitor_image;
@@ -279,17 +298,32 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                             cv::imencode(".jpg", monitor_image, serialized_monitor_image);
                             pipe_data msg_monitor_image(serialized_monitor_image.data(), serialized_monitor_image.size());
 
-                            get_port("image_stream_monitor")->send(msg_topic, zmq::send_flags::sndmore); //first
-                            get_port("image_stream_monitor")->send(msg_id, zmq::send_flags::sndmore);
-                            get_port("image_stream_monitor")->send(msg_monitor_image, zmq::send_flags::dontwait);
+                            zmq::multipart_t msg_multipart;
+                            msg_multipart.addstr(topic_str);
+                            msg_multipart.addstr(id_str);
+                            msg_multipart.addmem(serialized_monitor_image.data(), serialized_monitor_image.size());
+
+                            string camera_port = fmt::format("image_stream_monitor_{}", camera_id);
+                            msg_multipart.send(*get_port(camera_port), ZMQ_DONTWAIT);
+                            //get_port("image_stream_monitor")->send(msg_topic, zmq::send_flags::sndmore); //first
+                            //get_port("image_stream_monitor")->send(msg_id, zmq::send_flags::sndmore);
+                            //get_port("image_stream_monitor")->send(msg_monitor_image, zmq::send_flags::none);
+
+                            auto end = std::chrono::system_clock::now();
+                            spdlog::info("Processing Time : {} sec", std::chrono::duration<double, std::chrono::seconds::period>(end - start).count());
+                            logger::info("[{}] {} sent monitor image", get_name(), camera_id);
                         }
+
+                        //logger::info("[{}] {} image grabbed", get_name(), camera_id);
                     }
                     else{
                         logger::warn("[{}] Error-code({}) : {}", get_name(), ptrGrabResult->GetErrorCode(), ptrGrabResult->GetErrorDescription().c_str());
                     }
                 }
-                else
+                else{
+                    logger::warn("[{}] Grab result is invalid",get_name());
                     break;
+                }
             }
             catch(Pylon::TimeoutException& e){
                 logger::error("[{}] Camera {} Timeout exception occurred! {}", get_name(), camera_id, e.GetDescription());

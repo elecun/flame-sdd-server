@@ -71,7 +71,7 @@ class basler_gige_cam_grabber : public flame::component::object {
         unordered_map<int, unsigned long long> _camera_grab_counter; // camera id, grab counter
         unordered_map<int, json> _camera_status; // camera id, status
         map<int, CBaslerUniversalInstantCamera*> _device_map; // camera id, camera device instance
-        std::atomic<bool> _thread_stop_signal { false };
+        bool _thread_stop_signal { false };
 
         pthread_t _status_monitor; /* for status publish */
 
@@ -80,7 +80,7 @@ class basler_gige_cam_grabber : public flame::component::object {
             {"realtime", 1}
         };
         int _stream_method = 0; //batch mode default
-        atomic<bool> _monitoring = false;
+        bool _monitoring = false;
         int _stream_batch_buffer_size = 1000;
         typedef vector<unsigned char> image_data;
         map<int, vector<image_data>> _image_container;

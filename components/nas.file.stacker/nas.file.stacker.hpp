@@ -45,7 +45,7 @@ class nas_file_stacker : public flame::component::object {
     private:
         pthread_t _stacker_handle;
         
-        atomic<bool> _thread_stop_signal { false };
+        bool _thread_stop_signal { false };
         fs::path _mount_path;
         fs::path _destination_path;
 

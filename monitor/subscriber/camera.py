@@ -30,6 +30,7 @@ import json
 import threading
 import time
 from typing import Any, Dict
+from multiprocessing import Process, Queue
 
 # connection event message parsing
 EVENT_MAP = {}
@@ -67,6 +68,8 @@ class CameraMonitorSubscriber(QThread):
         self._monitor_thread.daemon = True
         self._monitor_thread.start()
 
+        #self._queue = Queue()
+
         self.__console.info("* Start Camera Monitor Subscriber")
 
         self.start() # start thread
@@ -79,12 +82,17 @@ class CameraMonitorSubscriber(QThread):
 
     def run(self):
         """ Run subscriber thread """
+
         while True:
             if self.isInterruptionRequested():
                 break
             try:
+
+                # previous
                 topic, id, image_data = self.__socket.recv_multipart()
                 if topic.decode() == self.__topic:
+                    if len(id)>2:
+                        return
                     nparr = np.frombuffer(image_data, np.uint8)
                     decoded_image = cv2.imdecode(nparr, cv2.IMREAD_UNCHANGED)
                     if decoded_image is not None:
