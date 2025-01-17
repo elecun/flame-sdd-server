@@ -273,11 +273,12 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                         pipe_data msg_image(serialized_image.data(), serialized_image.size());
 
                         // /* push image data */
-                        if(get_port("image_stream")->handle()!=nullptr){
+                        string nas_port = fmt::format("image_stream_{}", camera_id);
+                        if(get_port(nas_port)->handle()!=nullptr){
                             zmq::multipart_t msg_multipart_image;
                             msg_multipart_image.addstr(id_str);
                             msg_multipart_image.addmem(serialized_image.data(), serialized_image.size());
-                            msg_multipart_image.send(*get_port("image_stream"), ZMQ_DONTWAIT);
+                            msg_multipart_image.send(*get_port(nas_port), ZMQ_DONTWAIT);
                             logger::info("[{}] {} sent image to pipieline ", get_name(), camera_id);
                         }
                         else{
@@ -305,9 +306,6 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
 
                             string camera_port = fmt::format("image_stream_monitor_{}", camera_id);
                             msg_multipart.send(*get_port(camera_port), ZMQ_DONTWAIT);
-                            //get_port("image_stream_monitor")->send(msg_topic, zmq::send_flags::sndmore); //first
-                            //get_port("image_stream_monitor")->send(msg_id, zmq::send_flags::sndmore);
-                            //get_port("image_stream_monitor")->send(msg_monitor_image, zmq::send_flags::none);
 
                             auto end = std::chrono::system_clock::now();
                             spdlog::info("Processing Time : {} sec", std::chrono::duration<double, std::chrono::seconds::period>(end - start).count());

@@ -19,9 +19,18 @@ bool nas_file_stacker::on_init(){
     logger::info("[{}] Mounted NAS Storage Root Path : {}", get_name(), _mount_path.string());
 
     /* image stream data stacking */
-    thread stacking_worker = thread(&nas_file_stacker::_image_stacker, this, get_profile()->parameters());
-    _stacker_handle = stacking_worker.native_handle();
-    stacking_worker.detach();
+    // thread stacking_worker = thread(&nas_file_stacker::_image_stacker, this, get_profile()->parameters());
+    // _stacker_handle = stacking_worker.native_handle();
+    // stacking_worker.detach();
+
+    json streams = get_profile()->parameters()["image_streams"];
+    for(auto& stream_id:streams){
+        int id = stream_id["id"].get<int>();
+        thread worker = thread(&nas_file_stacker::_image_stacker, this, id, get_profile()->parameters());
+        _stacker_worker[id] = worker.native_handle();
+        worker.detach();
+        logger::info("[{}] worker #{} detached", get_name(), id);
+    }
 
     return true;
 }
@@ -51,21 +60,23 @@ void nas_file_stacker::on_message(){
     
 }
 
-void nas_file_stacker::_image_stacker(json parameters){
+void nas_file_stacker::_image_stacker(int id, json parameters){
     try{
-        //pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
-        //pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, nullptr);
+        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
+        pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, nullptr);
 
         //get_port("image_stream")->set(zmq::sockopt::rcvtimeo, 1000); // 1sec timeout
         string save_dir = parameters["mount_path"].get<string>();
+        string port_direction = fmt::format("image_stream_{}",id);
         while(!_thread_stop_signal){
 
             /* receive data pack from pipeline */
             pipe_data msg_id;
             pipe_data msg_image;
 
+            
             zmq::multipart_t msg_multipart;
-            bool ret = msg_multipart.recv(*get_port("image_stream"));
+            bool ret = msg_multipart.recv(*get_port(port_direction));
             logger::info("[{}] recv from image_stream ({})", get_name(), ret);
 
             if(ret){
@@ -91,7 +102,7 @@ void nas_file_stacker::_image_stacker(json parameters){
 
                 /* decode image & save */
                 cv::Mat decoded = cv::imdecode(image, cv::IMREAD_UNCHANGED);                        
-                //cv::imwrite(fmt::format("{}/{}",save_dir, filename), decoded);
+                cv::imwrite(fmt::format("{}/{}",save_dir, filename), decoded);
 
                 logger::info("[{}] Saved image : {}", get_name(), filename);
             }

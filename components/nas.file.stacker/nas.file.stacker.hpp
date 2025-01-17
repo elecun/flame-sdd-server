@@ -38,12 +38,13 @@ class nas_file_stacker : public flame::component::object {
         void on_message() override;
 
     private:
-        void _image_stacker(json parameters); /* realtime image data stacker thread callback */
+        void _image_stacker(int id, json parameters); /* realtime image data stacker thread callback */
         void _response(json paramters);
 
 
     private:
         pthread_t _stacker_handle;
+        unordered_map<int, pthread_t> _stacker_worker;  // image stream id, stacker thread
         
         bool _thread_stop_signal { false };
         fs::path _mount_path;

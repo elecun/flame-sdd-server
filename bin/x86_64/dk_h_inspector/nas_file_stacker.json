@@ -3,7 +3,19 @@
     "verbose" : 1,
 
     "parameters":{
-        "mount_path" : "/home/dk-sdd/nas_storage"
+        "mount_path" : "/home/dk-sdd/nas_storage",
+        "image_streams" : [
+            {"id":1},
+            {"id":2},
+            {"id":3},
+            {"id":4},
+            {"id":5},
+            {"id":6},
+            {"id":7},
+            {"id":8},
+            {"id":9},
+            {"id":10}
+        ]
     },
 
     "dataport":{
@@ -15,7 +27,52 @@
             "queue_size" : 1000,
             "io_handling":"async"
         },
-        "image_stream" : {
+        "image_stream_1" : {
+            "transport" : "inproc",
+            "socket_type" : "pull",
+            "queue_size" : 1000
+        },
+        "image_stream_2" : {
+            "transport" : "inproc",
+            "socket_type" : "pull",
+            "queue_size" : 1000
+        },
+        "image_stream_3" : {
+            "transport" : "inproc",
+            "socket_type" : "pull",
+            "queue_size" : 1000
+        },
+        "image_stream_4" : {
+            "transport" : "inproc",
+            "socket_type" : "pull",
+            "queue_size" : 1000
+        },
+        "image_stream_5" : {
+            "transport" : "inproc",
+            "socket_type" : "pull",
+            "queue_size" : 1000
+        },
+        "image_stream_6" : {
+            "transport" : "inproc",
+            "socket_type" : "pull",
+            "queue_size" : 1000
+        },
+        "image_stream_7" : {
+            "transport" : "inproc",
+            "socket_type" : "pull",
+            "queue_size" : 1000
+        },
+        "image_stream_8" : {
+            "transport" : "inproc",
+            "socket_type" : "pull",
+            "queue_size" : 1000
+        },
+        "image_stream_9" : {
+            "transport" : "inproc",
+            "socket_type" : "pull",
+            "queue_size" : 1000
+        },
+        "image_stream_10" : {
             "transport" : "inproc",
             "socket_type" : "pull",
             "queue_size" : 1000
