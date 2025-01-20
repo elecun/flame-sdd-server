@@ -47,7 +47,6 @@ class LensControlRequester(QObject):
         self.__socket = context.socket(zmq.REQ)
         self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 1000)
         self.__socket.connect(connection)
-        self.__socket.setsockopt(zmq.RCVTIMEO, 1000)
         #self.__lens_control_loop = asyncio.get_event_loop()
 
 
@@ -78,8 +77,6 @@ class LensControlRequester(QObject):
 
         except zmq.error.ZMQError as e:
             self.__console.error(f"{e}")
-        except zmq.error.Again as e:
-            self.__console.error(f"Receive timeout")
     
 
     def read_focus(self):
