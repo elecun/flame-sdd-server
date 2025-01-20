@@ -104,7 +104,7 @@ class computar_vlmpz_controller : public flame::component::object {
     private:
 
         /* pipeline processing handle*/
-        std::atomic<bool> _thread_stop_signal { false };
+        bool _thread_stop_signal { false };
         pthread_t _lens_control_responser_handle;
 
         /* scanned lens info. */

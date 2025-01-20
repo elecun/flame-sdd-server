@@ -60,7 +60,7 @@ void computar_vlmpz_controller::on_close(){
     // _device_map.clear();
 
     /* terminate len control responser */
-    _thread_stop_signal.store(true);
+    _thread_stop_signal = true;
     pthread_cancel(_lens_control_responser_handle);
     pthread_join(_lens_control_responser_handle, nullptr);
 
@@ -109,6 +109,9 @@ void computar_vlmpz_controller::_usb_device_scan(){
                         }
                     }
                 }
+                else{
+                    logger::warn("[{}] Not included SN in parameters", get_name());
+                }
             }
         }
     }
@@ -121,7 +124,7 @@ void computar_vlmpz_controller::_lens_control_responser(json parameters){
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
     pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, nullptr);
 
-    while(!_thread_stop_signal.load()){
+    while(!_thread_stop_signal){
         try{
             pipe_data request;
             zmq::recv_result_t request_result = get_port("focus_control")->recv(request, zmq::recv_flags::none);
