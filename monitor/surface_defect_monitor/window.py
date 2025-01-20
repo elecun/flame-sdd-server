@@ -23,13 +23,13 @@ try:
     # using PyQt5
     from PyQt5.QtGui import QImage, QPixmap, QCloseEvent, QStandardItem, QStandardItemModel
     from PyQt5.QtWidgets import QApplication, QFrame, QMainWindow, QLabel, QPushButton, QMessageBox
-    from PyQt5.QtWidget import QProgressBar, QFileDialog, QComboBox, QLineEdit, QSlider, QCheckBox
+    from PyQt5.QtWidget import QProgressBar, QFileDialog, QComboBox, QLineEdit, QSlider, QCheckBox, QComboBox
     from PyQt5.uic import loadUi
     from PyQt5.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
 except ImportError:
     # using PyQt6
     from PyQt6.QtGui import QImage, QPixmap, QCloseEvent, QStandardItem, QStandardItemModel
-    from PyQt6.QtWidgets import QApplication, QFrame, QMainWindow, QLabel, QPushButton, QCheckBox
+    from PyQt6.QtWidgets import QApplication, QFrame, QMainWindow, QLabel, QPushButton, QCheckBox, QComboBox
     from PyQt6.QtWidgets import QMessageBox, QProgressBar, QFileDialog, QComboBox, QLineEdit, QSlider, QVBoxLayout
     from PyQt6.uic import loadUi
     from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
@@ -111,29 +111,45 @@ class AppWindow(QMainWindow):
                 # register dial event callback function
                 self.dial_light_control.valueChanged.connect(self.on_change_light_control)
 
+                # register preset combobox event callback function
+                self.focus_preset_ctrl = self.findChild(QComboBox, name="combobox_focus_preset")
+                self.focus_preset_ctrl.currentIndexChanged.connect(self.on_changed_focus_preset_index)
+
+                # find focus preset files in preset directory
+                preset_path = pathlib.Path(config["app_path"])/pathlib.Path(config["preset_path"])
+                self.__config["preset_path"] = preset_path.as_posix()
+                self.__console.info(f"+ Preset Path : {preset_path}")
+                if os.path.exists(pathlib.Path(config["app_path"])):
+                    preset_files = [f for f in os.listdir(preset_path)]
+                    for preset in preset_files:
+                        self.focus_preset_ctrl.addItem(preset)
+
+                # create zmq pipeline context
+                self.__pipeline_context = zmq.Context()
+
                 # create temperature monitoring subscriber
                 self.__temp_monitor_subscriber = None
                 if "temp_stream_source" in config and "temp_stream_topic" in config:
                     self.__console.info("+ Create Temperature Monitoring Subscriber...")
-                    self.__temp_monitor_subscriber = TemperatureMonitorSubscriber(connection=config["temp_stream_source"], topic=config["temp_stream_topic"])
+                    self.__temp_monitor_subscriber = TemperatureMonitorSubscriber(self.__pipeline_context, connection=config["temp_stream_source"], topic=config["temp_stream_topic"])
                     self.__temp_monitor_subscriber.temperature_update_signal.connect(self.on_update_temperature)
                     self.__temp_monitor_subscriber.start() # run in thread
 
                 self.__lens_control_requester = None
                 if "lens_control_source" in config:
                     self.__console.info("+ Create Lens Control Requester...")
-                    self.__lens_control_requester = LensControlRequester(connection=config["lens_control_source"])
+                    self.__lens_control_requester = LensControlRequester(self.__pipeline_context, connection=config["lens_control_source"])
                     self.__lens_control_requester.focus_read_update_signal.connect(self.on_update_focus)
 
                 self.__light_control_requester = None
                 if "light_control_source" in config:
                     self.__console.info("+ Create Light Control Requester")
-                    self.__light_control_requester = LightControlRequester(connection=config["light_control_source"])
+                    self.__light_control_requester = LightControlRequester(self.__pipeline_context, connection=config["light_control_source"])
 
                 self.__pulse_generator_requester = None
                 if "trigger_control_source":
                     self.__console.info("+ Create Trigger Control Requester")
-                    self.__pulse_generator_requester = PulseGeneratorRequester(connection=config["trigger_control_source"])
+                    self.__pulse_generator_requester = PulseGeneratorRequester(self.__pipeline_context, connection=config["trigger_control_source"])
 
                 # map between camera device and windows
                 self.__frame_window_map = {}
@@ -147,13 +163,6 @@ class AppWindow(QMainWindow):
                     self.__camera_image_subscriber_map[id].frame_update_signal.connect(self.on_update_camera_image)
                     self.__camera_image_subscriber_map[id].start() # start thread for each
 
-                # find focus preset files in preset directory
-                preset_dir = pathlib.Path(config["app_path"])/pathlib.Path(config["preset_path"])
-                print(f"+ Preset Path : {preset_dir}")
-                if os.path.exists(pathlib.Path(config["app_path"])):
-                    preset_files = [f for f in os.listdir(pathlib.Path(config["app_path"])) if os.path.isfile(os.path.join(pathlib.Path(config["app_path"]), f))]
-                    print(preset_files)
-
 
 
         except Exception as e:
@@ -166,6 +175,13 @@ class AppWindow(QMainWindow):
         except Exception as e:
             self.__console.error(f"{e}")
 
+    def on_changed_focus_preset_index(self):
+        """ chane focus preset index """
+        focus_preset_ctrl = self.findChild(QComboBox, name="combobox_focus_preset")
+        selected_preset = focus_preset_ctrl.currentText()
+        if selected_preset:
+            absolute_path = pathlib.Path(self.__config["preset_path"])/selected_preset
+            self.__console.info(f"Selected preset : {absolute_path}")
 
     def on_btn_focus_initialize_all(self):
         """ initialize all """
@@ -229,12 +245,15 @@ class AppWindow(QMainWindow):
         if self.__lens_control_requester:
             self.__lens_control_requester.close()
             self.__console.info("Close lens control requester")
-        if self.__temp_monitor_subscriber:
-            self.__temp_monitor_subscriber.close()
-            self.__console.info("Close temperature subscriber")
         if self.__pulse_generator_requester:
             self.__pulse_generator_requester.close()
             self.__console.info("Close Pulse Generator Requester")
+        if self.__temp_monitor_subscriber:
+            self.__temp_monitor_subscriber.close()
+            self.__console.info("Close temperature subscriber")
+
+        # context termination
+        self.__pipeline_context.term()
             
         return super().closeEvent(event)
 

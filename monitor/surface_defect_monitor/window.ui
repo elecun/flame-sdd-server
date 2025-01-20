@@ -1991,7 +1991,7 @@ background-color: rgb(212, 212, 212);</string>
         <string>Initialize All</string>
        </property>
       </widget>
-      <widget class="QComboBox" name="list_focus_preset">
+      <widget class="QComboBox" name="combobox_focus_preset">
        <property name="geometry">
         <rect>
          <x>495</x>

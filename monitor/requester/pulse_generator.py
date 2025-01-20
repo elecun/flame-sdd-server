@@ -35,22 +35,39 @@ for name in dir(zmq):
         EVENT_MAP[value] = name
 
 class PulseGeneratorRequester(QObject):
-    def __init__(self, connection:str):
+    def __init__(self, context:zmq.Context, connection:str):
         super().__init__()
 
         self.__console = ConsoleLogger.get_logger()
         self.__console.info(f"+ Pulse Generator connection : {connection}")
+
+        # create context for zmq requester
+        self.__socket = context.socket(zmq.REQ)
+        self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 1000)
+        self.__socket.connect(connection)
 
         self.__worker = None
         self.__running = False
         self.__connection = connection
         self.__task = nidaqmx.Task()
 
+        self.__console.info("* Start Pulse Generator Requester")
+
     def get_connection_info(self) -> str:
         return self.__connection
     
     def close(self):
-        self.stop_generation()
+        """ close the socket and context """
+        # close pipeline connection
+        try:
+            self.__socket.close()
+        except Exception as e:
+            self.__console.error(f"{e}")
+        except zmq.ZMQError as e:
+            self.__console.error(f"Context termination error : {e}")
+
+        if self.__running:
+            self.stop_generation()
         self.__task.close()
         self.__console.info("Closed Pulse Generator Requester")
     

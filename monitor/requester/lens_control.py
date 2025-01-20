@@ -35,7 +35,7 @@ class LensControlRequester(QObject):
     status_msg_update_signal = pyqtSignal(str) # signal for connection status message
     focus_move_signal = pyqtSignal(bool) # signal for move focus
 
-    def __init__(self, connection:str):
+    def __init__(self, context:zmq.Context, connection:str):
         super().__init__()
 
         self.__console = ConsoleLogger.get_logger()   # console logger
@@ -44,8 +44,7 @@ class LensControlRequester(QObject):
         self.__connection = connection # connection info.
 
         # create context for zmq requester
-        self.__context = zmq.Context()
-        self.__socket = self.__context.socket(zmq.REQ)
+        self.__socket = context.socket(zmq.REQ)
         self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 1000)
         self.__socket.connect(connection)
         #self.__lens_control_loop = asyncio.get_event_loop()
@@ -178,18 +177,12 @@ class LensControlRequester(QObject):
 
     def close(self):
         """ close the socket and context """
-        # self._monitoring = False
-        # if self.monitor_socket:
-        #     self.monitor_socket.close()
-        # close monitoring thread
-        # self._stop_monitoring_event.set()
-        # self._monitor_thread.join()
-
         try:
             self.__socket.close()
-            self.__context.term()
         except Exception as e:
             self.__console.error(f"{e}")
+        except zmq.ZMQError as e:
+            self.__console.error(f"Context termination error : {e}")
 
         
         

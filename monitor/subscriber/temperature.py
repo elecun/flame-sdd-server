@@ -31,7 +31,7 @@ class TemperatureMonitorSubscriber(QThread):
     temperature_update_signal = pyqtSignal(dict) # signal for temperature update
     status_msg_update_signal = pyqtSignal(str) # signal for connection status message
 
-    def __init__(self, connection:str, topic:str):
+    def __init__(self, context:zmq.Context, connection:str, topic:str):
         super().__init__()
 
         self.__console = ConsoleLogger.get_logger()   # console logger
@@ -42,8 +42,7 @@ class TemperatureMonitorSubscriber(QThread):
         self.__topic = topic
 
         # initialize zmq
-        self.__context = zmq.Context()
-        self.__socket = self.__context.socket(zmq.SUB)
+        self.__socket = context.socket(zmq.SUB)
         self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 1000)
         self.__socket.connect(connection)
         self.__socket.subscribe(topic)
@@ -103,7 +102,6 @@ class TemperatureMonitorSubscriber(QThread):
             self.__console.error(f"{e}")
         finally:
             self.__socket.close()
-            self.__context.term()
 
     def close(self) -> None:
         """ Close the socket and context """

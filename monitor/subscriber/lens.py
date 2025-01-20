@@ -12,7 +12,7 @@ class LensController(QThread):
 
     lens_update_signal = pyqtSignal(dict) # signal for lens update
 
-    def __init__(self, connection:str, topic:str):
+    def __init__(self, context:zmq.Context, connection:str, topic:str):
         super().__init__()
 
         self.__console = ConsoleLogger.get_logger()   # console logger
@@ -23,8 +23,7 @@ class LensController(QThread):
         self.__topic = topic
 
         # initialize zmq
-        self.__context = zmq.Context()
-        self.__socket = self.context.socket(zmq.SUB)
+        self.__socket = context.socket(zmq.SUB)
         self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 1000)
         self.__socket.connect(connection)
         self.__socket.setsockopt_string(zmq.SUBSCRIBE, topic)
@@ -50,4 +49,3 @@ class LensController(QThread):
         self.wait(500)
 
         self.__socket.close()
-        self.__context.term()

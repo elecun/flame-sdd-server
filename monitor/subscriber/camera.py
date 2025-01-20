@@ -45,7 +45,7 @@ class CameraMonitorSubscriber(QThread):
     frame_update_signal = pyqtSignal(int, np.ndarray) # camera images update signal : camera_id, np.ndarray
     status_msg_update_signal = pyqtSignal(str) # connection status message update signal
 
-    def __init__(self, connection:str, topic:str):
+    def __init__(self, context:zmq.Context, connection:str, topic:str):
         super().__init__()
 
         self.__console = ConsoleLogger.get_logger()   # console logger
@@ -56,8 +56,7 @@ class CameraMonitorSubscriber(QThread):
         self.__topic = topic
 
         # initialize zmq
-        self.__context = zmq.Context()
-        self.__socket = self.__context.socket(zmq.SUB)
+        self.__socket = context.socket(zmq.SUB)
         self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 5000)
         self.__socket.connect(connection)
         self.__socket.subscribe(topic)
@@ -141,6 +140,5 @@ class CameraMonitorSubscriber(QThread):
 
         try:
             self.__socket.close()
-            self.__context.term()
         except zmq.error.ZMQError as e:
             self.__console.error(f"{e}")

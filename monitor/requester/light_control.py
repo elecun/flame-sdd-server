@@ -32,7 +32,7 @@ for name in dir(zmq):
 
 class LightControlRequester(QObject):
 
-    def __init__(self, connection:str):
+    def __init__(self, context:zmq.Context, connection:str):
         super().__init__()
 
         self.__console = ConsoleLogger.get_logger()
