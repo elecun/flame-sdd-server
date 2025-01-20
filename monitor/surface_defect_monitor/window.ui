@@ -1378,9 +1378,9 @@ background-color: rgb(212, 212, 212);</string>
      <widget class="QGroupBox" name="groupBox_7">
       <property name="geometry">
        <rect>
-        <x>755</x>
+        <x>475</x>
         <y>10</y>
-        <width>486</width>
+        <width>766</width>
         <height>271</height>
        </rect>
       </property>
@@ -1955,6 +1955,66 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="btn_focus_preset_set_all">
+       <property name="geometry">
+        <rect>
+         <x>645</x>
+         <y>85</y>
+         <width>101</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">color: rgb(0,0,0);
+background-color: rgb(212, 212, 212);</string>
+       </property>
+       <property name="text">
+        <string>Set All</string>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="btn_focus_initialize_all">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>225</y>
+         <width>101</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">color: rgb(0,0,0);
+background-color: rgb(212, 212, 212);</string>
+       </property>
+       <property name="text">
+        <string>Initialize All</string>
+       </property>
+      </widget>
+      <widget class="QComboBox" name="list_focus_preset">
+       <property name="geometry">
+        <rect>
+         <x>495</x>
+         <y>50</y>
+         <width>256</width>
+         <height>31</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_5">
+       <property name="geometry">
+        <rect>
+         <x>495</x>
+         <y>30</y>
+         <width>121</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Focus Presets</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
        </property>
       </widget>
      </widget>
