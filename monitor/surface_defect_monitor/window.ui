@@ -44,7 +44,7 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>0</number>
     </property>
     <property name="tabBarAutoHide">
      <bool>false</bool>
@@ -2045,36 +2045,14 @@ background-color: rgb(212, 212, 212);</string>
       </widget>
      </widget>
     </widget>
-    <widget class="QWidget" name="tab_4">
-     <attribute name="title">
-      <string>Pipeline</string>
-     </attribute>
-    </widget>
     <widget class="QWidget" name="tab_3">
      <attribute name="title">
       <string>Test</string>
      </attribute>
-     <widget class="QPushButton" name="btn_camera_view_test">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>15</y>
-        <width>151</width>
-        <height>41</height>
-       </rect>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">color: rgb(0,0,0);
-background-color: rgb(212, 212, 212);</string>
-      </property>
-      <property name="text">
-       <string>Camera View Test</string>
-      </property>
-     </widget>
      <widget class="QPushButton" name="btn_defect_visualization_test">
       <property name="geometry">
        <rect>
-        <x>185</x>
+        <x>20</x>
         <y>15</y>
         <width>211</width>
         <height>41</height>
