@@ -172,7 +172,7 @@ class AppWindow(QMainWindow):
 
     def on_btn_focus_initialize_all(self):
         """ initialize all """
-        pass
+        self.__lens_control_requester.focus_init_all()
     
     def on_btn_focus_preset_set_all(self):
         """ set focus preset for all lens """

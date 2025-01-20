@@ -47,6 +47,7 @@ class LensControlRequester(QObject):
         self.__socket = context.socket(zmq.REQ)
         self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 1000)
         self.__socket.connect(connection)
+        self.__socket.setsockopt(zmq.RCVTIMEO, 1000)
         #self.__lens_control_loop = asyncio.get_event_loop()
 
 
@@ -62,6 +63,24 @@ class LensControlRequester(QObject):
 
     def get_connection_info(self) -> str:
         return self.__connection
+    
+    def focus_init_all(self) -> None:
+        try :
+            self.__console.info("Initialize all Focus Lens")
+            message = {"function":"init_all"}
+            request_string = json.dumps(message)
+            self.__socket.send_string(request_string)
+            self.__console.info(f"Request : {request_string}")
+
+            # reply
+            response = self.__socket.recv_string()
+            self.__console.info(f"Reply : {response}")
+
+        except zmq.error.ZMQError as e:
+            self.__console.error(f"{e}")
+        except zmq.error.Again as e:
+            self.__console.error(f"Receive timeout")
+    
 
     def read_focus(self):
         """ read focus value """
