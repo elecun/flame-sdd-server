@@ -47,9 +47,6 @@ bool autonics_temp_controller::on_init(){
         /* read controll slaves */
         json slave_controllers = get_profile()->parameters()["slaves"];
         _slave_addrs = slave_controllers.get<std::vector<int>>();
-        for(int slave_addr:_slave_addrs){
-            last_temperature[slave_addr] = 9999.0;  //add dummy value
-        }
 
         /* component status monitoring subtask */
         thread status_monitor_worker = thread(&autonics_temp_controller::_subtask_status_publish, this, get_profile()->parameters());
@@ -82,11 +79,7 @@ void autonics_temp_controller::on_loop(){
             float temperature = (float)reg[0] + (float)reg[1] / 10.0;
             data_pack[fmt::format("{}", slave_addr)] = temperature;
 
-            if(temperature!=last_temperature[slave_addr])
-                logger::info("[{}] Slave({}) Temperature : {} ({},{})", get_name(), slave_addr, temperature, (int)reg[0], (int)reg[1]);
-
-            /* save last temperature values */
-            last_temperature[slave_addr] = temperature;
+            logger::info("[{}] Slave({}) Temperature : {} ({},{})", get_name(), slave_addr, temperature, (int)reg[0], (int)reg[1]);
         }
 
         usleep(70000); // 70ms

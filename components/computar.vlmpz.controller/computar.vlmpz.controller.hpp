@@ -24,8 +24,9 @@
 #include <thread>
 
 /* lens controller */
-#include "include/LensConnect.h"
+//#include "include/LensConnect.h"
 #include "include/LensCtrl.h"
+#include "include/defVal.h"
 
 using namespace std;
 
@@ -36,8 +37,8 @@ class controlImpl {
         virtual ~controlImpl() = default;
 
         /* functions */
-        bool open();    //open device
-        void close();   //close device
+        bool open();    // device open
+        void close();   // device close
 
         /* function supports (working in thread)*/
         void focus_initialize();  //focus initialize
@@ -53,22 +54,53 @@ class controlImpl {
         int get_camera_id() { return _lens_camera_id; }
         string get_sn() { return _lens_device_sn; }
 
+        /* USB related functions */
+        int UsbGetNumDevices(unsigned long* numDevices);
+        int UsbGetSnDevice(unsigned short index, char* SnString);
+        int UsbOpen(unsigned long deviceNumber);
+        void UsbClose();
+        int UsbSetConfig();
+        int UsbRead(unsigned short segmentOffset, unsigned short receiveSize);
+        unsigned short UsbRead2Bytes();
+        unsigned int CountRead();
+        int UsbWrite(unsigned short segmentOffset, unsigned short writeData);
+
+        /* lens control low-level functions */
+        int CapabilitiesRead(unsigned short* capabilities);
+        int Status2ReadSet();
+        int FocusParameterReadSet();
+        int FocusCurrentAddrReadSet();
+        int IrisParameterReadSet();
+        int IrisCurrentAddrReadSet();
+        int FocusInit();
+        int StatusWait(unsigned short segmentOffset, unsigned short statusMask, int waitTime);
+        void MsSleep(int n);
+        int IrisInit();
+        int WaitCalc(unsigned short moveValue, int speedPPS);
+        int FocusMove(unsigned short addrData);
+        int DeviceMove(unsigned short segmentOffset, unsigned short *addrData, unsigned short mask , int waitTime);
+        int IrisMove(unsigned short addrData);
+
     private:
         void run_process(); /* run process in thread */
         void execute(const json& api);
        
     private:
 
+        HID_SMBUS_DEVICE connectedDevice;
+        unsigned char i2cAddr = I2CSLAVEADDR * 2;
+        unsigned char receivedData[80];
+
         unique_ptr<thread> _control_worker; /* control process in thread */
         mutex _mutex; /* mutex for thread */
-        bool _is_running = true;
+        atomic<bool> _is_running = true;
         queue<function<void()>> _f_queue;
         condition_variable  _cv;
         string _parent_name;
 
         /* scanned lens info. */
         string  _lens_device_sn;    // lens serial number
-        int     _lens_device_id = -1;// lens device id
+        unsigned long     _lens_device_id = -1;// lens device id
         int     _lens_camera_id = -1; //lens user id
 
         map<string, int> function_code {
@@ -109,7 +141,7 @@ class computar_vlmpz_controller : public flame::component::object {
 
         /* scanned lens info. */
         vector<string> _lens_device_sn; // lens serial number
-        map<int, unique_ptr<controlImpl>> _lens_control_map; // device id, controller instance
+        map<int, controlImpl*> _lens_controller_map; // device id, controller instance
         map<int, int> _device_id_mapper; // user id : device id
 
     private:

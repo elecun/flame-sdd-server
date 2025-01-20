@@ -1,45 +1,37 @@
-# include "computar.vlmpz.controller.hpp"
+#include "computar.vlmpz.controller.hpp"
+#include <time.h>
 
 #define SATURATE(x, min, max) ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
+#define MILLI_SEC 1000000L
 
 controlImpl::controlImpl(string parent_name, int device_id, int camera_id)
 :_parent_name(parent_name), _lens_device_id(device_id), _lens_camera_id(camera_id){
 
-	// char serial_number[260] = {0, };
-	// int retval = UsbGetSnDevice(device_id, serial_number);
-
-	// if(!retval){
-	// 	_lens_device_sn = serial_number;
-
-	// 	// find user id
-	// 	for(auto& device:param){
-	// 		if(!device["sn"].get<string>().compare(_lens_device_sn)){ // found
-	// 			_lens_camera_id = device["id"].get<int>();
-	// 			logger::info("[{}] + Registered. Lens #{}({}) : S/N({})", _parent_name, device_id, _lens_user_id, _lens_device_sn);
-	// 		}
-	// 	}
-	// }
 }
 
 bool controlImpl::open(){
-    if(UsbOpen(_lens_device_id))
-        return false;
-    if(UsbSetConfig())
-        return false;
+
+	/* USB Open */
+	if(this->UsbOpen(_lens_device_id))
+		return false;
+
+	/* USB Set Config */
+    if(this->UsbSetConfig())
+		return false;
 
     uint16_t capabilities;
-    CapabilitiesRead(&capabilities);
-	Status2ReadSet();
+    this->CapabilitiesRead(&capabilities);
+	this->Status2ReadSet();
 
 	if(capabilities & FOCUS_MASK) {
-		FocusParameterReadSet();
+		this->FocusParameterReadSet();
 		if((status2 & FOCUS_MASK) == INIT_COMPLETED)
-			FocusCurrentAddrReadSet();
+			this->FocusCurrentAddrReadSet();
 	}
 	if(capabilities & IRIS_MASK) {
-		IrisParameterReadSet();
+		this->IrisParameterReadSet();
 		if((status2 & IRIS_MASK) == INIT_COMPLETED)
-			IrisCurrentAddrReadSet();
+			this->IrisCurrentAddrReadSet();
 	}
 
 	/* start worker thread */
@@ -49,21 +41,21 @@ bool controlImpl::open(){
 }
 
 int controlImpl::read_focus_position(){
-	return FocusCurrentAddrReadSet();
+	return this->FocusCurrentAddrReadSet();
 }
 
 void controlImpl::close(){
 
-	_is_running = false;
+	_is_running.store(false);
 	this_thread::sleep_for(chrono::milliseconds(500));
 	if(_control_worker && _control_worker->joinable()){
 		_control_worker->join();
 	}
 
 	// /* close USB */
-    // UsbClose();
+	this->UsbClose();
 
-	logger::info("close controlImpl");
+	logger::info("close Lens Controller");
 }
 
 void controlImpl::focus_initialize(){
@@ -117,13 +109,13 @@ void controlImpl::execute(const json& api){
 			int fcode = function_code[function_name];
 			switch(fcode){
 				case 1: { //focus initialize
-					FocusInit();
+					this->FocusInit();
 					logger::info("Lens #{} Focus is initialized",_lens_device_id);
 				}
 				break;
 
 				case 2: { //iris initialize
-					IrisInit();
+					this->IrisInit();
 					logger::info("Lens #{} Iris is initialized",_lens_device_id);
 				}
 				break;
@@ -131,7 +123,7 @@ void controlImpl::execute(const json& api){
 				case 3: { // focus_move
 					int value = api["value"].get<int>();
 					value = SATURATE(value, 0, 9091);
-					FocusMove((uint16_t)value);
+					this->FocusMove((uint16_t)value);
 					logger::info("Lens #{} move focus : {}", _lens_device_id, value);
 				}
 				break;
@@ -139,7 +131,7 @@ void controlImpl::execute(const json& api){
 				case 4: { //iris move
 					int value = api["value"].get<int>();
 					value = SATURATE(value, 0, 12636);
-					IrisMove((uint16_t)value);
+					this->IrisMove((uint16_t)value);
 				}
 
 				default:
@@ -153,7 +145,7 @@ void controlImpl::execute(const json& api){
 
 void controlImpl::run_process(){
 
-	while(_is_running){
+	while(_is_running.load()){
 		function<void()> task;
 		{
 			lock_guard<mutex> lock(_mutex);
@@ -170,4 +162,270 @@ void controlImpl::run_process(){
 			this_thread::sleep_for(chrono::milliseconds(100));
 		}
 	}
+}
+
+
+int controlImpl::UsbGetNumDevices(unsigned long* numDevices){
+	int retval = HidSmbus_GetNumDevices(numDevices, VID, PID);
+	return retval;
+}
+int controlImpl::UsbGetSnDevice(unsigned short index, char* SnString){
+	int retval = HidSmbus_GetString(index, VID, PID, SnString, HID_SMBUS_GET_SERIAL_STR);
+	return retval;
+}
+int controlImpl::UsbOpen(unsigned long deviceNumber){
+	int retval = HidSmbus_Open(&connectedDevice, deviceNumber, VID, PID);
+	return retval;
+}
+void controlImpl::UsbClose(){
+	HidSmbus_Close(connectedDevice);
+}
+int controlImpl::UsbSetConfig(){
+	int retval = HidSmbus_SetSmbusConfig(connectedDevice,
+		BITRATE, i2cAddr, AUTOREADRESPOND,
+		WRITETIMEOUT, READTIMEOUT,
+		SCLLOWTIMEOUT, TRANSFARRETRIES);
+	if (retval == HID_SMBUS_SUCCESS)
+		return retval;
+
+	retval = HidSmbus_SetGpioConfig(connectedDevice, DIRECTION, MODE, SPECIAL, CLKDIV);
+	if (retval == HID_SMBUS_SUCCESS)
+		return retval;
+
+	retval = HidSmbus_SetTimeouts(connectedDevice, RESPONSETIMEOUT);
+	if (retval == HID_SMBUS_SUCCESS)
+		return retval;
+
+	return retval;
+}
+int controlImpl::UsbRead(unsigned short segmentOffset, unsigned short receiveSize){
+	unsigned char sendData[SEGMENTOFFSET_LENGTH];
+	sendData[0] = segmentOffset >> 8;
+	sendData[1] = (unsigned char)segmentOffset;
+	BYTE sendSize = sizeof(sendData);
+	int retval = HidSmbus_WriteRequest(connectedDevice, i2cAddr, sendData, sendSize);
+	if (retval != HID_SMBUS_SUCCESS)
+		return retval;
+
+	retval = HidSmbus_ReadRequest(connectedDevice, i2cAddr, receiveSize);
+	if (retval != HID_SMBUS_SUCCESS)
+		return retval;
+
+	retval = HidSmbus_ForceReadResponse(connectedDevice, receiveSize);
+	if (retval != HID_SMBUS_SUCCESS)
+		return retval;
+
+	unsigned char receiveData[128];
+	HID_SMBUS_S0 status;
+	BYTE totalBytesRead = 0;
+	BYTE bufferSize = 62;
+	BYTE bytesRead = 0;
+	do {
+		retval = HidSmbus_GetReadResponse(connectedDevice, &status, 
+			receiveData + totalBytesRead, bufferSize, &bytesRead);
+		if (retval != HID_SMBUS_SUCCESS)
+			return retval;
+
+		totalBytesRead += bytesRead;
+	} while (totalBytesRead < receiveSize);
+
+	for (int i = 0; i < totalBytesRead; i++) {
+		receivedData[i] = receiveData[i];
+	}
+	return retval;
+}
+unsigned short controlImpl::UsbRead2Bytes(){
+	return ((receivedData[0] << 8) | receivedData[1]);
+}
+unsigned int controlImpl::CountRead(){
+	return ((receivedData[0] << 24) | (receivedData[1] << 16) | (receivedData[2] << 8) | (receivedData[3]));
+}
+int controlImpl::UsbWrite(unsigned short segmentOffset, unsigned short writeData){
+	unsigned char sendData[4];
+	sendData[0] = segmentOffset >> 8;
+	sendData[1] = (unsigned char)segmentOffset;
+	sendData[2] = writeData >> 8;
+	sendData[3] = (unsigned char)writeData;
+	BYTE sendSize = sizeof(sendData);
+	int retval = HidSmbus_WriteRequest(connectedDevice, i2cAddr, sendData, sendSize);
+	return retval;
+}
+
+int controlImpl::CapabilitiesRead(unsigned short* capabilities) {
+	int retval = this->UsbRead(CAPABILITIES, DATA_LENGTH);
+	*capabilities = this->UsbRead2Bytes();
+	return retval;
+}
+
+int controlImpl::Status2ReadSet() {
+	int retval = this->UsbRead(STATUS2, DATA_LENGTH);
+	if (retval != HID_SMBUS_SUCCESS)
+		return retval;
+	status2 = this->UsbRead2Bytes();
+	return retval;
+}
+
+int controlImpl::FocusParameterReadSet() {
+	int retval = this->UsbRead(FOCUS_MECH_STEP_MIN, DATA_LENGTH);
+	if (retval != HID_SMBUS_SUCCESS)
+		return retval;
+	focusMinAddr = this->UsbRead2Bytes();
+
+	retval = this->UsbRead(FOCUS_MECH_STEP_MAX, DATA_LENGTH);
+	if (retval != HID_SMBUS_SUCCESS)
+		return retval;
+	focusMaxAddr = this->UsbRead2Bytes();
+
+	retval = this->UsbRead(FOCUS_SPEED_VAL, DATA_LENGTH);
+	if (retval != HID_SMBUS_SUCCESS)
+		return retval;
+	focusSpeedPPS = this->UsbRead2Bytes();
+
+	return retval;
+}
+
+int controlImpl::FocusCurrentAddrReadSet() {
+	int retval = this->UsbRead(FOCUS_POSITION_VAL, DATA_LENGTH);
+	focusCurrentAddr = this->UsbRead2Bytes();
+	return retval;
+}
+
+int controlImpl::IrisParameterReadSet() {
+	int retval = this->UsbRead(IRIS_MECH_STEP_MIN, DATA_LENGTH);
+	if (retval != HID_SMBUS_SUCCESS)
+		return retval;
+	irisMinAddr = this->UsbRead2Bytes();
+
+	retval = this->UsbRead(IRIS_MECH_STEP_MAX, DATA_LENGTH);
+	if (retval != HID_SMBUS_SUCCESS)
+		return retval;
+	irisMaxAddr = this->UsbRead2Bytes();
+
+	retval = this->UsbRead(IRIS_SPEED_VAL, DATA_LENGTH);
+	if (retval != HID_SMBUS_SUCCESS)
+		return retval;
+	irisSpeedPPS = this->UsbRead2Bytes();
+
+	return retval;
+}
+
+int controlImpl::IrisCurrentAddrReadSet() {
+	int retval = this->UsbRead(IRIS_POSITION_VAL, DATA_LENGTH);
+	irisCurrentAddr = this->UsbRead2Bytes();
+	return retval;
+}
+
+int controlImpl::FocusInit() {
+	int waitTime = WaitCalc((focusMaxAddr - focusMinAddr), focusSpeedPPS);
+	int retval = this->UsbWrite(FOCUS_INITIALIZE, INIT_RUN_BIT);
+	if (retval == HID_SMBUS_SUCCESS) {
+		retval = this->StatusWait(STATUS1, FOCUS_MASK, waitTime);
+		if (retval == HID_SMBUS_SUCCESS) {
+			retval = this->UsbRead(FOCUS_POSITION_VAL, DATA_LENGTH);
+			if (retval == HID_SMBUS_SUCCESS) {
+				focusCurrentAddr = this->UsbRead2Bytes();
+				this->Status2ReadSet();
+				return retval;
+			}
+		}
+	}
+	return retval;
+}
+
+void controlImpl::MsSleep(int n) {
+	struct timespec ts;
+	ts.tv_sec  = 0;
+	ts.tv_nsec = MILLI_SEC;
+	nanosleep(&ts, NULL);
+}
+
+int controlImpl::StatusWait(unsigned short segmentOffset, unsigned short statusMask, int waitTime) {
+	int tmp = 0;
+	unsigned short readStatus;
+	int retval;
+	do {
+		retval = this->UsbRead(segmentOffset, DATA_LENGTH);
+		if (retval != HID_SMBUS_SUCCESS)
+			return retval;
+
+		readStatus = this->UsbRead2Bytes();
+		tmp += 1;
+		if (tmp >= LOW_HIGH_WAIT)
+			return LOWHI_ERROR;
+
+	} while ((readStatus & statusMask) != statusMask);
+
+	tmp = 0;
+	do {
+		retval = this->UsbRead(segmentOffset, DATA_LENGTH);
+		if (retval != HID_SMBUS_SUCCESS)
+			return retval;
+
+		readStatus = this->UsbRead2Bytes();
+		tmp += 1;
+		if (tmp >= waitTime)
+			return HILOW_ERROR;
+		
+		this->MsSleep(1);
+	} while ((readStatus & statusMask) != 0);
+
+	return retval;
+}
+
+int controlImpl::IrisInit() {
+	int waitTime = this->WaitCalc((irisMaxAddr - irisMinAddr), irisSpeedPPS);
+	int retval = this->UsbWrite(IRIS_INITIALIZE, INIT_RUN_BIT);
+	if (retval == HID_SMBUS_SUCCESS) {
+		retval = this->StatusWait(STATUS1, IRIS_MASK, waitTime);
+		if (retval == HID_SMBUS_SUCCESS) {
+			retval = this->UsbRead(IRIS_POSITION_VAL, DATA_LENGTH);
+			if (retval == HID_SMBUS_SUCCESS) {
+				irisCurrentAddr = this->UsbRead2Bytes();
+				this->Status2ReadSet();
+				return retval;
+			}
+		}
+	}
+	return retval;
+}
+
+int controlImpl::WaitCalc(unsigned short moveValue, int speedPPS) {
+	int waitTime = WAIT_MAG * moveValue / speedPPS;
+	if (MINIMUM_WAIT > waitTime)
+		waitTime = MINIMUM_WAIT;
+	return waitTime;
+}
+
+int controlImpl::FocusMove(unsigned short addrData) {
+	unsigned short moveVal = abs(addrData - focusCurrentAddr);
+	int waitTime = this->WaitCalc(moveVal, focusSpeedPPS);
+	int retval = DeviceMove(FOCUS_POSITION_VAL, &addrData, FOCUS_MASK, waitTime);
+	if (retval == HID_SMBUS_SUCCESS)
+		focusCurrentAddr = addrData;
+	return retval;
+}
+
+int controlImpl::DeviceMove(unsigned short segmentOffset, unsigned short *addrData, unsigned short mask , int waitTime) {
+	int retval = this->UsbWrite(segmentOffset, *addrData);
+	if (retval == HID_SMBUS_SUCCESS) {
+		retval = this->StatusWait(STATUS1, mask, waitTime);
+		if (retval == HID_SMBUS_SUCCESS) {
+			retval = this->UsbRead(segmentOffset, DATA_LENGTH);
+			if (retval != HID_SMBUS_SUCCESS)
+				return retval;
+			*addrData = this->UsbRead2Bytes();
+			return retval;
+		}
+		return retval;
+	}
+	return retval;
+}
+
+int controlImpl::IrisMove(unsigned short addrData) {
+	unsigned short moveVal = abs(addrData - irisCurrentAddr);
+	int waitTime = this->WaitCalc(moveVal, irisSpeedPPS);
+	int retval = this->DeviceMove(IRIS_POSITION_VAL, &addrData, IRIS_MASK, waitTime);
+	if (retval == HID_SMBUS_SUCCESS)
+		irisCurrentAddr = addrData;
+	return retval;
 }

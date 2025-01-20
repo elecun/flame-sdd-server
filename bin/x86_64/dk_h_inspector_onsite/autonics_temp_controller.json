@@ -10,7 +10,7 @@
         "stop_bit" : 1,
         "flow_control" : "none",
         "timeout_sec" : 1.0,
-        "slaves":[1,2]
+        "slaves":[1,2,3,4,5,6,7,8]
     },
 
     "dataport":{

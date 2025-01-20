@@ -13,10 +13,10 @@ bool computar_vlmpz_controller::on_init(){
 
     try {
         
-        /* usb device scan and insert into container */
+        /* usb device scan and insert into container, lens controller map will be built*/
         _usb_device_scan();
 
-        for (map<int, unique_ptr<controlImpl>>::iterator it=_lens_control_map.begin(); it != _lens_control_map.end(); ++it) {
+        for (map<int, controlImpl*>::iterator it=_lens_controller_map.begin(); it != _lens_controller_map.end(); ++it) {
             if(it->second->open()){
                 logger::info("[{}] Lens #{} successfully opened", get_name(), it->second->get_camera_id());
                 logger::info("[{}] Lens #{} Focus Initializing...", get_name(), it->second->get_camera_id());
@@ -26,12 +26,6 @@ bool computar_vlmpz_controller::on_init(){
                 logger::warn("[{}] Lens #{} cannot be opened", get_name(), it->second->get_camera_id());
             }
         }
-        
-
-        /* component status monitoring subtask */
-        // thread status_monitor_worker = thread(&computar_vlmpz_controller::_subtask_status_publish, this, get_profile()->parameters());
-        // _subtask_status_publisher = status_monitor_worker.native_handle();
-        // status_monitor_worker.detach();
 
         /* lens control with req/rep processing */
         thread lens_control_responser = thread(&computar_vlmpz_controller::_lens_control_responser, this, get_profile()->parameters());
@@ -53,11 +47,10 @@ void computar_vlmpz_controller::on_loop(){
 
 void computar_vlmpz_controller::on_close(){
 
-    /* close usb */
-    // for(map<int, unique_ptr<controlImpl>>::iterator it=_device_map.begin(); it!=_device_map.end(); ++it){
-    //     it->second->close();
-    // }
-    // _device_map.clear();
+    for(map<int, controlImpl*>::iterator it=_lens_controller_map.begin(); it!=_lens_controller_map.end(); ++it){
+        it->second->close();
+    }
+    _lens_controller_map.clear();
 
     /* terminate len control responser */
     _thread_stop_signal = true;
@@ -65,7 +58,7 @@ void computar_vlmpz_controller::on_close(){
     pthread_join(_lens_control_responser_handle, nullptr);
 
     /* close usb connection */
-    UsbClose();
+    //UsbClose();
 
     logger::info("close computar_vlmpz_controller");
 }
@@ -83,7 +76,7 @@ void computar_vlmpz_controller::_subtask_status_publish(json parameters){
 void computar_vlmpz_controller::_usb_device_scan(){
 
     // 0. clear device map
-    _lens_control_map.clear();
+    _lens_controller_map.clear();
 
     // 1. get number of connected devices
     unsigned int _n_devices = 0;
@@ -96,14 +89,18 @@ void computar_vlmpz_controller::_usb_device_scan(){
         for(uint16_t device_id=0; device_id<_n_devices; device_id++){ //start index from 0
             char serial_number[260] = {0, }; // device name is 260bytes according to the instructions of the USB IC
             int retval = UsbGetSnDevice(device_id, serial_number);
-            if(!retval){
+            string sn = string(serial_number);
+
+            if(!retval){ // no error
+                logger::info("[{}] Found USB Lens Controller #{} - SN {}", get_name(), device_id, sn);
+
                 // found camera id with device id
                 if(defined_devices.contains("sn")){
                     for(auto& device:defined_devices){ // find in parameters
-                        string sn = string(serial_number);
-                        if(!device["sn"].get<string>().compare(sn)){
-                            _lens_control_map.insert({device["camera_id"].get<int>(), make_unique<controlImpl>(get_name(), (int)device_id, device["camera_id"].get<int>())});
-                            _device_id_mapper.insert({device["camera_id"].get<int>(), device_id});
+                        if(!device["sn"].get<string>().compare(sn)){ //found
+                            int cid = device["camera_id"].get<int>();
+                            _lens_controller_map.insert({cid, new controlImpl(get_name(), (int)device_id, cid)});
+                            _device_id_mapper.insert({cid, device_id});
                             logger::info("[{}] Registered Lens Controller, User ID({})-Device ID({})-SN({})",get_name(), device["camera_id"].get<int>(), (int)device_id, sn);
                             break;
                         }
@@ -141,7 +138,7 @@ void computar_vlmpz_controller::_lens_control_responser(json parameters){
                         // read lens focus value
                         for(map<int,int>::iterator it=_device_id_mapper.begin(); it!=_device_id_mapper.end(); ++it){
                             string str_camera_id = fmt::format("{}",it->first);
-                            reply_data[str_camera_id] = _lens_control_map[it->second]->read_focus_position();
+                            reply_data[str_camera_id] = _lens_controller_map[it->second]->read_focus_position();
                         }
                     }
 
@@ -150,7 +147,7 @@ void computar_vlmpz_controller::_lens_control_responser(json parameters){
                         int camera_id = json_data["id"].get<int>();
                         int value = json_data["value"].get<int>();
                         logger::info("[{}] Move focus ID:{} (Device ID : {})",get_name(), camera_id, _device_id_mapper[camera_id]);
-                        _lens_control_map[_device_id_mapper[camera_id]]->focus_move(value);
+                        _lens_controller_map[_device_id_mapper[camera_id]]->focus_move(value);
 
                         // response
                         string str_camera_id = fmt::format("{}", camera_id);
