@@ -111,11 +111,8 @@ class AppWindow(QMainWindow):
                 # register dial event callback function
                 self.dial_light_control.valueChanged.connect(self.on_change_light_control)
 
-                # register preset combobox event callback function
-                self.focus_preset_ctrl = self.findChild(QComboBox, name="combobox_focus_preset")
-                self.focus_preset_ctrl.currentIndexChanged.connect(self.on_changed_focus_preset_index)
-
                 # find focus preset files in preset directory
+                self.focus_preset_ctrl = self.findChild(QComboBox, name="combobox_focus_preset")
                 preset_path = pathlib.Path(config["app_path"])/pathlib.Path(config["preset_path"])
                 self.__config["preset_path"] = preset_path.as_posix()
                 self.__console.info(f"+ Preset Path : {preset_path}")
@@ -163,8 +160,6 @@ class AppWindow(QMainWindow):
                     self.__camera_image_subscriber_map[id].frame_update_signal.connect(self.on_update_camera_image)
                     self.__camera_image_subscriber_map[id].start() # start thread for each
 
-
-
         except Exception as e:
             self.__console.error(f"{e}")
 
@@ -175,21 +170,32 @@ class AppWindow(QMainWindow):
         except Exception as e:
             self.__console.error(f"{e}")
 
-    def on_changed_focus_preset_index(self):
-        """ chane focus preset index """
-        focus_preset_ctrl = self.findChild(QComboBox, name="combobox_focus_preset")
-        selected_preset = focus_preset_ctrl.currentText()
-        if selected_preset:
-            absolute_path = pathlib.Path(self.__config["preset_path"])/selected_preset
-            self.__console.info(f"Selected preset : {absolute_path}")
-
     def on_btn_focus_initialize_all(self):
         """ initialize all """
         pass
     
     def on_btn_focus_preset_set_all(self):
         """ set focus preset for all lens """
-        pass
+        focus_preset_ctrl = self.findChild(QComboBox, name="combobox_focus_preset")
+        selected_preset = focus_preset_ctrl.currentText()
+        if selected_preset:
+            absolute_path = pathlib.Path(self.__config["preset_path"])/selected_preset
+            self.__console.info(f"Selected Focus Lens Control preset : {absolute_path}")
+
+            try:
+                # file load (json format)
+                preset_file = open(absolute_path, encoding='utf-8')
+                focus_preset = json.load(preset_file)
+
+                # move focus
+                for lens_id in focus_preset["focus_value"]:
+                    self.__lens_control_requester.focus_move(int(lens_id), focus_preset["focus_value"][lens_id])
+
+            except json.JSONDecodeError as e:
+                self.__console.error(f"Focus Preset Load Error : {e}")
+            except FileNotFoundError as e:
+                self.__console.error(f"{absolute_path} File not found")
+
 
     def on_change_light_control(self, value):
         """ control value update """
