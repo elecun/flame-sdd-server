@@ -165,7 +165,7 @@ void controlImpl::run_process(){
 }
 
 
-int controlImpl::UsbGetNumDevices(unsigned long* numDevices){
+int controlImpl::UsbGetNumDevices(unsigned int* numDevices){
 	int retval = HidSmbus_GetNumDevices(numDevices, VID, PID);
 	return retval;
 }

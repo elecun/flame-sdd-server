@@ -55,7 +55,7 @@ class controlImpl {
         string get_sn() { return _lens_device_sn; }
 
         /* USB related functions */
-        int UsbGetNumDevices(unsigned long* numDevices);
+        int UsbGetNumDevices(unsigned int* numDevices);
         int UsbGetSnDevice(unsigned short index, char* SnString);
         int UsbOpen(unsigned long deviceNumber);
         void UsbClose();
