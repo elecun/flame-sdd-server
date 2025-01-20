@@ -148,6 +148,8 @@ class AppWindow(QMainWindow):
                     self.__camera_image_subscriber_map[id].start() # start thread for each
 
                 # find focus preset files in preset directory
+                preset_dir = pathlib.Path(config["app_path"])/pathlib.Path(config["preset_path"])
+                print(f"+ Preset Path : {preset_dir}")
                 if os.path.exists(pathlib.Path(config["app_path"])):
                     preset_files = [f for f in os.listdir(pathlib.Path(config["app_path"])) if os.path.isfile(os.path.join(pathlib.Path(config["app_path"]), f))]
                     print(preset_files)
