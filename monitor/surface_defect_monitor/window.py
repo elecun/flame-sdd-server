@@ -105,6 +105,8 @@ class AppWindow(QMainWindow):
                 self.btn_focus_set_10.clicked.connect(partial(self.on_btn_focus_set, 10))
                 self.btn_focus_read_all.clicked.connect(self.on_btn_focus_read_all)
                 self.btn_defect_visualization_test.clicked.connect(self.on_btn_defect_visualization_test)
+                self.btn_focus_initialize_all.clicked.connect(self.on_btn_focus_initialize_all)
+                self.btn_focus_preset_set_all.clicked.connect(self.on_btn_focus_preset_set_all)
 
                 # register dial event callback function
                 self.dial_light_control.valueChanged.connect(self.on_change_light_control)
@@ -145,6 +147,12 @@ class AppWindow(QMainWindow):
                     self.__camera_image_subscriber_map[id].frame_update_signal.connect(self.on_update_camera_image)
                     self.__camera_image_subscriber_map[id].start() # start thread for each
 
+                # find focus preset files in preset directory
+                if os.path.exists(pathlib.Path(config["app_path"])):
+                    preset_files = [f for f in os.listdir(pathlib.Path(config["app_path"])) if os.path.isfile(os.path.join(pathlib.Path(config["app_path"]), f))]
+                    print(preset_files)
+
+
 
         except Exception as e:
             self.__console.error(f"{e}")
@@ -155,6 +163,15 @@ class AppWindow(QMainWindow):
             self.__frame_defect_grid_plot.clear()
         except Exception as e:
             self.__console.error(f"{e}")
+
+
+    def on_btn_focus_initialize_all(self):
+        """ initialize all """
+        pass
+    
+    def on_btn_focus_preset_set_all(self):
+        """ set focus preset for all lens """
+        pass
 
     def on_change_light_control(self, value):
         """ control value update """
@@ -291,61 +308,9 @@ class AppWindow(QMainWindow):
         """ event callback : light on """
         if "dmx_ip" in self.__config and "dmx_port" in self.__config:
             self.label_light_control_value.setText("0")
+            self.dial_light_control.setValue(0)
             self.__light_control_requester.set_control(self.__config["dmx_ip"], self.__config["dmx_port"], self.__config["light_ids"], 0)
         else:
             QMessageBox.critical(self, "Error", f"DMX IP and Port is not defined")
 
-    # def __image_stream_subscribe(self):
-    #     """ zmq subscribe for camera monitoring """
-    #     while True:
-    #         try:
-
-    #             parts = self.__camera_monitor_socket.recv_multipart()
-    #             self.__console.info(f"Received data part {parts}")
-
-    #             if len(parts) < 3:
-    #                 self.__console.error(f"Invalid multipart message received")
-    #             else:
-    #                 topic = parts[0].decode("utf-8")
-    #                 camera_id = int(json.loads(parts[1].decode("utf-8"))["camera_id"])
-    #                 image_data = parts[2]
-    #                 self.__console.info(f"Received data from Camera ID : {camera_id}")
-
-    #             if topic == "image_stream_monitor" and image_data is not None:
-    #                 np_array = np.frombuffer(image_data, np.uint8)
-    #                 image = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
-    #                 # display image
-    #                 rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    #                 h, w, ch = rgb_image.shape
-    #                 bytes_per_line = ch * w
-    #                 qt_image = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
-    #                 pixmap = QPixmap.fromImage(qt_image)
-
-    #                 try:
-    #                     self.__frame_window_map[camera_id].setPixmap(pixmap.scaled(self.__frame_window_map[camera_id].size(), Qt.KeepAspectRatio))
-    #                 except Exception as e:
-    #                     self.__console.error(f"Frame display error : {e}")
-    #             else:
-    #                 self.__console.error(f"Invalid topic received: {topic}")
-
-    #         except Exception as e:
-    #             self.__console.critical(f"Error receiving image: {e}")
-
-    #         time.sleep(0.1) # for context switching
-
-    # # show camera grabbed image
-    # def __camera_frame_update(self, camera_id, frame, fps):
-    #     """ show camera image from subscriber"""
-    #     frame_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        
-    #     t = datetime.now()
-    #     cv2.putText(frame_image, t.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], (10, 1070), cv2.FONT_HERSHEY_SIMPLEX, 2.0, (0,255,0), 2, cv2.LINE_AA)
-    #     cv2.putText(frame_image, f"Camera #{camera_id}(fps:{fps:.1f})", (10,50), cv2.FONT_HERSHEY_SIMPLEX, 2.0, (1,255,0), 2, cv2.LINE_AA)
-
-    #     h, w, ch = frame_image.shape
-    #     qt_image = QImage(frame_image.data, w, h, ch*w, QImage.Format.Format_RGB888)
-    #     pixmap = QPixmap.fromImage(qt_image)
-    #     try:
-    #         self.__frame_window_map[camera_id].setPixmap(pixmap.scaled(self.__frame_window_map[camera_id].size(), Qt.AspectRatioMode.KeepAspectRatio))
-    #     except Exception as e:
-    #         self.__console.error(e)
+    
