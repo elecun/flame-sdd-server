@@ -96,18 +96,18 @@ class LensControlRequester(QObject):
     def focus_move(self, user_id:int, value:int):
         """ set focus value """
         try:
+            topic = "focus_control"
             message = {
                 "id":user_id,
                 "function":"move_focus",
                 "value":value
             }
-            topic = "focus_control"
-            func = "move_focus"
-            id = user_id
-            focus_value = value
+
+            jmsg = json.dumps(message)
+        
             # publish
-            self.__socket.send_multipart([topic.encode('utf-8'), func.encode('utf-8'), str(id).encode('utf-8'), str(focus_value).encode('utf-8')])
-            self.__console.info(f"Publish Lens Control Data : Camera-ID {id}, Focus {focus_value}")
+            self.__socket.send_multipart([topic.encode(), jmsg.encode()])
+            self.__console.info(f"Publish Lens Focus Control Data : Camera-ID {user_id}, Focus {value}")
 
         except zmq.error.ZMQError as e:
             self.__console.error(f"{e}")
