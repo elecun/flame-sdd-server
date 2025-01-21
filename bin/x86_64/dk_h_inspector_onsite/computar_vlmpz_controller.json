@@ -30,7 +30,7 @@
             "transport" : "tcp",
             "host":"*",
             "port" : 5104,
-            "socket_type" : "rep",
+            "socket_type" : "sub",
             "queue_size" : 1000
         }
     }

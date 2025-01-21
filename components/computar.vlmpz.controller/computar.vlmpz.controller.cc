@@ -28,7 +28,7 @@ bool computar_vlmpz_controller::on_init(){
         }
 
         /* lens control with req/rep processing */
-        thread lens_control_responser = thread(&computar_vlmpz_controller::_lens_control_responser, this, get_profile()->parameters());
+        thread lens_control_responser = thread(&computar_vlmpz_controller::_lens_control_subscribe, this, get_profile()->parameters());
         _lens_control_responser_handle = lens_control_responser.native_handle();
         lens_control_responser.detach();
 
@@ -91,14 +91,9 @@ void computar_vlmpz_controller::_usb_device_scan(){
             int retval = UsbGetSnDevice(device_id, serial_number);
             string sn = string(serial_number);
 
-            
-
             if(!retval){ // no error
                 logger::info("[{}] Found USB Lens Controller #{} - SN {}", get_name(), device_id, sn);
 
-                for(auto& test:defined_devices){
-                    logger::info("{}", test["sn"].get<string>());
-                }
                 // found camera id with device id
                 for(auto& device:defined_devices){ // find in parameters
                     if(!device["sn"].get<string>().compare(sn)){ //found
@@ -114,6 +109,43 @@ void computar_vlmpz_controller::_usb_device_scan(){
     }
     else{
         logger::error("[{}] No device found");
+    }
+}
+
+void computar_vlmpz_controller::_lens_control_subscribe(json parameters){
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
+    pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, nullptr);
+
+    while(!_thread_stop_signal.load()){
+        try{
+            zmq::multipart_t msg_multipart;
+            if(msg_multipart.recv(*get_port("focus_control"))){
+                string topic = msg_multipart.popstr();
+                std::string message(static_cast<char*>(msg_multipart.at(0).data()), msg_multipart.at(0).size()); //jsonized message
+                auto json_data = json::parse(message);
+
+                if(json_data.contains("function")){
+
+                    /* 1. for move focus function processing */
+                    if(!json_data["function"].get<string>().compare("move_focus")){
+                        int camera_id = json_data["id"].get<int>();
+                        int value = json_data["value"].get<int>();
+                        logger::info("[{}] Move focus ID:{} (Device ID : {})",get_name(), camera_id, _device_id_mapper[camera_id]);
+                        _lens_controller_map[_device_id_mapper[camera_id]]->focus_move(value);
+                    }
+                }
+
+            }
+        }
+        catch(const json::parse_error& e){
+            logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());
+        }
+        catch(const std::runtime_error& e){
+            logger::error("[{}] Runtime error occurred!", get_name());
+        }
+        catch(const zmq::error_t& e){
+            logger::error("[{}] Pipeline error : {}", get_name(), e.what());
+        }
     }
 }
 

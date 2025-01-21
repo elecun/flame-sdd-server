@@ -24,8 +24,6 @@
 #include <thread>
 
 /* lens controller */
-//#include "include/LensConnect.h"
-//#include "include/LensCtrl.h"
 #include "include/defVal.h"
 #include "include/SLABCP2112.h"
 #include "include/ConfigVal.h"
@@ -133,6 +131,7 @@ class computar_vlmpz_controller : public flame::component::object {
     private:
         /* pipieline processing */
         void _lens_control_responser(json parameters); // lens control port
+        void _lens_control_subscribe(json parameters); // focus_control port
 
     private:
         /* task impl. of status publisher for every 1 sec */
