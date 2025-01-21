@@ -308,7 +308,7 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                             msg_multipart.send(*get_port(camera_port), ZMQ_DONTWAIT);
 
                             auto end = std::chrono::system_clock::now();
-                            spdlog::info("Processing Time : {} sec", std::chrono::duration<double, std::chrono::seconds::period>(end - start).count());
+                            //spdlog::info("Processing Time : {} sec", std::chrono::duration<double, std::chrono::seconds::period>(end - start).count());
                             logger::info("[{}] {} sent monitor image", get_name(), camera_id);
                         }
 

@@ -44,7 +44,7 @@ class LensControlRequester(QObject):
         self.__connection = connection # connection info.
 
         # create context for zmq requester
-        self.__socket = context.socket(zmq.REQ)
+        self.__socket = context.socket(zmq.PUB)
         self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 1000)
         self.__socket.connect(connection)
         #self.__lens_control_loop = asyncio.get_event_loop()
@@ -111,15 +111,20 @@ class LensControlRequester(QObject):
                 "function":"move_focus",
                 "value":value
             }
+            topic = "lens_control"
+            id = user_id
+            focus_value = value
+            # publish
+            self.__socket.send_multipart([topic.encode('utf-8'), str(id).encode('utf-8'), str(focus_value).encode('utf-8')])
 
             # request
-            request_string = json.dumps(message)
-            self.__socket.send_string(request_string)
-            self.__console.info(f"Request : {request_string}")
+            # request_string = json.dumps(message)
+            # self.__socket.send_string(request_string)
+            # self.__console.info(f"Request : {request_string}")
 
             # reply
-            response = self.__socket.recv_string()
-            self.__console.info(f"Reply : {response}")
+            # response = self.__socket.recv_string()
+            # self.__console.info(f"Reply : {response}")
         except zmq.error.ZMQError as e:
             self.__console.error(f"{e}")
 

@@ -155,7 +155,7 @@ class AppWindow(QMainWindow):
                     self.__frame_window_map[id] = self.findChild(QLabel, config["camera_windows"][idx])
                     self.__console.info(f"Ready for camera grabber #{id} monitoring")
                     portname = f"image_stream_monitor_source_{id}"
-                    self.__camera_image_subscriber_map[id] = CameraMonitorSubscriber(connection=config[portname],
+                    self.__camera_image_subscriber_map[id] = CameraMonitorSubscriber(self.__pipeline_context,connection=config[portname],
                                                                                      topic=f"{config['image_stream_monitor_topic_prefix']}{id}")
                     self.__camera_image_subscriber_map[id].frame_update_signal.connect(self.on_update_camera_image)
                     self.__camera_image_subscriber_map[id].start() # start thread for each
