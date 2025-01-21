@@ -53,7 +53,7 @@ void computar_vlmpz_controller::on_close(){
     _lens_controller_map.clear();
 
     /* terminate len control responser */
-    _thread_stop_signal = true;
+    _thread_stop_signal.store(true);
     pthread_cancel(_lens_control_responser_handle);
     pthread_join(_lens_control_responser_handle, nullptr);
 
@@ -91,23 +91,23 @@ void computar_vlmpz_controller::_usb_device_scan(){
             int retval = UsbGetSnDevice(device_id, serial_number);
             string sn = string(serial_number);
 
+            
+
             if(!retval){ // no error
                 logger::info("[{}] Found USB Lens Controller #{} - SN {}", get_name(), device_id, sn);
 
-                // found camera id with device id
-                if(defined_devices.contains("sn")){
-                    for(auto& device:defined_devices){ // find in parameters
-                        if(!device["sn"].get<string>().compare(sn)){ //found
-                            int cid = device["camera_id"].get<int>();
-                            _lens_controller_map.insert({cid, new controlImpl(get_name(), (int)device_id, cid)});
-                            _device_id_mapper.insert({cid, device_id});
-                            logger::info("[{}] Registered Lens Controller, User ID({})-Device ID({})-SN({})",get_name(), device["camera_id"].get<int>(), (int)device_id, sn);
-                            break;
-                        }
-                    }
+                for(auto& test:defined_devices){
+                    logger::info("{}", test["sn"].get<string>());
                 }
-                else{
-                    logger::warn("[{}] Not included SN in parameters", get_name());
+                // found camera id with device id
+                for(auto& device:defined_devices){ // find in parameters
+                    if(!device["sn"].get<string>().compare(sn)){ //found
+                        int cid = device["camera_id"].get<int>();
+                        _lens_controller_map.insert({cid, new controlImpl(get_name(), (int)device_id, cid)});
+                        _device_id_mapper.insert({cid, device_id});
+                        logger::info("[{}] Registered Lens Controller, User ID({})-Device ID({})-SN({})",get_name(), device["camera_id"].get<int>(), (int)device_id, sn);
+                        break;
+                    }
                 }
             }
         }
@@ -121,7 +121,7 @@ void computar_vlmpz_controller::_lens_control_responser(json parameters){
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
     pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, nullptr);
 
-    while(!_thread_stop_signal){
+    while(!_thread_stop_signal.load()){
         try{
             pipe_data request;
             zmq::recv_result_t request_result = get_port("focus_control")->recv(request, zmq::recv_flags::none);
@@ -171,4 +171,14 @@ void computar_vlmpz_controller::_lens_control_responser(json parameters){
             logger::error("[{}] Pipeline error : {}", get_name(), e.what());
         }
     }
+}
+
+int computar_vlmpz_controller::UsbGetNumDevices(unsigned int* numDevices){
+	int retval = HidSmbus_GetNumDevices(numDevices, VID, PID);
+	return retval;
+}
+
+int computar_vlmpz_controller::UsbGetSnDevice(unsigned short index, char* SnString){
+	int retval = HidSmbus_GetString(index, VID, PID, SnString, HID_SMBUS_GET_SERIAL_STR);
+	return retval;
 }

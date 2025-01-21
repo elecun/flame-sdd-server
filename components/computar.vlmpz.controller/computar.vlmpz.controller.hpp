@@ -25,8 +25,11 @@
 
 /* lens controller */
 //#include "include/LensConnect.h"
-#include "include/LensCtrl.h"
+//#include "include/LensCtrl.h"
 #include "include/defVal.h"
+#include "include/SLABCP2112.h"
+#include "include/ConfigVal.h"
+#include "include/devAddr.h"
 
 using namespace std;
 
@@ -88,8 +91,13 @@ class controlImpl {
     private:
 
         HID_SMBUS_DEVICE connectedDevice;
-        unsigned char i2cAddr = I2CSLAVEADDR * 2;
+        // unsigned char i2cAddr = I2CSLAVEADDR * 2;
         unsigned char receivedData[80];
+        unsigned short zoomMaxAddr, zoomMinAddr, focusMaxAddr, focusMinAddr;
+        unsigned short irisMaxAddr, irisMinAddr, optFilMaxAddr;
+        unsigned short zoomCurrentAddr, focusCurrentAddr, irisCurrentAddr, optCurrentAddr;
+        unsigned short zoomSpeedPPS, focusSpeedPPS, irisSpeedPPS;
+        unsigned short status2;
 
         unique_ptr<thread> _control_worker; /* control process in thread */
         mutex _mutex; /* mutex for thread */
@@ -132,11 +140,13 @@ class computar_vlmpz_controller : public flame::component::object {
 
         /* USB device scan to find lens */
         void _usb_device_scan();
+        int UsbGetNumDevices(unsigned int* numDevices);
+        int UsbGetSnDevice(unsigned short index, char* SnString);
 
     private:
 
         /* pipeline processing handle*/
-        bool _thread_stop_signal { false };
+        atomic<bool> _thread_stop_signal { false };
         pthread_t _lens_control_responser_handle;
 
         /* scanned lens info. */

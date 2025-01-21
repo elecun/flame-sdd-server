@@ -185,8 +185,7 @@ $(BUILDDIR)system.status.monitor.o:	$(CURRENT_DIR)/components/system.status.moni
 
 # focus lens module controller component
 computar_vlmpz_controller.comp:	$(BUILDDIR)computar_vlmpz_controller.o \
-									$(BUILDDIR)control_impl.o \
-									$(BUILDDIR)LensCtrl.o
+									$(BUILDDIR)control_impl.o
 									$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(BUILDDIR)$@ $^ $(LDLIBS) -lslabhidtosmbus -lslabhiddevice -lusb-1.0 -ludev
 $(BUILDDIR)computar_vlmpz_controller.o:	$(CURRENT_DIR)/components/computar.vlmpz.controller/computar.vlmpz.controller.cc
 									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
@@ -194,8 +193,8 @@ $(BUILDDIR)control_impl.o:	$(CURRENT_DIR)/components/computar.vlmpz.controller/c
 									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
 # $(BUILDDIR)UsbCtrl.o:$(CURRENT_DIR)/components/computar.vlmpz.controller/include/UsbCtrl.c 
 # 					$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -I./ -c $^ -o $@
-$(BUILDDIR)LensCtrl.o:$(CURRENT_DIR)/components/computar.vlmpz.controller/include/LensCtrl.c 
-					$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -I./ -c $^ -o $@
+# $(BUILDDIR)LensCtrl.o:$(CURRENT_DIR)/components/computar.vlmpz.controller/include/LensCtrl.c 
+# 					$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -I./ -c $^ -o $@
 # $(BUILDDIR)LensAccess.o:$(CURRENT_DIR)/components/computar.vlmpz.controller/include/LensAccess.c 
 # 					$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -I./ -c $^ -o $@
 # $(BUILDDIR)LensConnect.o:$(CURRENT_DIR)/components/computar.vlmpz.controller/include/LensConnect.c 

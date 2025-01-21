@@ -10,7 +10,7 @@
         "trigger_selector":"FrameStart",
         "trigger_mode":"On",
         "trigger_source":"Line2",
-        "trigger_activation":"RisingEdge",
+        "trigger_activation":"FallingEdge",
         "heartbeat_timeout":5000,
         "cameras":[
             {"id":1, "ip":"192.168.0.100", "sn":"40296138"},
