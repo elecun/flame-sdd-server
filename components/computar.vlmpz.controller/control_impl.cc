@@ -74,11 +74,14 @@ void controlImpl::iris_initialize(){
 }
 
 void controlImpl::focus_move(int value){
-	json api = {
-		{"function","move_focus"},
-		{"value", value}
-	};
-	caller(api);
+	// json api = {
+	// 	{"function","move_focus"},
+	// 	{"value", value}
+	// };
+	// caller(api);
+	//value = SATURATE(value, 0, 9091);
+	this->FocusMove((uint16_t)value);
+	logger::info("Lens #{} move focus : {}", _lens_device_id, value);
 }
 
 void controlImpl::iris_move(int value){

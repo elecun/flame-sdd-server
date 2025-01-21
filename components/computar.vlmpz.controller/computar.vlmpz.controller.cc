@@ -80,40 +80,49 @@ void computar_vlmpz_controller::_usb_device_scan(){
     UsbGetNumDevices(&_n_devices);
     logger::info("[{}] Found {} Lens connected", get_name(), _n_devices);
 
-    // 2. get device information
+    // device insert by force
     json defined_devices = get_profile()->parameters()["devices"];
-    if(_n_devices>0){
-        for(uint16_t device_id=0; device_id<_n_devices; device_id++){ //start index from 0
-            char serial_number[260] = {0, }; // device name is 260bytes according to the instructions of the USB IC
-            int retval = UsbGetSnDevice(device_id, serial_number);
-            string sn = string(serial_number);
-
-            if(!retval){ // no error
-                logger::info("[{}] Found USB Lens Controller #{} - SN {}", get_name(), device_id, sn);
-
-                // found camera id with device id
-                for(auto& device:defined_devices){ // find in parameters
-                    if(!device["sn"].get<string>().compare(sn)){ //found
-                        int cid = device["camera_id"].get<int>();
-                        _lens_controller_map.insert({cid, new controlImpl(get_name(), (int)device_id, cid)});
-                        _device_id_mapper.insert({cid, device_id});
-                        logger::info("[{}] Registered Lens Controller, User ID({})-Device ID({})-SN({})",get_name(), device["camera_id"].get<int>(), (int)device_id, sn);
-                        break;
-                    }
-                }
-            }
-        }
+    for(auto& device:defined_devices){
+        int cam_id = device["camera_id"].get<int>();
+        int dev_id = device["device_id"].get<int>();
+        _lens_controller_map.insert({cam_id, new controlImpl(get_name(), dev_id, cam_id)});
+        _device_id_mapper.insert({cam_id, dev_id});
     }
-    else{
-        logger::error("[{}] No device found");
-    }
+
+
+    // 2. get device information
+    // json defined_devices = get_profile()->parameters()["devices"];
+    // if(_n_devices>0){
+    //     for(uint16_t device_id=0; device_id<_n_devices; device_id++){ //start index from 0
+    //         char serial_number[260] = {0, }; // device name is 260bytes according to the instructions of the USB IC
+    //         int retval = UsbGetSnDevice(device_id, serial_number);
+    //         string sn = string(serial_number);
+
+    //         if(!retval){ // no error
+    //             logger::info("[{}] Found USB Lens Controller #{} - SN {}", get_name(), device_id, sn);
+
+    //             // found camera id with device id
+    //             for(auto& device:defined_devices){ // find in parameters
+    //                 if(!device["sn"].get<string>().compare(sn)){ //found
+    //                     int cid = device["camera_id"].get<int>();
+    //                     _lens_controller_map.insert({cid, new controlImpl(get_name(), (int)device_id, cid)});
+    //                     _device_id_mapper.insert({cid, device_id});
+    //                     logger::info("[{}] Registered Lens Controller, User ID({})-Device ID({})-SN({})",get_name(), device["camera_id"].get<int>(), (int)device_id, sn);
+    //                     break;
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+    // else{
+    //     logger::error("[{}] No device found");
+    // }
 }
 
 void computar_vlmpz_controller::_lens_control_subscribe(json parameters){
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
     pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, nullptr);
 
-    logger::info("test");
     while(!_thread_stop_signal.load()){
         try{
 
@@ -132,7 +141,9 @@ void computar_vlmpz_controller::_lens_control_subscribe(json parameters){
                         int camera_id = json_data["id"].get<int>();
                         int value = json_data["value"].get<int>();
                         logger::info("[{}] Move focus ID:{} (Device ID : {})",get_name(), camera_id, _device_id_mapper[camera_id]);
-                        _lens_controller_map[_device_id_mapper[camera_id]]->focus_move(value);
+                        if(_lens_controller_map.contains(_device_id_mapper[camera_id])){
+                            _lens_controller_map[_device_id_mapper[camera_id]]->focus_move(value);
+                        }
                     }
                 }
             }
