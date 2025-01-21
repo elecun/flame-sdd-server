@@ -3,6 +3,7 @@
 
 #define SATURATE(x, min, max) ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
 #define MILLI_SEC 1000000L
+unsigned char i2cAddr = I2CSLAVEADDR * 2;
 
 controlImpl::controlImpl(string parent_name, int device_id, int camera_id)
 :_parent_name(parent_name), _lens_device_id(device_id), _lens_camera_id(camera_id){
@@ -174,25 +175,25 @@ int controlImpl::UsbGetSnDevice(unsigned short index, char* SnString){
 	return retval;
 }
 int controlImpl::UsbOpen(unsigned long deviceNumber){
-	int retval = HidSmbus_Open(&connectedDevice, deviceNumber, VID, PID);
+	int retval = HidSmbus_Open(&this->connectedDevice, deviceNumber, VID, PID);
 	return retval;
 }
 void controlImpl::UsbClose(){
-	HidSmbus_Close(connectedDevice);
+	HidSmbus_Close(this->connectedDevice);
 }
 int controlImpl::UsbSetConfig(){
-	int retval = HidSmbus_SetSmbusConfig(connectedDevice,
+	int retval = HidSmbus_SetSmbusConfig(this->connectedDevice,
 		BITRATE, i2cAddr, AUTOREADRESPOND,
 		WRITETIMEOUT, READTIMEOUT,
 		SCLLOWTIMEOUT, TRANSFARRETRIES);
 	if (retval == HID_SMBUS_SUCCESS)
 		return retval;
 
-	retval = HidSmbus_SetGpioConfig(connectedDevice, DIRECTION, MODE, SPECIAL, CLKDIV);
+	retval = HidSmbus_SetGpioConfig(this->connectedDevice, DIRECTION, MODE, SPECIAL, CLKDIV);
 	if (retval == HID_SMBUS_SUCCESS)
 		return retval;
 
-	retval = HidSmbus_SetTimeouts(connectedDevice, RESPONSETIMEOUT);
+	retval = HidSmbus_SetTimeouts(this->connectedDevice, RESPONSETIMEOUT);
 	if (retval == HID_SMBUS_SUCCESS)
 		return retval;
 
@@ -203,15 +204,15 @@ int controlImpl::UsbRead(unsigned short segmentOffset, unsigned short receiveSiz
 	sendData[0] = segmentOffset >> 8;
 	sendData[1] = (unsigned char)segmentOffset;
 	BYTE sendSize = sizeof(sendData);
-	int retval = HidSmbus_WriteRequest(connectedDevice, i2cAddr, sendData, sendSize);
+	int retval = HidSmbus_WriteRequest(this->connectedDevice, i2cAddr, sendData, sendSize);
 	if (retval != HID_SMBUS_SUCCESS)
 		return retval;
 
-	retval = HidSmbus_ReadRequest(connectedDevice, i2cAddr, receiveSize);
+	retval = HidSmbus_ReadRequest(this->connectedDevice, i2cAddr, receiveSize);
 	if (retval != HID_SMBUS_SUCCESS)
 		return retval;
 
-	retval = HidSmbus_ForceReadResponse(connectedDevice, receiveSize);
+	retval = HidSmbus_ForceReadResponse(this->connectedDevice, receiveSize);
 	if (retval != HID_SMBUS_SUCCESS)
 		return retval;
 
@@ -221,7 +222,7 @@ int controlImpl::UsbRead(unsigned short segmentOffset, unsigned short receiveSiz
 	BYTE bufferSize = 62;
 	BYTE bytesRead = 0;
 	do {
-		retval = HidSmbus_GetReadResponse(connectedDevice, &status, 
+		retval = HidSmbus_GetReadResponse(this->connectedDevice, &status, 
 			receiveData + totalBytesRead, bufferSize, &bytesRead);
 		if (retval != HID_SMBUS_SUCCESS)
 			return retval;
@@ -247,7 +248,7 @@ int controlImpl::UsbWrite(unsigned short segmentOffset, unsigned short writeData
 	sendData[2] = writeData >> 8;
 	sendData[3] = (unsigned char)writeData;
 	BYTE sendSize = sizeof(sendData);
-	int retval = HidSmbus_WriteRequest(connectedDevice, i2cAddr, sendData, sendSize);
+	int retval = HidSmbus_WriteRequest(this->connectedDevice, i2cAddr, sendData, sendSize);
 	return retval;
 }
 
@@ -269,17 +270,17 @@ int controlImpl::FocusParameterReadSet() {
 	int retval = this->UsbRead(FOCUS_MECH_STEP_MIN, DATA_LENGTH);
 	if (retval != HID_SMBUS_SUCCESS)
 		return retval;
-	focusMinAddr = this->UsbRead2Bytes();
+	this->focusMinAddr = this->UsbRead2Bytes();
 
 	retval = this->UsbRead(FOCUS_MECH_STEP_MAX, DATA_LENGTH);
 	if (retval != HID_SMBUS_SUCCESS)
 		return retval;
-	focusMaxAddr = this->UsbRead2Bytes();
+	this->focusMaxAddr = this->UsbRead2Bytes();
 
 	retval = this->UsbRead(FOCUS_SPEED_VAL, DATA_LENGTH);
 	if (retval != HID_SMBUS_SUCCESS)
 		return retval;
-	focusSpeedPPS = this->UsbRead2Bytes();
+	this->focusSpeedPPS = this->UsbRead2Bytes();
 
 	return retval;
 }

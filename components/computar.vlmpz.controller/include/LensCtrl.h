@@ -10,14 +10,14 @@
 #include "devAddr.h"
 #include "ConfigVal.h"
 
-extern HID_SMBUS_DEVICE connectedDevice;
-extern BYTE i2cAddr;
-extern BYTE receivedData[80];
+// extern HID_SMBUS_DEVICE connectedDevice;
+// extern BYTE i2cAddr;
+// extern BYTE receivedData[80];
 
-extern uint16_t zoomCurrentAddr, focusCurrentAddr, irisCurrentAddr, optCurrentAddr;
-extern uint16_t zoomMaxAddr, zoomMinAddr, focusMaxAddr, focusMinAddr, irisMaxAddr, irisMinAddr, optFilMaxAddr;
-extern uint16_t zoomSpeedPPS, focusSpeedPPS, irisSpeedPPS;
-extern uint16_t status2;
+// extern uint16_t zoomCurrentAddr, focusCurrentAddr, irisCurrentAddr, optCurrentAddr;
+// extern uint16_t zoomMaxAddr, zoomMinAddr, focusMaxAddr, focusMinAddr, irisMaxAddr, irisMinAddr, optFilMaxAddr;
+// extern uint16_t zoomSpeedPPS, focusSpeedPPS, irisSpeedPPS;
+// extern uint16_t status2;
 
 // UsbCrtl.c
 int UsbGetNumDevices(DWORD* numdevices);
