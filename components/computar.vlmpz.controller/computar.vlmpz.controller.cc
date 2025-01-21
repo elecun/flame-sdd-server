@@ -57,9 +57,6 @@ void computar_vlmpz_controller::on_close(){
     pthread_cancel(_lens_control_responser_handle);
     pthread_join(_lens_control_responser_handle, nullptr);
 
-    /* close usb connection */
-    //UsbClose();
-
     logger::info("close computar_vlmpz_controller");
 }
 
@@ -116,10 +113,14 @@ void computar_vlmpz_controller::_lens_control_subscribe(json parameters){
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
     pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, nullptr);
 
+    logger::info("test");
     while(!_thread_stop_signal.load()){
         try{
+
             zmq::multipart_t msg_multipart;
-            if(msg_multipart.recv(*get_port("focus_control"))){
+            bool ret = msg_multipart.recv(*get_port("focus_control"));
+            
+            if(ret){
                 string topic = msg_multipart.popstr();
                 std::string message(static_cast<char*>(msg_multipart.at(0).data()), msg_multipart.at(0).size()); //jsonized message
                 auto json_data = json::parse(message);
@@ -134,7 +135,6 @@ void computar_vlmpz_controller::_lens_control_subscribe(json parameters){
                         _lens_controller_map[_device_id_mapper[camera_id]]->focus_move(value);
                     }
                 }
-
             }
         }
         catch(const json::parse_error& e){
@@ -147,6 +147,8 @@ void computar_vlmpz_controller::_lens_control_subscribe(json parameters){
             logger::error("[{}] Pipeline error : {}", get_name(), e.what());
         }
     }
+
+    logger::info("terminated");
 }
 
 void computar_vlmpz_controller::_lens_control_responser(json parameters){
