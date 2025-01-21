@@ -38,7 +38,8 @@ from util.logger.console import ConsoleLogger
 from . import trigger
 from . import light
 from subscriber.temperature import TemperatureMonitorSubscriber
-from requester.lens_control import LensControlRequester
+#from requester.lens_control import LensControlRequester
+from publisher.lens_control import LensControlRequester
 from requester.light_control import LightControlRequester
 #from requester.trigger_control import TriggerControlRequester
 from requester.pulse_generator import PulseGeneratorRequester
@@ -136,7 +137,7 @@ class AppWindow(QMainWindow):
                 if "lens_control_source" in config:
                     self.__console.info("+ Create Lens Control Requester...")
                     self.__lens_control_requester = LensControlRequester(self.__pipeline_context, connection=config["lens_control_source"])
-                    self.__lens_control_requester.focus_read_update_signal.connect(self.on_update_focus)
+                    #self.__lens_control_requester.focus_read_update_signal.connect(self.on_update_focus)
 
                 self.__light_control_requester = None
                 if "light_control_source" in config:

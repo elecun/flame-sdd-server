@@ -46,7 +46,8 @@ class LensControlRequester(QObject):
         # create context for zmq requester
         self.__socket = context.socket(zmq.PUB)
         self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 1000)
-        self.__socket.connect(connection)
+        # self.__socket.connect(connection)
+        self.__socket.bind(connection)
 
         self.__console.info("* Start Lens Control Requester")
 
