@@ -29,7 +29,8 @@ for name in dir(zmq):
         EVENT_MAP[value] = name
 
 
-class LensControlRequester(QObject):
+class LensControlPublisher(QObject):
+    """ Publisher for Lens Control """
 
     focus_read_update_signal = pyqtSignal(dict) # signal for focus value read reuslt update
     status_msg_update_signal = pyqtSignal(str) # signal for connection status message
@@ -46,7 +47,6 @@ class LensControlRequester(QObject):
         # create context for zmq requester
         self.__socket = context.socket(zmq.PUB)
         self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 1000)
-        # self.__socket.connect(connection)
         self.__socket.bind(connection)
 
         self.__console.info("* Start Lens Control Requester")
