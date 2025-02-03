@@ -1,5 +1,5 @@
 
-#include "nas.file.stacker.hpp"
+#include "synology.nas.file.stacker.hpp"
 #include <flame/log.hpp>
 #include <flame/config_def.hpp>
 #include <chrono>
@@ -9,24 +9,24 @@
 
 using namespace flame;
 
-static nas_file_stacker* _instance = nullptr;
-flame::component::object* create(){ if(!_instance) _instance = new nas_file_stacker(); return _instance; }
+static synology_nas_file_stacker* _instance = nullptr;
+flame::component::object* create(){ if(!_instance) _instance = new synology_nas_file_stacker(); return _instance; }
 void release(){ if(_instance){ delete _instance; _instance = nullptr; }}
 
-bool nas_file_stacker::on_init(){
+bool synology_nas_file_stacker::on_init(){
 
     _mount_path = fs::path(get_profile()->parameters().value("mount_path", ""));
     logger::info("[{}] Mounted NAS Storage Root Path : {}", get_name(), _mount_path.string());
 
     /* image stream data stacking */
-    // thread stacking_worker = thread(&nas_file_stacker::_image_stacker, this, get_profile()->parameters());
+    // thread stacking_worker = thread(&synology_nas_file_stacker::_image_stacker, this, get_profile()->parameters());
     // _stacker_handle = stacking_worker.native_handle();
     // stacking_worker.detach();
 
     json streams = get_profile()->parameters()["image_streams"];
     for(auto& stream_id:streams){
         int id = stream_id["id"].get<int>();
-        thread worker = thread(&nas_file_stacker::_image_stacker, this, id, get_profile()->parameters());
+        thread worker = thread(&synology_nas_file_stacker::_image_stacker, this, id, get_profile()->parameters());
         _stacker_worker[id] = worker.native_handle();
         worker.detach();
         logger::info("[{}] worker #{} detached", get_name(), id);
@@ -35,7 +35,7 @@ bool nas_file_stacker::on_init(){
     return true;
 }
 
-void nas_file_stacker::on_loop(){
+void synology_nas_file_stacker::on_loop(){
 
     // 1. component working status publish
 
@@ -49,18 +49,18 @@ void nas_file_stacker::on_loop(){
 
 }
 
-void nas_file_stacker::on_close(){
+void synology_nas_file_stacker::on_close(){
 
     _thread_stop_signal = true;
     pthread_cancel(_stacker_handle);
     pthread_join(_stacker_handle, nullptr);
 }
 
-void nas_file_stacker::on_message(){
+void synology_nas_file_stacker::on_message(){
     
 }
 
-void nas_file_stacker::_image_stacker(int id, json parameters){
+void synology_nas_file_stacker::_image_stacker(int id, json parameters){
     try{
         pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
         pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, nullptr);
