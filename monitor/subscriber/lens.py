@@ -21,6 +21,7 @@ class LensController(QThread):
         # store parameters
         self.__connection = connection
         self.__topic = topic
+        self.__running = True
 
         # initialize zmq
         self.__socket = context.socket(zmq.SUB)
@@ -34,9 +35,9 @@ class LensController(QThread):
 
     def run(self):
         """ Run the subscriber thread """
-        while True:
-            if self.isInterruptionRequested():
-                break
+        while self.__running:
+            # if self.isInterruptionRequested():
+            #     break
 
             data_str = self.__socket.recv_string()
             data = json.loads(data_str)
@@ -44,8 +45,9 @@ class LensController(QThread):
 
     def close(self) -> None:
         """ Close the socket and context """
-        self.requestInterruption()
-        self.quit()
-        self.wait(500)
+        self.__running = False
+        # self.requestInterruption()
+        # self.quit()
+        self.wait()
 
         self.__socket.close()

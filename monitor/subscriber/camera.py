@@ -106,6 +106,9 @@ class CameraMonitorSubscriber(QThread):
                 self.__console.critical(f"{e}")
             except zmq.ZMQError as e:
                 self.__console.critical(f"{e}")
+            except zmq.ContextTerminated as e:
+                self.__console.critical(f"{e}")
+                break
 
     def socket_monitor(self, socket:zmq.SyncSocket):
         """ socket monitoring """
@@ -131,7 +134,7 @@ class CameraMonitorSubscriber(QThread):
 
     def close(self) -> None:
         """ Close the socket and context """
-        # close monitoring thread
+
         self._monitor_thread_stop_event.set()
         self._monitor_thread.join()
 

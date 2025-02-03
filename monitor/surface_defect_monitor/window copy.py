@@ -50,7 +50,6 @@ class AppWindow(QMainWindow):
         self.__console = ConsoleLogger.get_logger() # logger
         self.__config = config  # copy configuration data
         self.__pipeline_context = zmq.Context() # zmq context
-        self.__service_workers = []
 
         self.__frame_defect_grid_layout = QVBoxLayout()
         self.__frame_defect_grid_plot = graph.PlotWidget()
