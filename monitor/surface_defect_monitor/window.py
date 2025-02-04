@@ -49,11 +49,16 @@ class AppWindow(QMainWindow):
         
         self.__console = ConsoleLogger.get_logger() # logger
         self.__config = config  # copy configuration data
-        self.__pipeline_context = zmq.Context() # zmq context
-        self.__service_workers = []
+        self.__pipeline_context = zmq.Context(4) # zmq context
 
         self.__frame_defect_grid_layout = QVBoxLayout()
         self.__frame_defect_grid_plot = graph.PlotWidget()
+
+        # device control interfaces
+        self.__temp_monitor_subscriber = None
+        self.__lens_control_publisher = None
+        self.__light_control_requester = None
+        self.__pulse_generator_requester = None
 
         try:            
             if "gui" in config:
@@ -118,28 +123,39 @@ class AppWindow(QMainWindow):
                 
 
                 # create temperature monitoring subscriber
-                self.__temp_monitor_subscriber = None
-                if "temp_stream_source" in config and "temp_stream_topic" in config:
-                    self.__console.info("+ Create Temperature Monitoring Subscriber...")
-                    self.__temp_monitor_subscriber = TemperatureMonitorSubscriber(self.__pipeline_context, connection=config["temp_stream_source"], topic=config["temp_stream_topic"])
-                    self.__temp_monitor_subscriber.temperature_update_signal.connect(self.on_update_temperature)
-                    self.__temp_monitor_subscriber.start() # run in thread
+                if "use_temperature_monitor" in config and config["use_temperature_monitor"]:
+                    if "temp_stream_source" in config and "temp_stream_topic" in config:
+                        self.__console.info("+ Create Temperature Monitoring Subscriber...")
+                        self.__temp_monitor_subscriber = TemperatureMonitorSubscriber(self.__pipeline_context, connection=config["temp_stream_source"], topic=config["temp_stream_topic"])
+                        self.__temp_monitor_subscriber.temperature_update_signal.connect(self.on_update_temperature)
+                        self.__temp_monitor_subscriber.start() # run in thread
+                else:
+                    self.__console.warning("Temperature Monitor is not enabled")
 
-                self.__lens_control_requester = None
-                if "lens_control_source" in config:
-                    self.__console.info("+ Create Lens Control Requester...")
-                    self.__lens_control_requester = LensControlPublisher(self.__pipeline_context, connection=config["lens_control_source"])
-                    #self.__lens_control_requester.focus_read_update_signal.connect(self.on_update_focus)
+                # create lens control publisher
+                if "use_lens_control" in config and config["use_lens_control"]:
+                    if "lens_control_source" in config:
+                        self.__console.info("+ Create Lens Control Publisher...")
+                        self.__lens_control_publisher = LensControlPublisher(self.__pipeline_context, connection=config["lens_control_source"])
+                        #self.__lens_control_publisher.focus_read_update_signal.connect(self.on_update_focus)
+                else:
+                    self.__console.warning("Lens Control is not enabled")
 
-                self.__light_control_requester = None
-                if "light_control_source" in config:
-                    self.__console.info("+ Create Light Control Requester")
-                    self.__light_control_requester = LightControlRequester(self.__pipeline_context, connection=config["light_control_source"])
-
-                self.__pulse_generator_requester = None
-                if "trigger_control_source":
-                    self.__console.info("+ Create Trigger Control Requester")
-                    self.__pulse_generator_requester = PulseGeneratorRequester(self.__pipeline_context, connection=config["trigger_control_source"])
+                # create light control requester
+                if "use_light_control" in config and config["use_light_control"]:
+                    if "light_control_source" in config:
+                        self.__console.info("+ Create Light Control Requester")
+                        self.__light_control_requester = LightControlRequester(self.__pipeline_context, connection=config["light_control_source"])
+                else:
+                    self.__console.warning("Light Control is not enabled")
+                
+                # create trigger control requester
+                if "use_trigger_control" in config and config["use_trigger_control"]:
+                    if "trigger_control_source":
+                        self.__console.info("+ Create Trigger Control Requester")
+                        self.__pulse_generator_requester = PulseGeneratorRequester(self.__pipeline_context, connection=config["trigger_control_source"])
+                else:
+                    self.__console.warning("Trigger Control is not enabled")
 
                 # map between camera device and windows
                 self.__frame_window_map = {}
@@ -165,12 +181,13 @@ class AppWindow(QMainWindow):
 
     def on_btn_focus_initialize_all(self):
         """ initialize all """
-        self.__lens_control_requester.focus_init_all()
+        self.__lens_control_publisher.focus_init_all()
     
     def on_btn_focus_preset_set_all(self):
         """ set focus preset for all lens """
-        focus_preset_ctrl = self.findChild(QComboBox, name="combobox_focus_preset")
-        selected_preset = focus_preset_ctrl.currentText()
+        # focus_preset_ctrl = self.findChild(QComboBox, name="combobox_focus_preset")
+        selected_preset = self.combobox_focus_preset.currentText()
+
         if selected_preset:
             absolute_path = pathlib.Path(self.__config["preset_path"])/selected_preset
             self.__console.info(f"Selected Focus Lens Control preset : {absolute_path}")
@@ -182,7 +199,13 @@ class AppWindow(QMainWindow):
 
                 # move focus
                 for lens_id in focus_preset["focus_value"]:
-                    self.__lens_control_requester.focus_move(int(lens_id), focus_preset["focus_value"][lens_id])
+                    edit_focus = self.findChild(QLineEdit, name=f"edit_focus_value_{lens_id}")
+                    if edit_focus !=  None:
+                        edit_focus.setText(str(focus_preset["focus_value"][lens_id]))
+                        if self.__lens_control_publisher:
+                            self.__lens_control_publisher.focus_move(int(lens_id), focus_preset["focus_value"][lens_id])
+                        else:
+                            self.__console.error("Lens Control Publisher is not initialized")
 
             except json.JSONDecodeError as e:
                 self.__console.error(f"Focus Preset Load Error : {e}")
@@ -198,11 +221,12 @@ class AppWindow(QMainWindow):
     def on_btn_focus_set(self, id:int):
         """ focus move control """
         focus_value = self.findChild(QLineEdit, name=f"edit_focus_value_{id}").text()
-        self.__lens_control_requester.focus_move(user_id=id, value=int(focus_value))
+        self.__lens_control_publisher.focus_move(user_id=id, value=int(focus_value))
+        self.__console.info(f"Focus Move : {id} -> {focus_value}")
     
     def on_btn_focus_read_all(self):
         """ call all focus value read (async) """
-        self.__lens_control_requester.read_focus()
+        self.__lens_control_publisher.read_focus()
 
     def on_update_focus(self, data:dict):
         """ update focus value for all lens """
@@ -241,8 +265,8 @@ class AppWindow(QMainWindow):
         if self.__light_control_requester:
             self.__light_control_requester.close()
             self.__console.info("Close light control requester")
-        if self.__lens_control_requester:
-            self.__lens_control_requester.close()
+        if self.__lens_control_publisher:
+            self.__lens_control_publisher.close()
             self.__console.info("Close lens control requester")
         if self.__pulse_generator_requester:
             self.__pulse_generator_requester.close()

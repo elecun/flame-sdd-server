@@ -17,6 +17,8 @@ import json
 import threading
 import time
 from typing import Any, Dict
+from service import Service
+from zmq.utils.monitor import parse_monitor_message
 
 # connection event message parsing
 EVENT_MAP = {}
@@ -35,49 +37,66 @@ class TemperatureMonitorSubscriber(QThread):
         super().__init__()
 
         self.__console = ConsoleLogger.get_logger()   # console logger
-        self.__console.info(f"Temperature controller Connection : {connection} (topic:{topic})")
+        self.__console.info(f"Temperature monitor subscriber is now connecting {connection} (topic:{topic})")
+
+        """ local varuiables """
+        self.__is_running = True
+
+        """ create zmq socket for subscriber """
+        self.__socket = context.socket(zmq.SUB)
+        self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 1000)
+        self.__socket.setsockopt(zmq.RCVTIMEO, 500)
+        self.__socket.setsockopt(zmq.LINGER,0)
+        self.__socket.connect(connection)
+        self.__socket.subscribe(topic)
+        
+        # socket monitoring
+        self._monitor_thread_stop_event = threading.Event()
+        self.__monitor = self.__socket.get_monitor_socket()
+        self.__poller = zmq.Poller()
+        self.__poller.register(self.__socket, zmq.POLLIN)
+        self.__poller.register(self.__monitor, zmq.POLLIN)
 
         # store parameters
         self.__connection = connection
         self.__topic = topic
 
-        # initialize zmq
-        self.__socket = context.socket(zmq.SUB)
-        self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 1000)
-        self.__socket.connect(connection)
-        self.__socket.subscribe(topic)
-
-        # create socket connection status monitoring thread
-        self._monitor_thread_stop_event = threading.Event()
-        self._monitor_thread = threading.Thread(target=self.socket_monitor, args=(self.__socket,))
-        self._monitor_thread.daemon = True
-        self._monitor_thread.start()
-
-        self.__console.info("* Start Temperature Subscriber")
-
+        self.__console.info("* Start temperature monitor subscriber in background...")
         self.start()
 
-    def get_connection_info(self) -> str: # return connection address
+    def get_connection_info(self) -> str:
+        """ return connection info """
         return self.__connection
     
-    def get_topic(self) -> str: # return subscriber topic
+    def get_topic(self) -> str:
+        """ get subscribe topic """
         return self.__topic
 
     def run(self):
         """ Run the subscriber thread """
-        while True:
-            if self.isInterruptionRequested():
-                break
+
+        while self.__is_running:
             try:
-                topic, data = self.__socket.recv_multipart() # only data block
-                if topic.decode() == self.__topic:
-                    data = json.loads(data.decode('utf8').replace("'", '"'))
-                    self.temperature_update_signal.emit(data)
-                
-            except json.JSONDecodeError as e:
-                self.__console.critical(f"{e}")
+                events = dict(self.__poller.poll())
+
+                if self.__socket in events and events[self.__socket]==zmq.POLLIN:
+                    message = self.__socket.recv_multipart(zmq.NOBLOCK)
+                    # message data processing here
+
+                if self.__monitor in events and events[self.__monitor]==zmq.POLLIN:
+                    monitor_event = self.__monitor.recv_multipart(zmq.NOBLOCK)
+                    parsed_event = parse_monitor_message(monitor_event)
+                    
+                    print(parsed_event)
+                    # self.status_msg_update_signal.emit
             except Exception as e:
-                self.__console.critical(f"{e}")
+                self.__console.critical(f"Temperature Monitor Subscriber Exception : {e}")
+            except zmq.ZMQError as e:
+                if e.errno != zmq.EAGAIN: # if nothing to recv, occurred zmq error EAGAIN
+                    break
+            finally:
+                self.__socket.close()
+                self.__monitor.close()
 
     def socket_monitor(self, socket:zmq.SyncSocket):
         """socket monitoring"""
@@ -107,7 +126,8 @@ class TemperatureMonitorSubscriber(QThread):
         """ Close the socket and context """
         # close monitoring thread
         self._monitor_thread_stop_event.set()
-        self._monitor_thread.join()
+        # self._monitor_thread.join()
 
         self.requestInterruption()
         self.quit()
+        self.wait()

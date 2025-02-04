@@ -94,12 +94,12 @@ class LensControlPublisher(QObject):
             self.__console.warning(f"Error Exception")
 
 
-    def focus_move(self, user_id:int, value:int):
+    def focus_move(self, lens_id:int, value:int):
         """ set focus value """
         try:
             topic = "focus_control"
             message = {
-                "id":user_id,
+                "id":lens_id,
                 "function":"move_focus",
                 "value":value
             }
@@ -108,7 +108,7 @@ class LensControlPublisher(QObject):
         
             # publish
             self.__socket.send_multipart([topic.encode(), jmsg.encode()])
-            self.__console.info(f"Publish Lens Focus Control Data : Camera-ID {user_id}, Focus {value}")
+            self.__console.info(f"Publish Lens Focus Control Data : Lens-ID {lens_id}, Focus {value}")
 
         except zmq.error.ZMQError as e:
             self.__console.error(f"{e}")

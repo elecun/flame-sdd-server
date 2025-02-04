@@ -15,27 +15,27 @@ SOURCE_FILES = .
 
 #Compilers
 ifeq ($(ARCH),arm64)
-	CC := /usr/bin/aarch64-linux-gnu-g++
-	GCC := /usr/bin/aarch64-linux-gnu-g++
+	CC := g++
+	GCC := gcc
 	LD_LIBRARY_PATH += -L./lib/arm64
-	OUTDIR		= $(CURRENT_DIR)/bin/arm64
-	BUILDDIR	= $(CURRENT_DIR)/bin/arm64
+	OUTDIR		= $(CURRENT_DIR)/bin/arm64/
+	BUILDDIR	= $(CURRENT_DIR)/bin/arm64/
 	INCLUDE_DIR = -I./ -I$(CURRENT_DIR)/ -I$(CURRENT_DIR)/include/ -I$(CURRENT_DIR)/include/dep -I/usr/include
-	LD_LIBRARY_PATH += -L/usr/local/lib -L./lib/arm64
+	LD_LIBRARY_PATH += -L/usr/local/lib -L./lib/arm64/
 else ifeq ($(ARCH), armhf)
 	CC := /usr/bin/arm-linux-gnueabihf-g++-9
 	GCC := /usr/bin/arm-linux-gnueabihf-gcc-9
 	LD_LIBRARY_PATH += -L./lib/armhf
-	OUTDIR		= $(CURRENT_DIR)/bin/armhf
-	BUILDDIR	= $(CURRENT_DIR)/bin/armhf
+	OUTDIR		= $(CURRENT_DIR)/bin/armhf/
+	BUILDDIR	= $(CURRENT_DIR)/bin/armhf/
 	INCLUDE_DIR = -I./ -I$(CURRENT_DIR)/ -I$(CURRENT_DIR)/include/ -I$(CURRENT_DIR)/include/dep -I/usr/include
-	LD_LIBRARY_PATH += -L/usr/local/lib -L./lib/armhf
+	LD_LIBRARY_PATH += -L/usr/local/lib -L./lib/armhf/
 else ifeq ($(ARCH), aarch64) # for Mac Apple Silicon
 	CC := g++
 	GCC := gcc
 #	LD_LIBRARY_PATH += -L./lib/aarch64-linux-gnu
-	OUTDIR		= $(CURRENT_DIR)/bin/aarch64
-	BUILDDIR	= $(CURRENT_DIR)/bin/aarch64
+	OUTDIR		= $(CURRENT_DIR)/bin/aarch64/
+	BUILDDIR	= $(CURRENT_DIR)/bin/aarch64/
 	INCLUDE_DIR = -I./ -I$(CURRENT_DIR) -I$(FLAME_PATH)/include -I$(FLAME_PATH)/include/dep -I/usr/include -I/usr/local/include -I/opt/pylon/include -I/usr/include/opencv4
 	LIBDIR = -L/usr/local/lib -L$(CURRENT_DIR)/lib/aarch64-linux-gnu/
 export LD_LIBRARY_PATH := $(LIBDIR):$(LD_LIBRARY_PATH)
@@ -61,7 +61,7 @@ endif
 $(shell mkdir -p $(OUTDIR))
 $(shell mkdir -p $(BUILDDIR))
 REV_COUNT = $(shell git rev-list --all --count)
-MIN_COUNT = $(shell git tag | wc -l)
+MIN_COUNT = 0 #$(shell git tag | wc -l)
 
 #if release(-O3), debug(-O0)
 # if release mode compile, remove -DNDEBUG
