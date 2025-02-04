@@ -1,0 +1,18 @@
+{
+    "rt_cycle_ns" : 1000000000,
+    "verbose" : 1,
+
+    "parameters":{
+        "lv2_client":{
+            "host":"127.0.0.1",
+            "port":5401
+        },
+        "lv2_server":{
+            "port":5402
+        }
+    },
+
+    "dataport":{
+        
+    }
+}
