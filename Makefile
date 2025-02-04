@@ -131,11 +131,6 @@ dk_gui_supporter.comp:	$(BUILDDIR)dk.gui.supporter.o
 $(BUILDDIR)dk.gui.supporter.o:	$(CURRENT_DIR)/components/dk.gui.supporter/dk.gui.supporter.cc
 								$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
 
-dk_level_data_gateway.comp:	$(BUILDDIR)dk.level.data.gateway.o
-							$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(BUILDDIR)$@ $^ $(LDLIBS)
-$(BUILDDIR)dk.level.data.gateway.o:	$(CURRENT_DIR)/components/dk.level.data.gateway/dk.level.data.gateway.cc
-									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
-
 dk_sdd_inference.comp:	$(BUILDDIR)dk.sdd.inference.o
 						$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(BUILDDIR)$@ $^ $(LDLIBS)
 $(BUILDDIR)dk.sdd.inference.o:	$(CURRENT_DIR)/components/dk.sdd.inference/dk.sdd.inference.cc
@@ -166,9 +161,9 @@ ni_daq_controller.comp:	$(BUILDDIR)ni.daq.controller.o
 $(BUILDDIR)ni.daq.controller.o:	$(CURRENT_DIR)/components/ni.daq.controller/ni.daq.controller.cc
 									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
 
-dk_level2_terminal.comp:	$(BUILDDIR)dk.level2.terminal.o
+dk_level2_interface.comp:	$(BUILDDIR)dk.level2.interface.o
 							$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(BUILDDIR)$@ $^ $(LDLIBS) -lmodbus
-$(BUILDDIR)dk.level2.terminal.o:	$(CURRENT_DIR)/components/dk.level2.terminal/dk.level2.terminal.cc
+$(BUILDDIR)dk.level2.interface.o:	$(CURRENT_DIR)/components/dk.level2.interface/dk.level2.interface.cc
 									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
 
 dk_light_linker.comp:	$(BUILDDIR)dk.light.linker.o
@@ -231,7 +226,7 @@ $(BUILDDIR)dk.image.push.unittest.o:	$(CURRENT_DIR)/components/dk.image.push.uni
 
 all : flame
 
-dk_h_inspector : flame basler_gige_cam_grabber.comp synology_nas_file_stacker.comp ni_daq_pulse_generator.comp ni_daq_controller.comp
+dk_h_inspector : flame basler_gige_cam_grabber.comp synology_nas_file_stacker.comp ni_daq_pulse_generator.comp ni_daq_controller.comp dk_level2_interface.comp
 
 dk_h_inspector_onsite : flame system_status_monitor.comp autonics_temp_controller.comp computar_vlmpz_controller.comp
 
