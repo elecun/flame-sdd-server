@@ -18,7 +18,8 @@
             "socket_type" : "pull",
             "host":"127.0.0.1",
             "port" : 5101,
-            "queue_size" : 1000
+            "queue_size" : 1000,
+            "timeout_ms":1000
         }
     }
 }

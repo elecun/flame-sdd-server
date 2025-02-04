@@ -13,9 +13,7 @@
 #define FLAME_NI_DAQ_CONTROLLER_HPP_INCLUDED
 
 #include <flame/component/object.hpp>
-#include <string>
 #include <NIDAQmx.h>
-#include <atomic>
 
 class ni_daq_controller : public flame::component::object {
     public:
@@ -48,9 +46,6 @@ class ni_daq_controller : public flame::component::object {
 
         /* for worker handle */
         vector<thread> _worker_container;
-        pthread_t _counter_channel_worker_handle;
-        pthread_t _di_channel_worker_handle;
-        pthread_t _control_worker_handle; //puller
 
         /* for worker termination */
         atomic<bool> _worker_stop {false};

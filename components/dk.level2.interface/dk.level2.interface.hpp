@@ -1,7 +1,7 @@
 /**
- * @file dk.level2.terminal.hpp
+ * @file dk.level2.interface.hpp
  * @author Byunghun Hwang <bh.hwang@iae.re.kr>
- * @brief DK Level2 Data Interface Terminal component
+ * @brief DK Level2 Data Interface component
  * @version 0.1
  * @date 2024-06-30
  * 
@@ -9,17 +9,20 @@
  * 
  */
 
-#ifndef FLAME_DK_LEVEL2_TERMINAL_HPP_INCLUDED
-#define FLAME_DK_LEVEL2_TERMINAL_HPP_INCLUDED
+#ifndef FLAME_DK_LEVEL2_INTERFACE_HPP_INCLUDED
+#define FLAME_DK_LEVEL2_INTERFACE_HPP_INCLUDED
 
 #include <flame/component/object.hpp>
-#include <atomic>
+#include <iostream>
+#include <boost/asio.hpp>
 
+using namespace std;
+using namespace boost::asio::ip;
 
-class dk_level2_terminal : public flame::component::object {
+class dk_level2_interface : public flame::component::object {
     public:
-        dk_level2_terminal() = default;
-        virtual ~dk_level2_terminal() = default;
+        dk_level2_interface() = default;
+        virtual ~dk_level2_interface() = default;
 
         // default interface functions
         bool on_init() override;
@@ -28,19 +31,20 @@ class dk_level2_terminal : public flame::component::object {
         void on_message() override;
 
     private:
-        /* level2 data request response */
-        void _response(json parameters);
-
-        /* parse received packet into internal data */
-        string _parse(json data);
-
-        void _request(string port_name, json data);
-        void _reply(string port_name, int response_code);
-        bool _wait_response(string port_name);
+        void _server_proc();
 
     private:
-        pthread_t _responser_handle;
-        std::atomic<bool> _thread_stop_signal { false };
+        boost::asio::io_context _io_context;
+
+        string lv2_access_ip;
+        int lv2_access_port;
+        string sdd_host_ip;
+        int sdd_host_port;
+
+    private:
+        vector<thread> _worker_container;
+        atomic<bool> _worker_stop {false};
+
 
 }; /* class */
 

@@ -60,10 +60,7 @@ void ni_daq_controller::_counter_channel_proc(){
 
     while(!_worker_stop.load()){
         this_thread::sleep_for(chrono::milliseconds(500));
-        logger::info("[{}] counter channel worker is running", get_name());
     }
-
-    logger::info("[{}] counter channel worker is out", get_name());
 
 }
 
@@ -71,15 +68,10 @@ void ni_daq_controller::_di_channel_proc(){
 
     while(!_worker_stop.load()){
         this_thread::sleep_for(chrono::milliseconds(500));
-        logger::info("[{}] di channel worker is running", get_name());
     }
-
-    logger::info("[{}] di channel worker is out", get_name());
-
 }
 
 void ni_daq_controller::_control_proc(){
-    logger::info("[{}] control worker is running", get_name());
 
     try{
         while(!_worker_stop.load()){
@@ -94,9 +86,6 @@ void ni_daq_controller::_control_proc(){
                         string msg_str(static_cast<char*>(message.data()), message.size());
                         // parse message here
                     }
-                }
-                else{
-                    logger::info("[{}] nothing to read message", get_name());
                 }
             }
             catch(const zmq::error_t& e){
@@ -119,7 +108,5 @@ void ni_daq_controller::_control_proc(){
     catch(const json::parse_error& e){
         logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());
     }
-
-    logger::info("[{}] control worker is out", get_name());
 
 }
