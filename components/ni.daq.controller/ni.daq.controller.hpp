@@ -15,27 +15,18 @@
 #include <flame/component/object.hpp>
 #include <string>
 #include <NIDAQmx.h>
+#include <atomic>
 
 class ni_daq_controller : public flame::component::object {
     public:
         ni_daq_controller() = default;
         virtual ~ni_daq_controller() = default;
 
-        // default interface functions
+        /* common component interfaces */
         bool on_init() override;
         void on_loop() override;
         void on_close() override;
         void on_message() override;
-
-    private:
-
-        /* internal worker start/stop instruction */
-        void _start_di_channel_worker();
-        void _stop_di_channel_worker();
-        void _start_counter_channel_worker();
-        void _stop_counter_channel_worker();
-        void _start_control_worker();
-        void _stop_control_worker();
 
     private:
         /* internal functions */
@@ -62,7 +53,7 @@ class ni_daq_controller : public flame::component::object {
         pthread_t _control_worker_handle; //puller
 
         /* for worker termination */
-        volatile bool _worker_stop { false };
+        atomic<bool> _worker_stop {false};
 
         
 

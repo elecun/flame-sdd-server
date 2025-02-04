@@ -13,18 +13,6 @@
     },
 
     "dataport":{
-        "status" : {
-            "transport" : "tcp",
-            "host":"*",
-            "port" : 5001,
-            "socket_type" : "pub",
-            "queue_size" : 1000
-        },
-        "op_trigger" : {
-            "transport" : "inproc",
-            "socket_type" : "pub",
-            "queue_size" : 1000
-        },
         "manual_control" : {
             "transport" : "tcp",
             "socket_type" : "pull",

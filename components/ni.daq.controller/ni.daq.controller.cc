@@ -41,11 +41,12 @@ void ni_daq_controller::on_loop(){
 
 void ni_daq_controller::on_close(){
 
-    _worker_stop = true;
+    _worker_stop.store(true);
 
     for_each(_worker_container.begin(), _worker_container.end(), [](thread& t){ // do in parallel, available for C++17
-        if(t.joinable())
+        if(t.joinable()){
             t.join();
+        }
     });
 
     _worker_container.clear();
@@ -57,75 +58,68 @@ void ni_daq_controller::on_message(){
 
 void ni_daq_controller::_counter_channel_proc(){
 
-    while(!_worker_stop){
+    while(!_worker_stop.load()){
         this_thread::sleep_for(chrono::milliseconds(500));
         logger::info("[{}] counter channel worker is running", get_name());
     }
+
+    logger::info("[{}] counter channel worker is out", get_name());
 
 }
 
 void ni_daq_controller::_di_channel_proc(){
 
-    while(!_worker_stop){
+    while(!_worker_stop.load()){
         this_thread::sleep_for(chrono::milliseconds(500));
         logger::info("[{}] di channel worker is running", get_name());
     }
 
+    logger::info("[{}] di channel worker is out", get_name());
+
 }
 
 void ni_daq_controller::_control_proc(){
+    logger::info("[{}] control worker is running", get_name());
 
-    while(!_worker_stop){
-        this_thread::sleep_for(chrono::milliseconds(500));
-        logger::info("[{}] control worker is running", get_name());
+    try{
+        while(!_worker_stop.load()){
+            try {
+                pipe_data message;
+                zmq::recv_result_t result = get_port("manual_control")->recv(message, zmq::recv_flags::none);
+                if(result.has_value()){ // failed
+                    if(result.value() == EAGAIN){
+                        continue;
+                    }
+                    else{
+                        string msg_str(static_cast<char*>(message.data()), message.size());
+                        // parse message here
+                    }
+                }
+                else{
+                    logger::info("[{}] nothing to read message", get_name());
+                }
+            }
+            catch(const zmq::error_t& e){
+                if(e.num() == ETERM){
+                    logger::error("[{}] Pipeline context was terminated. stopping receiver...", get_name());
+                    break;
+                }
+                throw;
+            }
+
+        }
+
+    }
+    catch(const zmq::error_t& e){
+        logger::error("[{}] Pipeline error : {}", get_name(), e.what()); // ETERM
+    }
+    catch(const std::runtime_error& e){
+        logger::error("[{}] Runtime error occurred!", get_name());
+    }
+    catch(const json::parse_error& e){
+        logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());
     }
 
-}
+    logger::info("[{}] control worker is out", get_name());
 
-
-
-
-void ni_daq_controller::_start_control_worker(){
-
-    thread control_worker = thread(&ni_daq_controller::_control_proc, this);
-    _control_worker_handle = control_worker.native_handle();
-    control_worker.detach(); //worker thread will be detached from the main thread
-    logger::info("[{}] control worker detached", get_name());
-}
-
-void ni_daq_controller::_stop_control_worker(){
-
-    /* stop control worker */
-    // pthread_cancel(_control_worker_handle);
-    // pthread_join(_control_worker_handle, nullptr);
-}
-
-/* start thread for di channel */
-void ni_daq_controller::_start_di_channel_worker(){
-
-    thread di_channel_worker = thread(&ni_daq_controller::_di_channel_proc, this);
-    _di_channel_worker_handle = di_channel_worker.native_handle();
-    di_channel_worker.detach();
-    logger::info("[{}] di channel worker detached", get_name());
-}
-
-/* stop thread for di channel */
-void ni_daq_controller::_stop_di_channel_worker(){
-}
-
-/* start thread for counter channel */
-void ni_daq_controller::_start_counter_channel_worker(){
-
-    thread counter_channel_worker = thread(&ni_daq_controller::_counter_channel_proc, this);
-    _counter_channel_worker_handle = counter_channel_worker.native_handle();
-    counter_channel_worker.detach();
-    logger::info("[{}] counter channel worker detached", get_name());
-}
-
-/* stop thread for counter channel */
-void ni_daq_controller::_stop_counter_channel_worker(){
-
-    /* stop counter channel worker */
-    // pthread_cancel(_counter_worker_handle);
-    // pthread_join(_counter_worker_handle, nullptr);
 }
