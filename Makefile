@@ -161,6 +161,11 @@ ni_daq_pulse_generator.comp:	$(BUILDDIR)ni.daq.pulse.generator.o
 $(BUILDDIR)ni.daq.pulse.generator.o:	$(CURRENT_DIR)/components/ni.daq.pulse.generator/ni.daq.pulse.generator.cc
 									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
 
+ni_daq_controller.comp:	$(BUILDDIR)ni.daq.controller.o
+							$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(BUILDDIR)$@ $^ $(LDLIBS) -lnidaqmx
+$(BUILDDIR)ni.daq.controller.o:	$(CURRENT_DIR)/components/ni.daq.controller/ni.daq.controller.cc
+									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
+
 dk_level2_terminal.comp:	$(BUILDDIR)dk.level2.terminal.o
 							$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(BUILDDIR)$@ $^ $(LDLIBS) -lmodbus
 $(BUILDDIR)dk.level2.terminal.o:	$(CURRENT_DIR)/components/dk.level2.terminal/dk.level2.terminal.cc
@@ -226,7 +231,7 @@ $(BUILDDIR)dk.image.push.unittest.o:	$(CURRENT_DIR)/components/dk.image.push.uni
 
 all : flame
 
-dk_h_inspector : flame basler_gige_cam_grabber.comp synology_nas_file_stacker.comp ni_daq_pulse_generator.comp
+dk_h_inspector : flame basler_gige_cam_grabber.comp synology_nas_file_stacker.comp ni_daq_pulse_generator.comp ni_daq_controller.comp
 
 dk_h_inspector_onsite : flame system_status_monitor.comp autonics_temp_controller.comp computar_vlmpz_controller.comp
 
