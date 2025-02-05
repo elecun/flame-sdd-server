@@ -63,7 +63,7 @@ class AppWindow(QMainWindow):
         try:            
             if "gui" in config:
 
-                # load gui file
+                # load UI File
                 ui_path = pathlib.Path(config["app_path"]) / config["gui"]
                 if os.path.isfile(ui_path):
                     loadUi(ui_path, self)
@@ -90,8 +90,6 @@ class AppWindow(QMainWindow):
                 # register button event callback function
                 self.btn_trigger_start.clicked.connect(self.on_btn_trigger_start)
                 self.btn_trigger_stop.clicked.connect(self.on_btn_trigger_stop)
-                self.btn_light_control_set.clicked.connect(self.on_btn_light_control_set)
-                self.btn_light_control_off.clicked.connect(self.on_btn_light_control_off)
                 self.btn_focus_set_1.clicked.connect(partial(self.on_btn_focus_set, 1))
                 self.btn_focus_set_2.clicked.connect(partial(self.on_btn_focus_set, 2))
                 self.btn_focus_set_3.clicked.connect(partial(self.on_btn_focus_set, 3))
@@ -109,6 +107,7 @@ class AppWindow(QMainWindow):
 
                 # register dial event callback function
                 self.dial_light_control.valueChanged.connect(self.on_change_light_control)
+                self.dial_light_control.sliderReleased.connect(self.on_set_light_control)
 
                 # find focus preset files in preset directory
                 self.focus_preset_ctrl = self.findChild(QComboBox, name="combobox_focus_preset")
@@ -302,12 +301,11 @@ class AppWindow(QMainWindow):
     def on_btn_trigger_start(self):
         """ event callback : trigger start """
         freq = self.findChild(QLineEdit, name="edit_trigger_frequency").text()
-        samples = self.findChild(QLineEdit, name="edit_trigger_samples").text()
         duty = self.findChild(QLineEdit, name="edit_trigger_duty").text()
-        continuous_mode = self.findChild(QCheckBox, name="chk_trigger_mode_continuous").isChecked()
+        
 
-        if continuous_mode:
-            self.__pulse_generator_requester.start_generation(float(freq), float(duty))
+        # if continuous_mode:
+        #     self.__pulse_generator_requester.start_generation(float(freq), float(duty))
         # else:
         #     self.__trigger.start_trigger_finite("Dev1/ctr0", float(freq), int(samples), float(duty))
             
@@ -339,22 +337,15 @@ class AppWindow(QMainWindow):
         self.__frame_defect_grid_plot.enableAutoRange(axis=graph.ViewBox.XAxis)
         self.__frame_defect_grid_plot.show()
 
-    def on_btn_light_control_set(self):
-        """ event callback : light on """
-        if "dmx_ip" in self.__config and "dmx_port" in self.__config:
+    def on_set_light_control(self):
+        """ event callback : light control """
+        if "use_light_control" in self.__config and self.__config["use_light_control"]:
+            if "dmx_ip" in self.__config and "dmx_port" in self.__config:
+                value = int(self.label_light_control_value.text())
+                self.__light_control_requester.set_control(self.__config["dmx_ip"], self.__config["dmx_port"], self.__config["light_ids"], value)
+            else:
+                QMessageBox.critical(self, "Error", f"DMX IP and Port is not defined")
+        else:
             value = int(self.label_light_control_value.text())
-            self.__light_control_requester.set_control(self.__config["dmx_ip"], self.__config["dmx_port"], self.__config["light_ids"], value)
-        else:
-            QMessageBox.critical(self, "Error", f"DMX IP and Port is not defined")
+            QMessageBox.critical(self, "Error", f"Light control did not activated. value is {value}")
         
-
-    def on_btn_light_control_off(self):
-        """ event callback : light on """
-        if "dmx_ip" in self.__config and "dmx_port" in self.__config:
-            self.label_light_control_value.setText("0")
-            self.dial_light_control.setValue(0)
-            self.__light_control_requester.set_control(self.__config["dmx_ip"], self.__config["dmx_port"], self.__config["light_ids"], 0)
-        else:
-            QMessageBox.critical(self, "Error", f"DMX IP and Port is not defined")
-
-    
