@@ -584,9 +584,9 @@ background-color: rgb(212, 212, 212);</string>
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>50</y>
+         <y>45</y>
          <width>256</width>
-         <height>31</height>
+         <height>36</height>
         </rect>
        </property>
       </widget>
@@ -827,6 +827,28 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="text">
         <string>Set</string>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="btn_focus_preset_load">
+       <property name="geometry">
+        <rect>
+         <x>270</x>
+         <y>45</y>
+         <width>96</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">color: rgb(0,0,0);
+background-color: rgb(212, 212, 212);</string>
+       </property>
+       <property name="text">
+        <string>Load</string>
        </property>
       </widget>
      </widget>
