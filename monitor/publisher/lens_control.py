@@ -47,6 +47,7 @@ class LensControlPublisher(QObject):
         # create context for zmq requester
         self.__socket = context.socket(zmq.PUB)
         self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 1000)
+        self.__socket.setsockopt(zmq.LINGER, 0)
         self.__socket.bind(connection)
 
         self.__console.info("* Start Lens Control Requester")
@@ -63,8 +64,8 @@ class LensControlPublisher(QObject):
             self.__console.info(f"Request : {request_string}")
 
             # reply
-            response = self.__socket.recv_string()
-            self.__console.info(f"Reply : {response}")
+            # response = self.__socket.recv_string()
+            # self.__console.info(f"Reply : {response}")
 
         except zmq.error.ZMQError as e:
             self.__console.error(f"{e}")

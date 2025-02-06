@@ -110,14 +110,14 @@ class AppWindow(QMainWindow):
                 self.dial_light_control.sliderReleased.connect(self.on_set_light_control)
 
                 # find focus preset files in preset directory
-                self.focus_preset_ctrl = self.findChild(QComboBox, name="combobox_focus_preset")
+                #self.focus_preset_ctrl = self.findChild(QComboBox, name="combobox_focus_preset")
                 preset_path = pathlib.Path(config["app_path"])/pathlib.Path(config["preset_path"])
                 self.__config["preset_path"] = preset_path.as_posix()
                 self.__console.info(f"+ Preset Path : {preset_path}")
                 if os.path.exists(pathlib.Path(config["app_path"])):
                     preset_files = [f for f in os.listdir(preset_path)]
                     for preset in preset_files:
-                        self.focus_preset_ctrl.addItem(preset)
+                        self.combobox_focus_preset.addItem(preset)
 
                 
 
@@ -274,8 +274,8 @@ class AppWindow(QMainWindow):
             self.__temp_monitor_subscriber.close()
             self.__console.info("Close temperature subscriber")
 
-        # context termination
-        self.__pipeline_context.term()
+        # context termination with linger=0
+        self.__pipeline_context.destroy(0)
             
         return super().closeEvent(event)
 
