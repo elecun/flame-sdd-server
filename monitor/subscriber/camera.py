@@ -58,16 +58,13 @@ class CameraMonitorSubscriber(QThread):
         # initialize zmq
         self.__socket = context.socket(zmq.SUB)
         self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 5000)
+        self.__socket.setsockopt(zmq.RCVTIMEO, 500)
+        self.__socket.setsockopt(zmq.LINGER, 0)
         self.__socket.connect(connection)
         self.__socket.subscribe(topic)
 
-        # create socket connection status monitoring thread
-        self._monitor_thread_stop_event = threading.Event()
-        self._monitor_thread = threading.Thread(target=self.socket_monitor, args=(self.__socket,))
-        self._monitor_thread.daemon = True
-        self._monitor_thread.start()
-
-        #self._queue = Queue()
+        self.__poller = zmq.Poller()
+        self.__poller.register(self.__socket, zmq.POLLIN) # POLLIN, POLLOUT, POLLERR
 
         self.__console.info("* Start Camera Monitor Subscriber")
 
@@ -82,32 +79,30 @@ class CameraMonitorSubscriber(QThread):
     def run(self):
         """ Run subscriber thread """
 
-        while True:
-            if self.isInterruptionRequested():
-                break
+        while not self.isInterruptionRequested():
             try:
-
-                # previous
-                topic, id, image_data = self.__socket.recv_multipart()
-                if topic.decode() == self.__topic:
-                    if len(id)>2:
-                        return
-                    nparr = np.frombuffer(image_data, np.uint8)
-                    decoded_image = cv2.imdecode(nparr, cv2.IMREAD_UNCHANGED)
-                    if decoded_image is not None:
-                        color_image = cv2.cvtColor(decoded_image, cv2.COLOR_BGR2RGB)
-                        h, w = color_image.shape[:2]  # height와 width
-                        ch = color_image.shape[2] if len(color_image.shape) > 2 else 1
-                        self.frame_update_signal.emit(int(id), color_image)
+                events = dict(self.__poller.poll(1000)) # wait 1 sec
+                if self.__socket in events:
+                    topic, id, image_data = self.__socket.recv_multipart()
+                    if topic.decode() == self.__topic:
+                        if len(id)>2:
+                            return
+                        nparr = np.frombuffer(image_data, np.uint8)
+                        decoded_image = cv2.imdecode(nparr, cv2.IMREAD_UNCHANGED)
+                        if decoded_image is not None:
+                            color_image = cv2.cvtColor(decoded_image, cv2.COLOR_BGR2RGB)
+                            h, w = color_image.shape[:2]  # height와 width
+                            ch = color_image.shape[2] if len(color_image.shape) > 2 else 1
+                            self.frame_update_signal.emit(int(id), color_image)
 
             except json.JSONDecodeError as e:
-                self.__console.critical(f"{e}")
-            except Exception as e:
-                self.__console.critical(f"{e}")
+                self.__console.critical(f"<Camera Monitor> {e}")
+                continue
             except zmq.ZMQError as e:
-                self.__console.critical(f"{e}")
-            except zmq.ContextTerminated as e:
-                self.__console.critical(f"{e}")
+                self.__console.critical(f"<Camera Monitor> {e}")
+                break
+            except Exception as e:
+                self.__console.critical(f"<Camera Monitor> {e}")
                 break
 
     def socket_monitor(self, socket:zmq.SyncSocket):
@@ -135,13 +130,20 @@ class CameraMonitorSubscriber(QThread):
     def close(self) -> None:
         """ Close the socket and context """
 
-        self._monitor_thread_stop_event.set()
-        self._monitor_thread.join()
+        # self._monitor_thread_stop_event.set()
+        # self._monitor_thread.join()
 
         self.requestInterruption()
         self.quit()
+        self.wait()
 
         try:
+            self.__socket.setsockopt(zmq.LINGER, 0)
+            self.__poller.unregister(self.__socket)
             self.__socket.close()
-        except zmq.error.ZMQError as e:
-            self.__console.error(f"{e}")
+        except zmq.ZMQError as e:
+            self.__console.error(f"<Camera Monitor> {e}")
+        
+        self.__console.info(f"Close Camera Monitor subscriber")
+
+        

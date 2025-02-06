@@ -18,6 +18,7 @@ import zmq.asyncio
 import json
 import cv2
 from functools import partial
+from concurrent.futures import ThreadPoolExecutor
 
 try:
     # using PyQt5
@@ -49,7 +50,7 @@ class AppWindow(QMainWindow):
         
         self.__console = ConsoleLogger.get_logger() # logger
         self.__config = config  # copy configuration data
-        self.__pipeline_context = zmq.Context(4) # zmq context
+        self.__pipeline_context = zmq.Context(14) # zmq context
 
         self.__frame_defect_grid_layout = QVBoxLayout()
         self.__frame_defect_grid_plot = graph.PlotWidget()
@@ -147,7 +148,21 @@ class AppWindow(QMainWindow):
                         self.__light_control_requester = LightControlRequester(self.__pipeline_context, connection=config["light_control_source"])
                 else:
                     self.__console.warning("Light Control is not enabled")
-                
+
+                # map between camera device and windows
+                self.__frame_window_map = {}
+                self.__camera_image_subscriber_map = {}
+
+                for idx, id in enumerate(config["camera_ids"]):
+                    self.__frame_window_map[id] = self.findChild(QLabel, config["camera_windows"][idx])
+                    self.__console.info(f"Ready for camera grabber #{id} monitoring")
+                    portname = f"image_stream_monitor_source_{id}"
+                    self.__console.info("+ Create Camera #{id} Monitoring Subscriber...")
+                    self.__camera_image_subscriber_map[id] = CameraMonitorSubscriber(self.__pipeline_context,connection=config[portname],
+                                                                                     topic=f"{config['image_stream_monitor_topic_prefix']}{id}")
+                    self.__camera_image_subscriber_map[id].frame_update_signal.connect(self.on_update_camera_image)
+                    self.__camera_image_subscriber_map[id].start()
+
                 # create trigger control requester
                 if "use_trigger_control" in config and config["use_trigger_control"]:
                     if "trigger_control_source":
@@ -155,18 +170,6 @@ class AppWindow(QMainWindow):
                         self.__pulse_generator_requester = PulseGeneratorRequester(self.__pipeline_context, connection=config["trigger_control_source"])
                 else:
                     self.__console.warning("Trigger Control is not enabled")
-
-                # map between camera device and windows
-                self.__frame_window_map = {}
-                self.__camera_image_subscriber_map = {}
-                for idx, id in enumerate(config["camera_ids"]):
-                    self.__frame_window_map[id] = self.findChild(QLabel, config["camera_windows"][idx])
-                    self.__console.info(f"Ready for camera grabber #{id} monitoring")
-                    portname = f"image_stream_monitor_source_{id}"
-                    self.__camera_image_subscriber_map[id] = CameraMonitorSubscriber(self.__pipeline_context,connection=config[portname],
-                                                                                     topic=f"{config['image_stream_monitor_topic_prefix']}{id}")
-                    self.__camera_image_subscriber_map[id].frame_update_signal.connect(self.on_update_camera_image)
-                    self.__camera_image_subscriber_map[id].start() # start thread for each
 
         except Exception as e:
             self.__console.error(f"{e}")
@@ -273,6 +276,13 @@ class AppWindow(QMainWindow):
         if self.__temp_monitor_subscriber:
             self.__temp_monitor_subscriber.close()
             self.__console.info("Close temperature subscriber")
+
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            executor.map(lambda subscriber: subscriber.close(), self.__camera_image_subscriber_map.values())
+
+        # for id, subscriber in self.__camera_image_subscriber_map.items():
+        #     subscriber.close()
+        #     self.__console.info(f"Close Camera #{id} Monitor subscriber")
 
         # context termination with linger=0
         self.__pipeline_context.destroy(0)

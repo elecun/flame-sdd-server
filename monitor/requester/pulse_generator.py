@@ -70,7 +70,6 @@ class PulseGeneratorRequester(QObject):
         if self.__running:
             self.stop_generation()
         self.__task.close()
-        self.__console.info("Closed Pulse Generator Requester")
     
     def __run(self, freq, duty):
         self.__task.co_channels.add_co_pulse_chan_freq("Dev1/ctr0:1","",units=FrequencyUnits.HZ, idle_state=Level.LOW, initial_delay=0.0, freq=freq, duty_cycle=duty)

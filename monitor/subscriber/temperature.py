@@ -35,7 +35,7 @@ class TemperatureMonitorSubscriber(QThread):
         super().__init__()
 
         self.__console = ConsoleLogger.get_logger()   # console logger
-        self.__console.info(f"Temperature controller Connection : {connection} (topic:{topic})")
+        self.__console.info(f"Temperature Monitor Connection : {connection} (topic:{topic})")
 
         # store parameters
         self.__connection = connection
@@ -48,6 +48,9 @@ class TemperatureMonitorSubscriber(QThread):
         self.__socket.setsockopt(zmq.LINGER,0)
         self.__socket.connect(connection)
         self.__socket.subscribe(topic)
+
+        self.__poller = zmq.Poller()
+        self.__poller.register(self.__socket, zmq.POLLIN) # POLLIN, POLLOUT, POLLERR
 
         # create socket connection status monitoring thread
         # self._monitor_thread_stop_event = threading.Event()
@@ -67,24 +70,24 @@ class TemperatureMonitorSubscriber(QThread):
 
     def run(self):
         """ Run the subscriber thread """
-        while True:
-            if self.isInterruptionRequested():
-                break
+        while not self.isInterruptionRequested():
             try:
-                if not self.__socket.is_closed(): 
-                    topic, data = self.__socket.recv_multipart() # only data block
+                events = dict(self.__poller.poll(1000)) # wait 1 sec
+                if self.__socket in events:
+                    topic, data = self.__socket.recv_multipart()
                     if topic.decode() == self.__topic:
                         data = json.loads(data.decode('utf8').replace("'", '"'))
                         self.temperature_update_signal.emit(data)
-                
-            except zmq.error.ZMQError as e:
-                self.__console.critical(f"<Temperature Monitor> {e}")
-                break
+            
             except json.JSONDecodeError as e:
-                self.__console.critical(f"<Temperature Monitor> {e}")
+                self.__console.critical(f"<Temperature Monitor>[DecodeError] {e}")
+                continue
+            except zmq.error.ZMQError as e:
+                self.__console.critical(f"<Temperature Monitor>[ZMQError] {e}")
                 break
             except Exception as e:
-                self.__console.critical(f"<Temperature Monitor> {e}")
+                self.__console.critical(f"<Temperature Monitor>[Exception] {e}")
+                break
 
     def socket_monitor(self, socket:zmq.SyncSocket):
         """socket monitoring"""
@@ -117,11 +120,15 @@ class TemperatureMonitorSubscriber(QThread):
         # self._monitor_thread_stop_event.set()
         # self._monitor_thread.join()
 
-        self.__socket.setsockopt(zmq.LINGER, 0)
-        self.__socket.close()
-
         self.requestInterruption()
-        self.wait()
-        
-
         self.quit()
+        self.wait()
+
+        try:
+            self.__socket.setsockopt(zmq.LINGER, 0)
+            self.__poller.unregister(self.__socket)
+            self.__socket.close()
+        except zmq.ZMQError as e:
+            self.__console.error(f"<Temperature Monitor> {e}")
+
+        
