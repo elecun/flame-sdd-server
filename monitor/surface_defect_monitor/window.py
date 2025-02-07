@@ -42,6 +42,7 @@ from requester.light_control import LightControlRequester
 from requester.pulse_generator import PulseGeneratorRequester
 from subscriber.camera import CameraMonitorSubscriber
 
+remap_id = {"1":"9", "2":"2", "3":"3", "4":"8", "5":"4", "6":"5", "7":"6", "8":"7", "9":"1", "10":"10" }
 
 class AppWindow(QMainWindow):
     def __init__(self, config:dict):
@@ -105,13 +106,13 @@ class AppWindow(QMainWindow):
                 self.btn_defect_visualization_test.clicked.connect(self.on_btn_defect_visualization_test)
                 self.btn_focus_initialize_all.clicked.connect(self.on_btn_focus_initialize_all)
                 self.btn_focus_preset_set_all.clicked.connect(self.on_btn_focus_preset_set_all)
+                self.btn_focus_preset_load.clicked.connect(self.on_btn_focus_preset_load)
 
                 # register dial event callback function
                 self.dial_light_control.valueChanged.connect(self.on_change_light_control)
                 self.dial_light_control.sliderReleased.connect(self.on_set_light_control)
 
                 # find focus preset files in preset directory
-                #self.focus_preset_ctrl = self.findChild(QComboBox, name="combobox_focus_preset")
                 preset_path = pathlib.Path(config["app_path"])/pathlib.Path(config["preset_path"])
                 self.__config["preset_path"] = preset_path.as_posix()
                 self.__console.info(f"+ Preset Path : {preset_path}")
@@ -119,8 +120,6 @@ class AppWindow(QMainWindow):
                     preset_files = [f for f in os.listdir(preset_path)]
                     for preset in preset_files:
                         self.combobox_focus_preset.addItem(preset)
-
-                
 
                 # create temperature monitoring subscriber
                 if "use_temperature_monitor" in config and config["use_temperature_monitor"]:
@@ -184,10 +183,9 @@ class AppWindow(QMainWindow):
     def on_btn_focus_initialize_all(self):
         """ initialize all """
         self.__lens_control_publisher.focus_init_all()
-    
-    def on_btn_focus_preset_set_all(self):
-        """ set focus preset for all lens """
-        # focus_preset_ctrl = self.findChild(QComboBox, name="combobox_focus_preset")
+
+    def on_btn_focus_preset_load(self):
+        """ load focus preset """
         selected_preset = self.combobox_focus_preset.currentText()
 
         if selected_preset:
@@ -198,21 +196,27 @@ class AppWindow(QMainWindow):
                 # file load (json format)
                 preset_file = open(absolute_path, encoding='utf-8')
                 focus_preset = json.load(preset_file)
+                preset_file.close()
 
-                # move focus
+                # remap the focus
+                # remap_id = {"1":"9", "2":"2", "3":"3", "4":"8", "5":"4", "6":"5", "7":"6", "8":"7", "9":"1", "10":"10" }
+
+                # apply to the gui
                 for lens_id in focus_preset["focus_value"]:
-                    edit_focus = self.findChild(QLineEdit, name=f"edit_focus_value_{lens_id}")
-                    if edit_focus !=  None:
+                    edit_focus = self.findChild(QLineEdit, name=f"edit_focus_value_{remap_id[lens_id]}")
+                    if edit_focus:
                         edit_focus.setText(str(focus_preset["focus_value"][lens_id]))
-                        if self.__lens_control_publisher:
-                            self.__lens_control_publisher.focus_move(int(lens_id), focus_preset["focus_value"][lens_id])
-                        else:
-                            self.__console.error("Lens Control Publisher is not initialized")
 
             except json.JSONDecodeError as e:
                 self.__console.error(f"Focus Preset Load Error : {e}")
             except FileNotFoundError as e:
                 self.__console.error(f"{absolute_path} File not found")
+    
+    
+    def on_btn_focus_preset_set_all(self):
+        """ set focus preset for all lens """
+        for lens_id in self.__config["camera_ids"]:
+            self.on_btn_focus_set(lens_id)
 
 
     def on_change_light_control(self, value):
@@ -222,9 +226,12 @@ class AppWindow(QMainWindow):
 
     def on_btn_focus_set(self, id:int):
         """ focus move control """
-        focus_value = self.findChild(QLineEdit, name=f"edit_focus_value_{id}").text()
-        self.__lens_control_publisher.focus_move(user_id=id, value=int(focus_value))
-        self.__console.info(f"Focus Move : {id} -> {focus_value}")
+        if self.__lens_control_publisher:
+            focus_value = self.findChild(QLineEdit, name=f"edit_focus_value_{id}").text()
+            self.__lens_control_publisher.focus_move(lens_id=id, value=int(focus_value))
+        else:
+            self.statusBar().showMessage(f"Lens control pipeline cannot be found")
+            
     
     def on_btn_focus_read_all(self):
         """ call all focus value read (async) """

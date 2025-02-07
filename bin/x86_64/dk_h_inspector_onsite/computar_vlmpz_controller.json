@@ -28,7 +28,7 @@
         },
         "focus_control" : {
             "transport" : "tcp",
-            "host":"192.168.0.50",
+            "host":"192.168.100.6",
             "port" : 5104,
             "socket_type" : "sub",
             "queue_size" : 1000

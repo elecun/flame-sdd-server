@@ -100,13 +100,14 @@ class LensControlPublisher(QObject):
         try:
             topic = "focus_control"
             message = {
-                "id":lens_id,
                 "function":"move_focus",
+                "id":lens_id,
                 "value":value
             }
 
             jmsg = json.dumps(message)
         
+            self.__console.info(f"<Lens Control> Focus Move : {lens_id} -> {value}")
             # publish
             self.__socket.send_multipart([topic.encode(), jmsg.encode()])
             self.__console.info(f"Publish Lens Focus Control Data : Lens-ID {lens_id}, Focus {value}")

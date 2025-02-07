@@ -140,7 +140,7 @@ void computar_vlmpz_controller::_lens_control_subscribe(json parameters){
                     if(!json_data["function"].get<string>().compare("move_focus")){
                         int camera_id = json_data["id"].get<int>();
                         int value = json_data["value"].get<int>();
-                        logger::info("[{}] Move focus ID:{} (Device ID : {})",get_name(), camera_id, _device_id_mapper[camera_id]);
+                        logger::info("[{}] Move focus ID:{} (Device ID : {}) to {}",get_name(), camera_id, _device_id_mapper[camera_id], value);
                         if(_lens_controller_map.contains(_device_id_mapper[camera_id])){
                             _lens_controller_map[_device_id_mapper[camera_id]]->focus_move(value);
                         }
