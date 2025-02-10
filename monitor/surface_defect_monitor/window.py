@@ -61,6 +61,7 @@ class AppWindow(QMainWindow):
         self.__lens_control_publisher = None
         self.__light_control_requester = None
         self.__pulse_generator_requester = None
+        self.__camera_image_subscriber_map = {}
 
         try:            
             if "gui" in config:
@@ -112,6 +113,15 @@ class AppWindow(QMainWindow):
                 self.dial_light_control.valueChanged.connect(self.on_change_light_control)
                 self.dial_light_control.sliderReleased.connect(self.on_set_light_control)
 
+                # default status indication
+                self.set_status_inactive("label_onsite_controller_status")
+                self.set_status_inactive("label_level2_status")
+                self.set_status_inactive("label_camera_status")
+                self.set_status_inactive("label_lens_status")
+                self.set_status_inactive("label_nas_status")
+                self.set_status_inactive("label_light_controller_status")
+                self.set_status_inactive("label_hmd_signal_status")
+
                 # find focus preset files in preset directory
                 preset_path = pathlib.Path(config["app_path"])/pathlib.Path(config["preset_path"])
                 self.__config["preset_path"] = preset_path.as_posix()
@@ -150,7 +160,6 @@ class AppWindow(QMainWindow):
 
                 # map between camera device and windows
                 self.__frame_window_map = {}
-                self.__camera_image_subscriber_map = {}
 
                 for idx, id in enumerate(config["camera_ids"]):
                     self.__frame_window_map[id] = self.findChild(QLabel, config["camera_windows"][idx])
@@ -284,8 +293,9 @@ class AppWindow(QMainWindow):
             self.__temp_monitor_subscriber.close()
             self.__console.info("Close temperature subscriber")
 
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            executor.map(lambda subscriber: subscriber.close(), self.__camera_image_subscriber_map.values())
+        if len(self.__camera_image_subscriber_map.keys())>0:
+            with ThreadPoolExecutor(max_workers=10) as executor:
+                executor.map(lambda subscriber: subscriber.close(), self.__camera_image_subscriber_map.values())
 
         # for id, subscriber in self.__camera_image_subscriber_map.items():
         #     subscriber.close()
@@ -365,4 +375,26 @@ class AppWindow(QMainWindow):
         else:
             value = int(self.label_light_control_value.text())
             QMessageBox.critical(self, "Error", f"Light control did not activated. value is {value}")
-        
+    
+    def set_status_active(self, label_name:str):
+        """ change background color to green for active status """
+        label_object = self.findChild(QLabel, name=label_name)
+        if label_object:
+            label_object.setStyleSheet("background-color: green")
+
+    def set_status_inactive(self, label_name:str):
+        """ change background color to red for inactive status """
+        label_object = self.findChild(QLabel, name=label_name)
+        if label_object:
+            label_object.setStyleSheet("background-color: red")
+
+    def set_status_warning(self, label_name:str):
+        """ change background color to yellow for warning status """
+        label_object = self.findChild(QLabel, name=label_name)
+        if label_object:
+            label_object.setStyleSheet("background-color: yellow")
+
+    def update_total_image_count(self, count:int):
+        """ update total image count """
+        self.label_total_images.setText(str(count))
+

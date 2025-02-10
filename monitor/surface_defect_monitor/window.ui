@@ -1132,12 +1132,12 @@ background-color: rgb(212, 212, 212);</string>
        </font>
       </property>
       <property name="title">
-       <string>시스템 연결 상태</string>
+       <string>주요 신호 및 시스템 연결 상태</string>
       </property>
       <widget class="QLabel" name="label_onsite_controller_status">
        <property name="geometry">
         <rect>
-         <x>10</x>
+         <x>5</x>
          <y>30</y>
          <width>31</width>
          <height>26</height>
@@ -1150,8 +1150,8 @@ background-color: rgb(212, 212, 212);</string>
         </font>
        </property>
        <property name="styleSheet">
-        <string notr="true">background-color: rgb(255, 0, 0);
-color: rgb(255,255,255);</string>
+        <string notr="true">background-color: rgb(200,200,200);
+color: rgb(0,0,0);</string>
        </property>
        <property name="text">
         <string>OC</string>
@@ -1176,8 +1176,8 @@ color: rgb(255,255,255);</string>
         </font>
        </property>
        <property name="styleSheet">
-        <string notr="true">background-color: rgb(255, 0, 0);
-color: rgb(255, 255,255);</string>
+        <string notr="true">background-color: rgb(200,200,200);
+color: rgb(0,0,0);</string>
        </property>
        <property name="text">
         <string>Lv2</string>
@@ -1189,7 +1189,7 @@ color: rgb(255, 255,255);</string>
       <widget class="QLabel" name="label_camera_status">
        <property name="geometry">
         <rect>
-         <x>90</x>
+         <x>95</x>
          <y>30</y>
          <width>31</width>
          <height>26</height>
@@ -1202,8 +1202,8 @@ color: rgb(255, 255,255);</string>
         </font>
        </property>
        <property name="styleSheet">
-        <string notr="true">background-color: rgb(255, 0, 0);
-color: rgb(255, 255,255);</string>
+        <string notr="true">background-color: rgb(200,200,200);
+color: rgb(0,0,0);</string>
        </property>
        <property name="text">
         <string>CAM</string>
@@ -1215,7 +1215,7 @@ color: rgb(255, 255,255);</string>
       <widget class="QLabel" name="label_lens_status">
        <property name="geometry">
         <rect>
-         <x>130</x>
+         <x>140</x>
          <y>30</y>
          <width>31</width>
          <height>26</height>
@@ -1228,8 +1228,8 @@ color: rgb(255, 255,255);</string>
         </font>
        </property>
        <property name="styleSheet">
-        <string notr="true">background-color: rgb(255, 0, 0);
-color: rgb(255, 255,255);</string>
+        <string notr="true">background-color: rgb(200,200,200);
+color: rgb(0,0,0);</string>
        </property>
        <property name="text">
         <string>Lens</string>
@@ -1241,7 +1241,7 @@ color: rgb(255, 255,255);</string>
       <widget class="QLabel" name="label_nas_status">
        <property name="geometry">
         <rect>
-         <x>170</x>
+         <x>185</x>
          <y>30</y>
          <width>31</width>
          <height>26</height>
@@ -1254,8 +1254,8 @@ color: rgb(255, 255,255);</string>
         </font>
        </property>
        <property name="styleSheet">
-        <string notr="true">background-color: rgb(255, 0, 0);
-color: rgb(255, 255,255);</string>
+        <string notr="true">background-color: rgb(200,200,200);
+color: rgb(0,0,0);</string>
        </property>
        <property name="text">
         <string>NAS</string>
@@ -1267,7 +1267,7 @@ color: rgb(255, 255,255);</string>
       <widget class="QLabel" name="label_light_controller_status">
        <property name="geometry">
         <rect>
-         <x>210</x>
+         <x>230</x>
          <y>30</y>
          <width>31</width>
          <height>26</height>
@@ -1280,11 +1280,37 @@ color: rgb(255, 255,255);</string>
         </font>
        </property>
        <property name="styleSheet">
-        <string notr="true">background-color: rgb(255, 0, 0);
-color: rgb(255, 255,255);</string>
+        <string notr="true">background-color: rgb(200,200,200);
+color: rgb(0,0,0);</string>
        </property>
        <property name="text">
         <string>LC</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_hmd_signal_status">
+       <property name="geometry">
+        <rect>
+         <x>275</x>
+         <y>30</y>
+         <width>31</width>
+         <height>26</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background-color: rgb(200,200,200);
+color: rgb(0,0,0);</string>
+       </property>
+       <property name="text">
+        <string>HMD</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -2254,7 +2280,7 @@ color: rgb(0, 255, 0);</string>
     </widget>
     <widget class="QWidget" name="tab_1">
      <attribute name="title">
-      <string>Status</string>
+      <string>Settings</string>
      </attribute>
      <widget class="QLabel" name="label_system_2">
       <property name="geometry">
@@ -2303,6 +2329,75 @@ color: rgb(0, 255, 0);</string>
        </property>
        <property name="text">
         <string>Show alignment line on camera image</string>
+       </property>
+      </widget>
+     </widget>
+     <widget class="QGroupBox" name="groupBox_2">
+      <property name="geometry">
+       <rect>
+        <x>15</x>
+        <y>15</y>
+        <width>551</width>
+        <height>76</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>13</pointsize>
+       </font>
+      </property>
+      <property name="title">
+       <string>표면결함 검출 모델</string>
+      </property>
+      <widget class="QComboBox" name="combobox_sdd_model">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
+         <y>30</y>
+         <width>291</width>
+         <height>31</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_6">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>30</y>
+         <width>96</width>
+         <height>26</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>모델 선택 :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="btn_sdd_model_apply">
+       <property name="geometry">
+        <rect>
+         <x>410</x>
+         <y>30</y>
+         <width>91</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Apply</string>
        </property>
       </widget>
      </widget>
