@@ -80,7 +80,7 @@ void controlImpl::focus_move(int value){
 	// };
 	// caller(api);
 	//value = SATURATE(value, 0, 9091);
-	//this->FocusMove((uint16_t)value);
+	this->FocusMove((unsigned short)value);
 	logger::info("Lens #{} move focus : {}", _lens_device_id, value);
 }
 
