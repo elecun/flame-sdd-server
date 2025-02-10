@@ -103,6 +103,16 @@ class AppWindow(QMainWindow):
                 self.btn_focus_set_8.clicked.connect(partial(self.on_btn_focus_set, 8))
                 self.btn_focus_set_9.clicked.connect(partial(self.on_btn_focus_set, 9))
                 self.btn_focus_set_10.clicked.connect(partial(self.on_btn_focus_set, 10))
+                self.btn_exposure_time_set_1.clicked.connect(partial(self.on_btn_exposure_time_set, 1))
+                self.btn_exposure_time_set_2.clicked.connect(partial(self.on_btn_exposure_time_set, 2))
+                self.btn_exposure_time_set_3.clicked.connect(partial(self.on_btn_exposure_time_set, 3))
+                self.btn_exposure_time_set_4.clicked.connect(partial(self.on_btn_exposure_time_set, 4))
+                self.btn_exposure_time_set_5.clicked.connect(partial(self.on_btn_exposure_time_set, 5))
+                self.btn_exposure_time_set_6.clicked.connect(partial(self.on_btn_exposure_time_set, 6))
+                self.btn_exposure_time_set_7.clicked.connect(partial(self.on_btn_exposure_time_set, 7))
+                self.btn_exposure_time_set_8.clicked.connect(partial(self.on_btn_exposure_time_set, 8))
+                self.btn_exposure_time_set_9.clicked.connect(partial(self.on_btn_exposure_time_set, 9))
+                self.btn_exposure_time_set_10.clicked.connect(partial(self.on_btn_exposure_time_set, 10))
                 self.btn_focus_read_all.clicked.connect(self.on_btn_focus_read_all)
                 self.btn_defect_visualization_test.clicked.connect(self.on_btn_defect_visualization_test)
                 self.btn_focus_initialize_all.clicked.connect(self.on_btn_focus_initialize_all)
@@ -240,6 +250,10 @@ class AppWindow(QMainWindow):
             self.__lens_control_publisher.focus_move(lens_id=id, value=int(focus_value))
         else:
             self.statusBar().showMessage(f"Lens control pipeline cannot be found")
+
+    def on_btn_exposure_time_set(self, id:int):
+        """ camera exposure time control """
+        pass
             
     
     def on_btn_focus_read_all(self):
