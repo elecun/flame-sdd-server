@@ -49,7 +49,7 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <property name="tabBarAutoHide">
      <bool>false</bool>
@@ -2285,10 +2285,10 @@ color: rgb(0, 255, 0);</string>
      <widget class="QLabel" name="label_system_2">
       <property name="geometry">
        <rect>
-        <x>900</x>
-        <y>10</y>
-        <width>341</width>
-        <height>321</height>
+        <x>985</x>
+        <y>5</y>
+        <width>256</width>
+        <height>241</height>
        </rect>
       </property>
       <property name="text">
@@ -2304,8 +2304,8 @@ color: rgb(0, 255, 0);</string>
      <widget class="QGroupBox" name="groupBox_6">
       <property name="geometry">
        <rect>
-        <x>10</x>
-        <y>265</y>
+        <x>510</x>
+        <y>15</y>
         <width>306</width>
         <height>71</height>
        </rect>
@@ -2337,7 +2337,7 @@ color: rgb(0, 255, 0);</string>
        <rect>
         <x>15</x>
         <y>15</y>
-        <width>551</width>
+        <width>481</width>
         <height>76</height>
        </rect>
       </property>
@@ -2354,8 +2354,8 @@ color: rgb(0, 255, 0);</string>
         <rect>
          <x>120</x>
          <y>30</y>
-         <width>291</width>
-         <height>31</height>
+         <width>236</width>
+         <height>36</height>
         </rect>
        </property>
       </widget>
@@ -2363,9 +2363,9 @@ color: rgb(0, 255, 0);</string>
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>30</y>
+         <y>28</y>
          <width>96</width>
-         <height>26</height>
+         <height>36</height>
         </rect>
        </property>
        <property name="font">
@@ -2384,10 +2384,10 @@ color: rgb(0, 255, 0);</string>
       <widget class="QPushButton" name="btn_sdd_model_apply">
        <property name="geometry">
         <rect>
-         <x>410</x>
+         <x>355</x>
          <y>30</y>
          <width>91</width>
-         <height>31</height>
+         <height>36</height>
         </rect>
        </property>
        <property name="font">
@@ -2398,6 +2398,674 @@ color: rgb(0, 255, 0);</string>
        </property>
        <property name="text">
         <string>Apply</string>
+       </property>
+      </widget>
+     </widget>
+     <widget class="QGroupBox" name="groupBox_9">
+      <property name="geometry">
+       <rect>
+        <x>15</x>
+        <y>100</y>
+        <width>481</width>
+        <height>226</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>Arial</family>
+       </font>
+      </property>
+      <property name="title">
+       <string>카메라 노출 시간 설정</string>
+      </property>
+      <widget class="QLabel" name="label_lens_20">
+       <property name="geometry">
+        <rect>
+         <x>245</x>
+         <y>70</y>
+         <width>86</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Camera #7 :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="edit_exposure_time_value_1">
+       <property name="geometry">
+        <rect>
+         <x>100</x>
+         <y>35</y>
+         <width>61</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>0</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_lens_15">
+       <property name="geometry">
+        <rect>
+         <x>245</x>
+         <y>105</y>
+         <width>86</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Camera #8 :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_lens_16">
+       <property name="geometry">
+        <rect>
+         <x>245</x>
+         <y>180</y>
+         <width>86</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Camera #10 :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_lens_17">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>140</y>
+         <width>86</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Camera #4 :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="btn_exposure_time_set_10">
+       <property name="geometry">
+        <rect>
+         <x>405</x>
+         <y>175</y>
+         <width>61</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">color: rgb(0,0,0);
+background-color: rgb(212, 212, 212);</string>
+       </property>
+       <property name="text">
+        <string>Set</string>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="btn_exposure_time_set_9">
+       <property name="geometry">
+        <rect>
+         <x>405</x>
+         <y>140</y>
+         <width>61</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">color: rgb(0,0,0);
+background-color: rgb(212, 212, 212);</string>
+       </property>
+       <property name="text">
+        <string>Set</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="edit_exposure_time_value_9">
+       <property name="geometry">
+        <rect>
+         <x>335</x>
+         <y>140</y>
+         <width>61</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>0</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_lens_14">
+       <property name="geometry">
+        <rect>
+         <x>245</x>
+         <y>140</y>
+         <width>86</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Camera #9 :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="btn_exposure_time_set_1">
+       <property name="geometry">
+        <rect>
+         <x>170</x>
+         <y>35</y>
+         <width>61</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">color: rgb(0,0,0);
+background-color: rgb(212, 212, 212);</string>
+       </property>
+       <property name="text">
+        <string>Set</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_lens_12">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>105</y>
+         <width>86</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Camera #3 :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_lens_13">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>35</y>
+         <width>86</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Camera #1 :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="btn_exposure_time_set_3">
+       <property name="geometry">
+        <rect>
+         <x>170</x>
+         <y>105</y>
+         <width>61</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">color: rgb(0,0,0);
+background-color: rgb(212, 212, 212);</string>
+       </property>
+       <property name="text">
+        <string>Set</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="edit_exposure_time_value_5">
+       <property name="geometry">
+        <rect>
+         <x>100</x>
+         <y>175</y>
+         <width>61</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>0</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="edit_exposure_time_value_6">
+       <property name="geometry">
+        <rect>
+         <x>335</x>
+         <y>35</y>
+         <width>61</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>0</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="edit_exposure_time_value_10">
+       <property name="geometry">
+        <rect>
+         <x>335</x>
+         <y>175</y>
+         <width>61</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>0</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_lens_19">
+       <property name="geometry">
+        <rect>
+         <x>245</x>
+         <y>35</y>
+         <width>86</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Camera #6 :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="edit_exposure_time_value_3">
+       <property name="geometry">
+        <rect>
+         <x>100</x>
+         <y>105</y>
+         <width>61</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>0</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="btn_exposure_time_set_6">
+       <property name="geometry">
+        <rect>
+         <x>405</x>
+         <y>35</y>
+         <width>61</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">color: rgb(0,0,0);
+background-color: rgb(212, 212, 212);</string>
+       </property>
+       <property name="text">
+        <string>Set</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="edit_exposure_time_value_8">
+       <property name="geometry">
+        <rect>
+         <x>335</x>
+         <y>105</y>
+         <width>61</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>0</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="edit_exposure_time_value_4">
+       <property name="geometry">
+        <rect>
+         <x>100</x>
+         <y>140</y>
+         <width>61</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>0</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_lens_11">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>175</y>
+         <width>86</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Camera #5 :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="btn_exposure_time_set_5">
+       <property name="geometry">
+        <rect>
+         <x>170</x>
+         <y>175</y>
+         <width>61</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">color: rgb(0,0,0);
+background-color: rgb(212, 212, 212);</string>
+       </property>
+       <property name="text">
+        <string>Set</string>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="btn_exposure_time_set_7">
+       <property name="geometry">
+        <rect>
+         <x>405</x>
+         <y>70</y>
+         <width>61</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">color: rgb(0,0,0);
+background-color: rgb(212, 212, 212);</string>
+       </property>
+       <property name="text">
+        <string>Set</string>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="btn_exposure_time_set_2">
+       <property name="geometry">
+        <rect>
+         <x>170</x>
+         <y>70</y>
+         <width>61</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">color: rgb(0,0,0);
+background-color: rgb(212, 212, 212);</string>
+       </property>
+       <property name="text">
+        <string>Set</string>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="btn_exposure_time_set_8">
+       <property name="geometry">
+        <rect>
+         <x>405</x>
+         <y>105</y>
+         <width>61</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">color: rgb(0,0,0);
+background-color: rgb(212, 212, 212);</string>
+       </property>
+       <property name="text">
+        <string>Set</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_lens_18">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>70</y>
+         <width>86</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Camera #2 :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="edit_exposure_time_value_2">
+       <property name="geometry">
+        <rect>
+         <x>100</x>
+         <y>70</y>
+         <width>61</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>0</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="edit_exposure_time_value_7">
+       <property name="geometry">
+        <rect>
+         <x>335</x>
+         <y>70</y>
+         <width>61</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>0</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="btn_exposure_time_set_4">
+       <property name="geometry">
+        <rect>
+         <x>170</x>
+         <y>140</y>
+         <width>61</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">color: rgb(0,0,0);
+background-color: rgb(212, 212, 212);</string>
+       </property>
+       <property name="text">
+        <string>Set</string>
        </property>
       </widget>
      </widget>
