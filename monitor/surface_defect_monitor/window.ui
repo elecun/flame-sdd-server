@@ -49,7 +49,7 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>0</number>
     </property>
     <property name="tabBarAutoHide">
      <bool>false</bool>
@@ -1337,9 +1337,9 @@ color: rgb(0,0,0);</string>
       <widget class="QLabel" name="label_28">
        <property name="geometry">
         <rect>
-         <x>15</x>
+         <x>10</x>
          <y>105</y>
-         <width>81</width>
+         <width>86</width>
          <height>21</height>
         </rect>
        </property>
@@ -1359,9 +1359,9 @@ color: rgb(0,0,0);</string>
       <widget class="QLabel" name="label_29">
        <property name="geometry">
         <rect>
-         <x>15</x>
+         <x>10</x>
          <y>165</y>
-         <width>81</width>
+         <width>86</width>
          <height>21</height>
         </rect>
        </property>
@@ -1447,9 +1447,9 @@ color: rgb(0,0,0);</string>
       <widget class="QLabel" name="label_33">
        <property name="geometry">
         <rect>
-         <x>15</x>
+         <x>10</x>
          <y>135</y>
-         <width>81</width>
+         <width>86</width>
          <height>21</height>
         </rect>
        </property>
@@ -1613,16 +1613,16 @@ color: rgb(0,0,0);</string>
       <widget class="QLabel" name="label_34">
        <property name="geometry">
         <rect>
-         <x>55</x>
+         <x>15</x>
          <y>25</y>
-         <width>81</width>
+         <width>141</width>
          <height>21</height>
         </rect>
        </property>
        <property name="font">
         <font>
          <family>Arial</family>
-         <pointsize>13</pointsize>
+         <pointsize>12</pointsize>
         </font>
        </property>
        <property name="text">
@@ -1659,16 +1659,16 @@ color: rgb(0,0,0);</string>
       <widget class="QLabel" name="label_35">
        <property name="geometry">
         <rect>
-         <x>190</x>
+         <x>180</x>
          <y>25</y>
-         <width>81</width>
+         <width>116</width>
          <height>21</height>
         </rect>
        </property>
        <property name="font">
         <font>
          <family>Arial</family>
-         <pointsize>13</pointsize>
+         <pointsize>12</pointsize>
         </font>
        </property>
        <property name="text">
