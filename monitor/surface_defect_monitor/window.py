@@ -278,8 +278,8 @@ class AppWindow(QMainWindow):
         if check and check.isChecked():
             cx = w//2
             cy = h//2
-            cv2.line(image, (cx, 0), (cx, h), (0, 255, 0), 5) #(960, 0) (960, 1920)
-            cv2.line(image, (0, cy), (w, cy), (0, 255, 0), 5) # 
+            cv2.line(image, (cx, 0), (cx, h), (0, 255, 0), 2) #(960, 0) (960, 1920)
+            cv2.line(image, (0, cy), (w, cy), (0, 255, 0), 2) # 
 
         qt_image = QImage(image.data, w, h, ch*w, QImage.Format.Format_RGB888)
         pixmap = QPixmap.fromImage(qt_image)
