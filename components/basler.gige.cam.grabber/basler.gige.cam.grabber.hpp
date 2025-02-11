@@ -52,42 +52,27 @@ class basler_gige_cam_grabber : public flame::component::object {
         void on_close() override;
         void on_message() override;
 
-    private:
-        /* task impl. of status publisher for every 1 sec */
-        void _subtask_status_publish(json parameters);
-
-        void _image_stream_task(int camera_id, CBaslerUniversalInstantCamera* camera, json parameters);
-        void _status_monitor_task(json parameters);
-        void _status_publish();
-
-        void _publish_status(); //publish camera work status for every seconds
 
     private:
+        /* for device handle */
+        map<int, CBaslerUniversalInstantCamera*> _device_map; // (camera id, instance)
 
-        /* sub-tasks */
-        pthread_t _subtask_status_publisher; /* for status publish */
+        /* for worker threads handle */
+        unordered_map<int, thread> _camera_grab_worker; // (camera id, thread)
+        unordered_map<int, thread> _camera_control_worker; // (camera id, thread)
+        atomic<bool> _worker_stop {false};
 
-        unordered_map<int, pthread_t> _camera_grab_worker;  // camera id, grab thread
-        unordered_map<int, unsigned long long> _camera_grab_counter; // camera id, grab counter
-        unordered_map<int, json> _camera_status; // camera id, status
-        map<int, CBaslerUniversalInstantCamera*> _device_map; // camera id, camera device instance
-        bool _thread_stop_signal { false };
+        /* camera-related status */
+        unordered_map<int, atomic<unsigned long long>> _camera_grab_counter; // (camera id, counter)
+        unordered_map<string, json> _camera_status; // (camera id(string), status)
 
-        pthread_t _status_monitor; /* for status publish */
+        /* for profiles */
+        atomic<bool> _prof_realtime_monitoring {false};
 
-        map<string, int> _method_type { 
-            {"batch", 0 },
-            {"realtime", 1}
-        };
-        int _stream_method = 0; //batch mode default
-        bool _monitoring = false;
-        int _stream_batch_buffer_size = 1000;
-        typedef vector<unsigned char> image_data;
-        map<int, vector<image_data>> _image_container;
-        
-        
-
-
+    private:
+        /* subtasks */
+        void _camera_control_task(int camera_id, CBaslerUniversalInstantCamera* camera); /* camera control */
+        void _image_stream_task(int camera_id, CBaslerUniversalInstantCamera* camera, json parameters); /* image capture & flush in pipeline */        
 
 }; /* class */
 

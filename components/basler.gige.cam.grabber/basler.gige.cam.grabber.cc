@@ -19,71 +19,32 @@ bool basler_gige_cam_grabber::on_init(){
 
     try{
 
-        /* read parameters */
-        json param = get_profile()->parameters();
-        if(param.contains("stream_method")){ 
-            string _set_method = param["stream_method"];
-            std::transform(_set_method.begin(), _set_method.end(), _set_method.begin(), ::tolower);
-            _stream_method = _method_type[_set_method];
-        }
+        /* read profile */
+        _prof_realtime_monitoring.store(get_profile()->parameters().value("realtime_monitoring", false));
+ 
 
-        /* publish image for monitoring in realtime */
-        if(param.contains("realtime_monitoring")){
-            _monitoring = param["realtime_monitoring"].get<bool>();
-        }
-
-        /* if stream method is 'batch' mode, buffer reservation is required for memory optimization */
-        if(_stream_method==_method_type["batch"]){
-            if(param.contains("stream_batch_reserved")){
-                _stream_batch_buffer_size = param["stream_batch_reserved"].get<int>();
-            }
-        }
-
-        //1. pylon initialization
+        /* pylon initialize */
         PylonInitialize();
 
-        //2. find GigE cameras
+        /* find GigE cameras in same netwrok */
         CTlFactory& tlFactory = CTlFactory::GetInstance();
         DeviceInfoList_t devices;
         tlFactory.EnumerateDevices(devices);
         if(devices.size()>=1)
             logger::info("[{}] Found {} cameras", get_name(), devices.size());
 
-        //3. create device & insert to device map
+        /* create device & insert to device container */
         for(int idx=0;idx<(int)devices.size();idx++){
-            _device_map.insert(make_pair(stoi(devices[idx].GetUserDefinedName().c_str()), 
-                            new CBaslerUniversalInstantCamera(tlFactory.CreateDevice(devices[idx]))));
-            // _monitoring[stoi(devices[idx].GetUserDefinedName().c_str())].store(false);
-            logger::info("[{}] Found User ID {}, (SN:{}, Address : {})", get_name(), devices[idx].GetUserDefinedName().c_str(), devices[idx].GetSerialNumber().c_str(), devices[idx].GetIpAddress().c_str());
+            _device_map.insert(make_pair(stoi(devices[idx].GetUserDefinedName().c_str()), new CBaslerUniversalInstantCamera(tlFactory.CreateDevice(devices[idx]))));
+            logger::info("[{}] Found Camera ID {}, (SN:{}, Address : {})", get_name(), devices[idx].GetUserDefinedName().c_str(), devices[idx].GetSerialNumber().c_str(), devices[idx].GetIpAddress().c_str());
         }
 
-        //4. device control handle assign for each camera
+        /* device control handle assign for each camera */
         for(const auto& camera:_device_map){
-            thread worker = thread(&basler_gige_cam_grabber::_image_stream_task, this, camera.first, camera.second, get_profile()->parameters());
-            _camera_grab_worker[camera.first] = worker.native_handle();
-            _camera_grab_counter[camera.first] = 0;
-            worker.detach();
-            logger::info("[{}] worker #{} detached", get_name(), camera.first);
+            _camera_grab_worker[camera.first] = thread(&basler_gige_cam_grabber::_image_stream_task, this, camera.first, camera.second, get_profile()->parameters());
+            _camera_control_worker[camera.first] = thread(&basler_gige_cam_grabber::_camera_control_task, this, camera.first, camera.second);
+            logger::info("[{}] Camera #{} Grabber is running...", get_name(), camera.first);
         }
-
-        /* camera status ready with default profile */
-        json defined_cameras = get_profile()->parameters()["cameras"];
-        for(auto& camera:defined_cameras){
-            int id = camera["id"].get<int>();
-            _camera_status.insert(make_pair(id, camera));
-            _camera_status[id]["frames"] = 0;  // add frames (unsigned long long)
-            _camera_status[id]["status"] = "-"; // add status (-|working|connected)
-
-            // image container reserve
-            if(_stream_method==_method_type["batch"]){
-                _image_container[id].reserve(_stream_batch_buffer_size);
-            }
-        }
-
-        /* component status monitoring subtask */
-        // thread status_monitor_worker = thread(&basler_gige_cam_grabber::_subtask_status_publish, this, get_profile()->parameters());
-        // _subtask_status_publisher = status_monitor_worker.native_handle();
-        // status_monitor_worker.detach();
 
     }
     catch(const GenericException& e){
@@ -98,49 +59,66 @@ bool basler_gige_cam_grabber::on_init(){
     return true;
 }
 
-/* status publisher subtask impl. */
-void basler_gige_cam_grabber::_subtask_status_publish(json parameters){
-    while(!_thread_stop_signal){
-        _publish_status();
-        this_thread::sleep_for(chrono::seconds(1));
-    }
-}
-
 void basler_gige_cam_grabber::on_loop(){
 
+    /* camera status update (publish) */
+    for(auto& camera:_device_map){
+        json status_data;
+        status_data["frames"] = _camera_grab_counter[camera.first].load();
+        _camera_status[fmt::format("{}",camera.first)] = status_data;
+    }
+
+    /* message serialize */
+    zmq::multipart_t msg_multipart;
+    json status = _camera_status;
+    string serialized_data = status.dump();
+    string topic = fmt::format("{}/status", get_name());
+
+    msg_multipart.addstr(topic);
+    msg_multipart.addstr(serialized_data);
+
+    /* send status */
+    msg_multipart.send(*get_port("status"), ZMQ_DONTWAIT);
+    logger::info("[{}] Publish Camera Status", get_name());
 
 }
+
 
 void basler_gige_cam_grabber::on_close(){
 
-    /* thread stop */
-    _thread_stop_signal = true;
-
-    /* show container size */
-    for (map<int, vector<vector<unsigned char>>>::iterator it = _image_container.begin(); it != _image_container.end(); ++it){
-        logger::info("[{}] Image Container size : {}", it->first, _image_container[it->first].size());
+    /* stop grabbing */
+    for(auto& camera:_device_map){
+        camera.second->StopGrabbing();
     }
 
-    /* camera grab thread will be killed */
-    for(auto& worker:_camera_grab_worker){
-        pthread_cancel(worker.second);
-        pthread_join(worker.second, nullptr);
-    }
+    /* work stop signal */
+    _worker_stop.store(true);
+
+    for_each(_camera_control_worker.begin(), _camera_control_worker.end(), [](auto& t) {
+        if(t.second.joinable()){
+            t.second.join();
+            logger::info("- Camera #{} Controller is now stopped", t.first);
+        }
+    });
+
+    for_each(_camera_grab_worker.begin(), _camera_grab_worker.end(), [](auto& t) {
+        if(t.second.joinable()){
+            t.second.join();
+            logger::info("- Camera #{} Grabber is now stopped", t.first);
+        }
+    });
+
+
+
     _camera_grab_worker.clear();
 
     /* camera close and delete */
     for(auto& camera:_device_map){
         if(camera.second->IsOpen()){
-            camera.second->StopGrabbing();
             camera.second->Close();
             delete camera.second;
         }
-        
     }
-
-    /* close status monitoring subtask */
-    pthread_cancel(_subtask_status_publisher);
-    pthread_join(_subtask_status_publisher, nullptr);
 
     PylonTerminate();
 }
@@ -149,66 +127,63 @@ void basler_gige_cam_grabber::on_message(){
     
 }
 
-void basler_gige_cam_grabber::_publish_status(){
-
-    /* update the camera working status */
-    for(auto& camera:_device_map){
-        if(camera.second->IsGrabbing())
-            _camera_status[camera.first]["status"] = "working";
-        else {
-            _camera_status[camera.first]["status"] = "not working";
-        }
-    }
-
-    /* update the camera frame for each */
-    for(auto& camera:_camera_grab_counter){
-        _camera_status[camera.first]["frames"] = camera.second;
-    }
-
-    /* combine camera status */
-    json combined_status;
-    for(auto& camera:_camera_status){
-        combined_status.push_back(_camera_status[camera.first]);
-    }
-
-    /* transfer(publish) status data */
+void basler_gige_cam_grabber::_camera_control_task(int camera_id, CBaslerUniversalInstantCamera* camera){
     try{
-        string status_message = combined_status.dump();
-        string topic = fmt::format("{}", get_name(), "status");
-        pipe_data topic_msg(topic.data(), topic.size());
-        pipe_data end_msg(status_message.data(), status_message.size());
-        get_port("status")->send(topic_msg, zmq::send_flags::sndmore);
-        get_port("status")->send(end_msg, zmq::send_flags::dontwait);
+        while(!_worker_stop.load()){
+            try{
+                pipe_data message;
+                string portname = fmt::format("camera_control_{}", camera_id);
+                
+                vector<pipe_data> recv_msg;
+                zmq::recv_result_t result = zmq::recv_multipart(*get_port(portname), std::back_inserter(recv_msg));
 
-        logger::info("published the camera status ({})", topic);
+                
+                if(result.has_value()){
+                    if(recv_msg.size()==2){
+                        string topic(static_cast<char*>(recv_msg[0].data()), recv_msg[0].size());
+                        string msg_data(static_cast<char*>(recv_msg[1].data()), recv_msg[1].size());
+
+                        /* camera_control_<> port */
+                        if(!topic.compare(portname)){
+                            auto msg_param = json::parse(msg_data);
+                            if(msg_param.contains("function")){
+
+                                // set_exposure_time function
+                                if(!msg_param["function"].get<string>().compare("set_exposure_time")){
+                                    CFloatParameter exposureTime(camera->GetNodeMap(), "ExposureTime");
+                                    double exposure_time = msg_param.value("value", 5000.0);
+                                    if(exposureTime.IsWritable()) {
+                                        exposureTime.SetValue(exposure_time);
+                                        logger::info("[{}] Set Camera #{} exposure time to {}", get_name(), camera_id, exposure_time);
+                                    }
+                                }
+                            }
+                            else {
+                                logger::warn("[{}] 'function' does not contained in message");
+                            }
+                        }       
+                    }
+                }
+            }
+            catch(const zmq::error_t& e){
+                break;
+            }
+        }
+
     }
-    catch(std::runtime_error& e){
-        logger::error("{}", e.what());
+    catch(const zmq::error_t& e){
+        logger::error("[{}] Pipeline error : {}", get_name(), e.what()); // ETERM
+    }
+    catch(const std::runtime_error& e){
+        logger::error("[{}] Runtime error occurred!", get_name());
+    }
+    catch(const json::parse_error& e){
+        logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());
     }
 }
-
-void basler_gige_cam_grabber::_status_monitor_task(json parameters){
-    while(!_thread_stop_signal){
-        this_thread::sleep_for(chrono::milliseconds(1000));
-    }
-}
-
-// camera status publish
-void basler_gige_cam_grabber::_status_publish(){
-    json defined_cameras = get_profile()->parameters()["cameras"];
-    for(auto& camera:defined_cameras){
-        int id = camera["id"].get<int>();
-        _camera_status.insert(make_pair(id, camera));
-        _camera_status[id]["frames"] = 0;  // add frames (unsigned long long)
-        _camera_status[id]["status"] = "-"; // add status (-|working|connected)
-    }
-}
-
 
 void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversalInstantCamera* camera, json parameters){
     try{
-        //pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
-        //pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, nullptr);
 
         camera->Open();
         string acquisition_mode = parameters.value("acquisition_mode", "Continuous"); // Continuous, SingleFrame, MultiFrame
@@ -218,10 +193,25 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
         string trigger_source = parameters.value("trigger_source", "Line2");
         string trigger_activation = parameters.value("trigger_activation", "RisingEdge");
         int heartbeat_timeout = parameters.value("heartbeat_timeout", 5000);
+        
+        
+        // camera exposure time set
+        for(auto& param:parameters["cameras"]){
+            int id = param["id"].get<int>();
+            if(id==camera_id){
+                double exposure_time = param.value("exposure_time", 5000.0);
+                CEnumerationPtr(camera->GetNodeMap().GetNode("ExposureAuto"))->FromString("Off");
+                CFloatParameter exposureTime(camera->GetNodeMap(), "ExposureTime");
+                if(exposureTime.IsWritable()) {
+                    exposureTime.SetValue(exposure_time);
+                    logger::info("[{}] Camera #{} Exposure Time set : {}", get_name(), camera_id, exposure_time);
+                }
+            }
+        }
 
         /* camera setting parameters notification */
         logger::info("[{}]* Camera Acquisition Mode : {} (Continuous|SingleFrame)", get_name(), acquisition_mode);
-        //logger::info("[{}]* Camera Acqusition Framerate : {}", get_name(), acquisition_fps);
+        logger::info("[{}]* Camera Acqusition Framerate : {}", get_name(), acquisition_fps);
         logger::info("[{}]* Camera Trigger Mode : {}", get_name(), trigger_mode);
         logger::info("[{}]* Camera Trigger Selector : {}", get_name(), trigger_selector);
         logger::info("[{}]* Camera Trigger Activation : {}", get_name(), trigger_activation);
@@ -229,31 +219,32 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
         /* set camera parameters */
         camera->AcquisitionMode.SetValue(acquisition_mode.c_str());
         camera->AcquisitionFrameRate.SetValue(acquisition_fps);
-        //camera->AcquisitionFrameRateEnable.setValue(false);
+        camera->AcquisitionFrameRateEnable.SetValue(false);
         camera->TriggerSelector.SetValue(trigger_selector.c_str());
         camera->TriggerMode.SetValue(trigger_mode.c_str());
         camera->TriggerSource.SetValue(trigger_source.c_str());
         camera->TriggerActivation.SetValue(trigger_activation.c_str());
-        //camera->GevHeartbeatTimeout.SetValue(heartbeat_timeout);
+        camera->GevHeartbeatTimeout.SetValue(heartbeat_timeout);
 
         /* start grabbing */
         camera->StartGrabbing(Pylon::GrabStrategy_OneByOne, Pylon::GrabLoop_ProvidedByUser);
         CGrabResultPtr ptrGrabResult;
 
-        while(camera->IsGrabbing() && !_thread_stop_signal){
-            //logger::info("[{}] worker #{} start", get_name(), camera_id);
+        unsigned long long camera_grab_counter = 0;
+        while(camera->IsGrabbing() && !_worker_stop.load()){
             try{
+                
                 camera->RetrieveResult(5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException); //trigger mode makes it blocked
                 if(ptrGrabResult.IsValid()){
                     if(ptrGrabResult->GrabSucceeded()){
 
-                        //logger::info("[{}] worker #{} grabbed", get_name(), camera_id);
-
                         auto start = std::chrono::system_clock::now();
+
+                        /* camera grab status update */
+                        _camera_grab_counter[camera_id].store(++camera_grab_counter);
 
                         /* grabbed imgae stores into buffer */
                         const uint8_t* pImageBuffer = (uint8_t*)ptrGrabResult->GetBuffer();
-                        _camera_grab_counter[camera_id]++;
 
                         /* get image properties */
                         size_t size = ptrGrabResult->GetWidth() * ptrGrabResult->GetHeight();
@@ -263,35 +254,27 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                         std::vector<unsigned char> serialized_image;
                         cv::imencode(".jpg", image, serialized_image);
 
-                        // save into image data container
-                        // if(_stream_method==0) // batch mode
-                        //     _image_container[camera_id].emplace_back(buffer);
-
                         /* common transport parameters */
                         string id_str = fmt::format("{}",camera_id);
                         pipe_data msg_id(id_str.data(), id_str.size());
                         pipe_data msg_image(serialized_image.data(), serialized_image.size());
 
-                        // /* push image data */
-                        string nas_port = fmt::format("image_stream_{}", camera_id);
-                        if(get_port(nas_port)->handle()!=nullptr){
+                        /* push image data */
+                        string image_stream_port = fmt::format("image_stream_{}", camera_id);
+                        if(get_port(image_stream_port)->handle()!=nullptr){
                             zmq::multipart_t msg_multipart_image;
                             msg_multipart_image.addstr(id_str);
                             msg_multipart_image.addmem(serialized_image.data(), serialized_image.size());
-                            msg_multipart_image.send(*get_port(nas_port), ZMQ_DONTWAIT);
-                            logger::info("[{}] {} sent image to pipieline ", get_name(), camera_id);
+                            msg_multipart_image.send(*get_port(image_stream_port), ZMQ_DONTWAIT);
                         }
                         else{
                             logger::warn("[{}] {} socket handle is not valid ", get_name(), camera_id);
                         }
-                        // get_port("image_stream")->send(msg_id, zmq::send_flags::sndmore);
-                        // get_port("image_stream")->send(msg_image, zmq::send_flags::dontwait);
-
 
 
                         /* publish for monitoring (size reduction for performance)*/
-                        if(_monitoring){
-                            string topic_str = fmt::format("camera_{}", camera_id);
+                        if(_prof_realtime_monitoring.load()){
+                            string topic_str = fmt::format("image_stream_monitor_{}", camera_id);
                             pipe_data msg_topic(topic_str.data(), topic_str.size());
                             cv::Mat monitor_image;
                             cv::resize(image, monitor_image, cv::Size(image.cols/6, image.rows/6));
@@ -304,38 +287,29 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                             msg_multipart.addstr(id_str);
                             msg_multipart.addmem(serialized_monitor_image.data(), serialized_monitor_image.size());
 
-                            string camera_port = fmt::format("image_stream_monitor_{}", camera_id);
+                            string camera_port = fmt::format("image_stream_monitor_{}", camera_id); //portname = topic
                             msg_multipart.send(*get_port(camera_port), ZMQ_DONTWAIT);
 
                             auto end = std::chrono::system_clock::now();
                             //spdlog::info("Processing Time : {} sec", std::chrono::duration<double, std::chrono::seconds::period>(end - start).count());
-                            logger::info("[{}] {} sent monitor image", get_name(), camera_id);
+                            //logger::info("[{}] {} sent monitor image", get_name(), camera_id);
                         }
-
-                        //logger::info("[{}] {} image grabbed", get_name(), camera_id);
                     }
                     else{
                         logger::warn("[{}] Error-code({}) : {}", get_name(), ptrGrabResult->GetErrorCode(), ptrGrabResult->GetErrorDescription().c_str());
                     }
                 }
-                else{
-                    logger::warn("[{}] Grab result is invalid",get_name());
-                    break;
-                }
-            }
-            catch(Pylon::TimeoutException& e){
-                logger::error("[{}] Camera {} Timeout exception occurred! {}", get_name(), camera_id, e.GetDescription());
-                break;
             }
             catch(Pylon::RuntimeException& e){
                 logger::error("[{}] Camera {} Runtime Exception ({})", get_name(), camera_id, e.what());
+                break;
             }
             catch(const zmq::error_t& e){
                 logger::error("[{}] {}", get_name(), e.what());
+                break;
             }
         }
 
-        camera->StopGrabbing();
         camera->Close();
     }
     catch(const GenericException& e){

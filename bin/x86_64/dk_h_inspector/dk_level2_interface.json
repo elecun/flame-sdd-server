@@ -3,13 +3,20 @@
     "verbose" : 1,
 
     "parameters":{
-        "lv2_access_ip":"127.0.0.1",
-        "lv2_access_port":5401,
+        "show_raw_packet":true,
+        "level2_access_ip":"127.0.0.1",
+        "level2_access_port":5401,
         "sdd_host_ip":"127.0.0.1",
         "sdd_host_port":5402
     },
 
     "dataport":{
-        
+        "status" : {
+            "transport" : "tcp",
+            "host" : "*",
+            "port" : 5008,
+            "socket_type" : "pub",
+            "queue_size" : 1000
+        }
     }
 }

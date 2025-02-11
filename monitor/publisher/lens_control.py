@@ -50,7 +50,7 @@ class LensControlPublisher(QObject):
         self.__socket.setsockopt(zmq.LINGER, 0)
         self.__socket.bind(connection)
 
-        self.__console.info("* Start Lens Control Requester")
+        self.__console.info("* Start Lens Control Publisher")
 
     def get_connection_info(self) -> str:
         return self.__connection
@@ -110,10 +110,10 @@ class LensControlPublisher(QObject):
             self.__console.info(f"<Lens Control> Focus Move : {lens_id} -> {value}")
             # publish
             self.__socket.send_multipart([topic.encode(), jmsg.encode()])
-            self.__console.info(f"Publish Lens Focus Control Data : Lens-ID {lens_id}, Focus {value}")
+            self.__console.info(f"Publish Lens Focus Control : Lens-ID {lens_id}, Focus {value}")
 
         except zmq.error.ZMQError as e:
-            self.__console.error(f"{e}")
+            self.__console.error(f"<Lens Control> {e}")
 
 
     async def socket_monitor_async(self):
@@ -184,7 +184,7 @@ class LensControlPublisher(QObject):
         self.__console.info(f"Stopped Lens socket monitoring...")
 
     def close(self):
-        """ close the socket and context """
+        """ close the socket """
         try:
             self.__socket.close()
         except Exception as e:

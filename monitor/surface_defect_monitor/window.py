@@ -37,11 +37,14 @@ except ImportError:
     
 from util.logger.console import ConsoleLogger
 from subscriber.temperature import TemperatureMonitorSubscriber
+from subscriber.camera_status import CameraStatusMonitorSubscriber
 from publisher.lens_control import LensControlPublisher
+from publisher.camera_control import CameraControlPublisher
 from requester.light_control import LightControlRequester
 from requester.pulse_generator import PulseGeneratorRequester
 from subscriber.camera import CameraMonitorSubscriber
 
+# [note!] important!!!
 remap_id = {"1":"9", "2":"2", "3":"3", "4":"8", "5":"4", "6":"5", "7":"6", "8":"7", "9":"1", "10":"10" }
 
 class AppWindow(QMainWindow):
@@ -58,10 +61,15 @@ class AppWindow(QMainWindow):
 
         # device control interfaces
         self.__temp_monitor_subscriber = None
+        self.__camera_status_monitor_subscriber = None
         self.__lens_control_publisher = None
         self.__light_control_requester = None
         self.__pulse_generator_requester = None
         self.__camera_image_subscriber_map = {}
+        self.__camera_control_publisher_map = {}
+
+        # variables
+        self.__total_frames = 0
 
         try:            
             if "gui" in config:
@@ -151,6 +159,14 @@ class AppWindow(QMainWindow):
                 else:
                     self.__console.warning("Temperature Monitor is not enabled")
 
+                # camera status monitoring subscriber
+                if "use_camera_status_monitor" in config and config["use_camera_status_monitor"]:
+                    if "camera_status_monitor_source" in config and "camera_status_monitor_topic" in config:
+                        self.__console.info("+ Create Camera Status Monitoring Subscriber...")
+                        self.__camera_status_monitor_subscriber = CameraStatusMonitorSubscriber(self.__pipeline_context, connection=config["camera_status_monitor_source"], topic=config["camera_status_monitor_topic"])
+                        self.__camera_status_monitor_subscriber.status_update_signal.connect(self.on_update_camera_status)
+                        self.__camera_status_monitor_subscriber.start() # run in thread
+
                 # create lens control publisher
                 if "use_lens_control" in config and config["use_lens_control"]:
                     if "lens_control_source" in config:
@@ -158,7 +174,16 @@ class AppWindow(QMainWindow):
                         self.__lens_control_publisher = LensControlPublisher(self.__pipeline_context, connection=config["lens_control_source"])
                         #self.__lens_control_publisher.focus_read_update_signal.connect(self.on_update_focus)
                 else:
-                    self.__console.warning("Lens Control is not enabled")
+                    self.__console.warning("Lens Control is not enabled.")
+
+                # create camera control publisher
+                if "use_camera_control" in config and config["use_camera_control"]:
+                    for idx, id in enumerate(config["camera_ids"]):
+                        portname = f"camera_control_source_{id}"
+                        self.__console.info("+ Create Camera #{id} Control Publisher...")
+                        self.__camera_control_publisher_map[id] = CameraControlPublisher(self.__pipeline_context, connection=config[portname])
+                else:
+                    self.__console.warning("Camera Control is not enabled.")
 
                 # create light control requester
                 if "use_light_control" in config and config["use_light_control"]:
@@ -217,9 +242,6 @@ class AppWindow(QMainWindow):
                 focus_preset = json.load(preset_file)
                 preset_file.close()
 
-                # remap the focus
-                # remap_id = {"1":"9", "2":"2", "3":"3", "4":"8", "5":"4", "6":"5", "7":"6", "8":"7", "9":"1", "10":"10" }
-
                 # apply to the gui
                 for lens_id in focus_preset["focus_value"]:
                     edit_focus = self.findChild(QLineEdit, name=f"edit_focus_value_{remap_id[lens_id]}")
@@ -253,7 +275,11 @@ class AppWindow(QMainWindow):
 
     def on_btn_exposure_time_set(self, id:int):
         """ camera exposure time control """
-        pass
+        if id in self.__camera_control_publisher_map.keys():
+            et_val = self.findChild(QLineEdit, name=f"edit_exposure_time_value_{id}").text()
+            self.__camera_control_publisher_map[id].set_exposure_time(id, float(et_val))
+        else:
+            self.statusBar().showMessage(f"Camera #{id} control pipeline cannot be found")
             
     
     def on_btn_focus_read_all(self):
@@ -293,27 +319,40 @@ class AppWindow(QMainWindow):
     def closeEvent(self, event:QCloseEvent) -> None: 
         """ terminate main window """      
 
-        # clear instance explicitly
+        # close light control requester
         if self.__light_control_requester:
             self.__light_control_requester.close()
-            self.__console.info("Close light control requester")
+            self.__console.info("Close Light Control Requester")
+
+        # close lens control publisher
         if self.__lens_control_publisher:
             self.__lens_control_publisher.close()
-            self.__console.info("Close lens control requester")
+            self.__console.info("Close Lens Control Publisher")
+
+        # close pulse generator requester
         if self.__pulse_generator_requester:
             self.__pulse_generator_requester.close()
             self.__console.info("Close Pulse Generator Requester")
+
+        # close temperature monitor subscriber
         if self.__temp_monitor_subscriber:
             self.__temp_monitor_subscriber.close()
-            self.__console.info("Close temperature subscriber")
+            self.__console.info("Close Temperature Subscriber")
+    
+        # close camera status monitor subscriber
+        if self.__camera_status_monitor_subscriber:
+            self.__camera_status_monitor_subscriber.close()
+            self.__console.info("Close Camera Status Monitor Subscriber")
 
+        # close camera stream monitoring subscriber
         if len(self.__camera_image_subscriber_map.keys())>0:
             with ThreadPoolExecutor(max_workers=10) as executor:
                 executor.map(lambda subscriber: subscriber.close(), self.__camera_image_subscriber_map.values())
 
-        # for id, subscriber in self.__camera_image_subscriber_map.items():
-        #     subscriber.close()
-        #     self.__console.info(f"Close Camera #{id} Monitor subscriber")
+        # close camera control publisher
+        if len(self.__camera_control_publisher_map.keys())>0:
+            with ThreadPoolExecutor(max_workers=10) as executor:
+                executor.map(lambda publisher: publisher.close(), self.__camera_control_publisher_map.values())
 
         # context termination with linger=0
         self.__pipeline_context.destroy(0)
@@ -333,6 +372,20 @@ class AppWindow(QMainWindow):
             self.label_temperature_value_8.setText(str(int(values["8"])*0.1))
         except Exception as e:
             pass
+
+    def on_update_camera_status(self, status:str):
+        """ update camera status """
+        try:
+            status = json.loads(status)
+            self.__total_frames = 0
+            for camera_id in self.__config["camera_ids"]:
+                if str(camera_id) in status:
+                    self.__total_frames = self.__total_frames + status[str(camera_id)]["frames"]
+            
+            self.label_total_images.setText(str(self.__total_frames))
+
+        except json.JSONDecodeError as e:
+            self.__console.error(f"Camera Status Update Error : {e.waht()}")
 
     def on_update_temperature_status(self, msg:str): # update temperature control monitoring pipeline status
         self.label_temp_monitor_pipeline_message.setText(msg)
