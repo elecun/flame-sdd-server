@@ -31,11 +31,21 @@ class synology_nas_file_stacker : public flame::component::object {
         nas_file_stacker() = default;
         virtual ~nas_file_stacker() = default;
 
-        // default interface functions
+        /* common interface function */
         bool on_init() override;
         void on_loop() override;
         void on_close() override;
         void on_message() override;
+
+    private:
+        /* worker */
+        unordered_map<int, thread> _stacker_worker; // (stream id, thread)
+        atomic<bool> _worker_stop {false};
+
+    private:
+        void _image_stacker_task(int stream_id, json param);
+
+
 
     private:
         void _image_stacker(int id, json parameters); /* realtime image data stacker thread callback */

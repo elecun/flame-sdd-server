@@ -15,21 +15,22 @@ void release(){ if(_instance){ delete _instance; _instance = nullptr; }}
 
 bool synology_nas_file_stacker::on_init(){
 
+    /* mount path */
     _mount_path = fs::path(get_profile()->parameters().value("mount_path", ""));
     logger::info("[{}] Mounted NAS Storage Root Path : {}", get_name(), _mount_path.string());
 
-    /* image stream data stacking */
-    // thread stacking_worker = thread(&synology_nas_file_stacker::_image_stacker, this, get_profile()->parameters());
-    // _stacker_handle = stacking_worker.native_handle();
-    // stacking_worker.detach();
+    /* image stacker worker */
+    json parameters = get_profile()->parameters()
+    if(parameters.contains("image_streams") && parameters["image_streams"].is_array()){
+        json image_streams = parameters["image_streams"];
 
-    json streams = get_profile()->parameters()["image_streams"];
-    for(auto& stream_id:streams){
-        int id = stream_id["id"].get<int>();
-        thread worker = thread(&synology_nas_file_stacker::_image_stacker, this, id, get_profile()->parameters());
-        _stacker_worker[id] = worker.native_handle();
-        worker.detach();
-        logger::info("[{}] worker #{} detached", get_name(), id);
+        for(const auto& stream:image_streams){
+            int stream_id = stream["id"].get<int>();
+            string dirname = stream["dirname"].get<std::string>();
+
+            _stacker_worker[stream_id] = thread(&synology_nas_file_stacker::_image_stacker_task, this, stream_id, param);
+            logger::info("[{}] Stream #{} stacker is running...", get_name(), stream_id);
+        }
     }
 
     return true;
@@ -51,13 +52,43 @@ void synology_nas_file_stacker::on_loop(){
 
 void synology_nas_file_stacker::on_close(){
 
-    _thread_stop_signal = true;
-    pthread_cancel(_stacker_handle);
-    pthread_join(_stacker_handle, nullptr);
+    /* work stop signal */
+    _worker_stop.store(true);
+
+    for_each(_stacker_worker.begin(), _stacker_worker.end(), [](auto& t) {
+        if(t.second.joinable()){
+            t.second.join();
+            logger::info("- File Stacker #{} is now stopped", t.first);
+        }
+    });
 }
 
 void synology_nas_file_stacker::on_message(){
     
+}
+
+void synology_nas_file_stacker::_image_stacker_task(int stream_id, json parameters)
+{
+    try{
+        while(!_worker_stop.load()){
+            try{
+                // code here
+            }
+            catch(const zmq::error_t& e){
+                break;
+            }
+        }
+
+    }
+    catch(const zmq::error_t& e){
+        logger::error("[{}] Pipeline error : {}", get_name(), e.what()); // ETERM
+    }
+    catch(const std::runtime_error& e){
+        logger::error("[{}] Runtime error occurred!", get_name());
+    }
+    catch(const json::parse_error& e){
+        logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());
+    }
 }
 
 void synology_nas_file_stacker::_image_stacker(int id, json parameters){

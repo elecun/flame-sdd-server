@@ -39,6 +39,7 @@ class dk_level2_interface : public flame::component::object {
     private:
         /* local vairables */
         unsigned long _alive_msg_counter {0};
+        int _alive_interval {1};
         atomic<bool> _show_raw_packet {false};
 
         /* tcp-client related */
@@ -46,7 +47,11 @@ class dk_level2_interface : public flame::component::object {
         tcp::endpoint _lv2_endpoint;
         boost::asio::steady_timer _reconnect_timer;
 
+        unique_ptr<tcp_client> _tcp_client;
+
         /* tcp-server related */
+        tcp::acceptor _acceptor;
+        unique_ptr<tcp::socket> _server_socket;
 
     private:
         /* useful functions */

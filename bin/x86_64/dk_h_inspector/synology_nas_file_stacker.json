@@ -5,16 +5,16 @@
     "parameters":{
         "mount_path" : "/home/dk-sdd/nas_storage",
         "image_streams" : [
-            {"id":1},
-            {"id":2},
-            {"id":3},
-            {"id":4},
-            {"id":5},
-            {"id":6},
-            {"id":7},
-            {"id":8},
-            {"id":9},
-            {"id":10}
+            {"id":1, "dirname":"camera_1"},
+            {"id":2, "dirname":"camera_2"},
+            {"id":3, "dirname":"camera_3"},
+            {"id":4, "dirname":"camera_4"},
+            {"id":5, "dirname":"camera_5"},
+            {"id":6, "dirname":"camera_6"},
+            {"id":7, "dirname":"camera_7"},
+            {"id":8, "dirname":"camera_8"},
+            {"id":9, "dirname":"camera_9"},
+            {"id":10, "dirname":"camera_10"}
         ]
     },
 

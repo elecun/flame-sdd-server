@@ -4,6 +4,7 @@
 
     "parameters":{
         "show_raw_packet":true,
+        "alive_interval":30,
         "level2_access_ip":"127.0.0.1",
         "level2_access_port":5401,
         "sdd_host_ip":"127.0.0.1",
@@ -15,6 +16,11 @@
             "transport" : "tcp",
             "host" : "*",
             "port" : 5008,
+            "socket_type" : "pub",
+            "queue_size" : 1000
+        },
+        "lv2_dispatch" : {
+            "transport" : "inproc",
             "socket_type" : "pub",
             "queue_size" : 1000
         }

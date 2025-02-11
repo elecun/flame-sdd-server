@@ -31,7 +31,6 @@ TriggerSource = Line1
 #include <thread>
 #include <string>
 #include <atomic>
-#include <pthread.h>
 #include <atomic>
 
 #include <pylon/PylonIncludes.h>

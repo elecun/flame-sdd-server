@@ -20,9 +20,17 @@ bool dk_level2_interface::on_init(){
     sdd_host_ip = get_profile()->parameters().value("sdd_host_ip", "127.0.0.1"); //sdd server ip address
     sdd_host_port = get_profile()->parameters().value("sdd_host_port", 9998);
 
+    _alive_interval = get_profile()->parameters().value("alive_interval", 1);
+
     /* client socket (lv2 server access )*/
     _client_socket = tcp::socket(_io_context);
-    _lv2_endpoint = tcp::endpoint(address::from_string(lv2_access_ip), lv2_access_port);
+    _lv2_endpoint = tcp::endpoint(make_address(lv2_access_ip), lv2_access_port);
+
+    /* server socket */
+    _server_socket = tcp::socket(_io_context);
+    _sdd_endpoint = tcp::endpoint(make_address(sdd_host_ip), sdd_host_port);
+
+    _acceptor = tcp::acceptor(_io_context, _sdd_endpoint);
 
 
     // tcp::acceptor acceptor(_io_context, tcp::endpoint(tcp::v4(), sdd_host_port));
@@ -36,13 +44,16 @@ bool dk_level2_interface::on_init(){
 void dk_level2_interface::on_loop(){
 
     /* send alive packet for every 30s */
-    dk_sdd_alive alive_packet = generate_packet_alive();
+    static int alive_time = 0;
+    if(alive_time>=_alive_interval){
+        dk_sdd_alive alive_packet = generate_packet_alive();
+        alive_time = 0;
+    }
+    alive_time++;
 
     /* show raw packet data */
     if(_show_raw_packet.load())
         show_raw_packet(reinterpret_cast<char*>(&alive_packet), sizeof(alive_packet));
-
-
 }
 
 void dk_level2_interface::on_close(){

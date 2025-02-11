@@ -3,7 +3,7 @@
 
 using namespace std;
 
-struct dk_lv2_mf_instruction {
+struct _type_dk_lv2_mf_instruction {
     char cTcCode[4];        /* TC Code */
     char cDate[14];         /* 송신시간 */
     char cTcLength[6];      /* 전문길이 */
@@ -35,49 +35,28 @@ struct dk_lv2_mf_instruction {
     char cStandSize6[3];    /* 표준단면 치수(HB : r2, Angles : r2, Chanel : r2) */
     char cDSCutCoun[1];     /* DS Number of cutting */
     char cSpare[298];       /* Reserved */
-
-    void serialize(char* data, size_t size) const {
-        std::memcpy(data, this, sizeof(dk_lv2_mf_instruction));
-    }
-
-    void deserialize(const char* data){
-        std::memcpy(this, data, sizeof(dk_lv2_mf_instruction));
-    }
 };
+typedef _type_dk_lv2_mf_instruction dk_lv2_mf_instruction;
 
-struct dk_lv2_mf_clear {
+struct _type_dk_lv2_mf_clear {
     char cTcCode[4];    /* TC Code */
     char cDate[14];     /* 송신시간 */
     char cTcLength[6];  /* 전문길이 */
     char cSpare[26];    /* 스페어 */
-
-    void serialize(char* data, size_t size) const {
-        std::memcpy(data, this, sizeof(dk_lv2_mf_clear));
-    }
-
-    void deserialize(const char* data){
-        std::memcpy(this, data, sizeof(dk_lv2_mf_clear));
-    }
 };
+typedef _type_dk_lv2_mf_clear dk_lv2_mf_clear;
 
 
-struct dk_lv2_mf_alive {
+struct _type_dk_lv2_mf_alive {
     char cTcCode[4];    /* TC Code */
     char cDate[14];     /* 송신시간 */
     char cTcLength[6];  /* 전문길이 */
     char cCount[4];     /* 카운트 */
     char cSpare[22];    /* 스페어 */
-
-    void serialize(char* data, size_t size) const {
-        std::memcpy(data, this, sizeof(dk_lv2_mf_clear));
-    }
-
-    void deserialize(const char* data){
-        std::memcpy(this, data, sizeof(dk_lv2_mf_clear));
-    }
 };
+typedef _type_dk_lv2_mf_alive dk_lv2_mf_alive ;
 
-struct dk_sdd_perform {
+struct _type_dk_sdd_perform {
     char cTcCode[4];        /* TC Code */
     char cDate[14];         /* 송신시간 */
     char cTcLength[6];      /* 전문길이 */
@@ -106,15 +85,8 @@ struct dk_sdd_perform {
     char cResult9_Pos[6];
     char cResult10_Code[6];
     char cResult10_Pos[6];
-
-    void serialize(char* data, size_t size) const {
-        std::memcpy(data, this, sizeof(dk_sdd_perform));
-    }
-
-    void deserialize(const char* data){
-        std::memcpy(this, data, sizeof(dk_sdd_perform));
-    }
 };
+typedef _type_dk_sdd_perform dk_sdd_perform;
 
 struct _type_dk_sdd_alarm {
     char cTcCode[4];    /* TC Code */
