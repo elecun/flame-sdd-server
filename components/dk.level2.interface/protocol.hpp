@@ -56,7 +56,7 @@ struct _type_dk_lv2_mf_alive {
 };
 typedef _type_dk_lv2_mf_alive dk_lv2_mf_alive ;
 
-struct _type_dk_sdd_perform {
+struct _type_dk_sdd_job_result {
     char cTcCode[4];        /* TC Code */
     char cDate[14];         /* 송신시간 */
     char cTcLength[6];      /* 전문길이 */
@@ -86,7 +86,7 @@ struct _type_dk_sdd_perform {
     char cResult10_Code[6];
     char cResult10_Pos[6];
 };
-typedef _type_dk_sdd_perform dk_sdd_perform;
+typedef _type_dk_sdd_job_result dk_sdd_job_result;
 
 struct _type_dk_sdd_alarm {
     char cTcCode[4];    /* TC Code */
@@ -105,3 +105,9 @@ struct _type_dk_sdd_alive {
     char cSpare[22];    /* 스페어 */
 };
 typedef _type_dk_sdd_alive  dk_sdd_alive;
+
+struct _type_dk_sdd_defect {
+    char cResult_Code[6];
+    char cResult_Pos[6];
+};
+typedef _type_dk_sdd_defect dk_sdd_defect;
