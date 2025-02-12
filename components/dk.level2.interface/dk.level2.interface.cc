@@ -32,12 +32,6 @@ bool dk_level2_interface::on_init(){
         logger::error("[{}] Create client exception : {}", get_name(), e.what());
     }
 
-
-    // tcp::acceptor acceptor(_io_context, tcp::endpoint(tcp::v4(), sdd_host_port));
-    // std::cout << "Server started. Waiting for clients..." << std::endl;
-
-    // _worker_container.emplace_back(&dk_level2_interface::_server_proc, this);
-
     return true;
 }
 
@@ -64,6 +58,18 @@ void dk_level2_interface::on_close(){
 
 void dk_level2_interface::on_message(){
     
+}
+
+void dk_level2_interface::on_server_connected(const tcp::endpoint& endpoint){
+
+}
+
+void dk_level2_interface::on_server_disconnected(const tcp::endpoint& endpoint){
+
+}
+
+void dk_level2_interface::on_server_received(const std::string& data){
+
 }
 
 dk_sdd_alive dk_level2_interface::generate_packet_alive(){
@@ -94,6 +100,10 @@ dk_sdd_alive dk_level2_interface::generate_packet_alive(){
     /* 5. reserved (22) */
     memset(packet.cSpare, '0', sizeof(packet.cSpare));
 
+    /* show raw packet data */
+    if(_show_raw_packet.load())
+        show_raw_packet(reinterpret_cast<char*>(&packet), sizeof(packet));
+
     return packet;
 
 }
@@ -121,6 +131,10 @@ dk_sdd_alarm dk_level2_interface::generate_packet_alarm(){
 
     /* 5. reserved (23) */
     memset(packet.cSpare, '0', sizeof(packet.cSpare));
+
+    /* show raw packet data */
+    if(_show_raw_packet.load())
+        show_raw_packet(reinterpret_cast<char*>(&packet), sizeof(packet));
 
     return packet;
 }
@@ -171,38 +185,11 @@ dk_sdd_job_result dk_level2_interface::generate_packet_job_result(string lot_no,
     std::memcpy(packet.cCount, ss.str().c_str(), sizeof(packet.cCount));
     ss.str(""); ss.clear();
 
-}
+    /* show raw packet data */
+    if(_show_raw_packet.load())
+        show_raw_packet(reinterpret_cast<char*>(&packet), sizeof(packet));
 
-
-void dk_level2_interface::_server_proc(){
-
-    // tcp::acceptor acceptor(_io_context, tcp::endpoint(tcp::v4(), sdd_host_port));
-    // logger::info("[{}] Server({}) started. Waiting for clients...", get_name(), sdd_host_port);
-
-    // while(!_worker_stop.load()){
-    //     tcp::socket socket(_io_context);
-    //     tcp::socket socket = acceptor.accept();
-    //     logger::info("[{}] New client connected", get_name());
-
-    //     try{
-    //         boost::system::error_code error;
-    //         boost::asio::streambuf buffer;
-    //         boost::asio::read(socket, buffer, error);
-
-    //         if(error && error != boost::asio::error::eof){
-    //             logger::error("[{}] Receive failed: {}", get_name(), error.message());
-    //         }
-    //         else{
-    //             std::istream is(&buffer);
-    //             std::string data;
-    //             std::getline(is, data);
-    //             logger::info("[{}] Received data : {}", get_name(), data);
-    //         }
-    //     }
-    //     catch(const std::exception& e){
-    //         logger::error("[{}] Exception : {}", get_name(), e.what());
-    //     }
-    // }
+    return packet;
 
 }
 
@@ -224,27 +211,4 @@ void dk_level2_interface::show_raw_packet(char* data, size_t size){
     std::stringstream log_stream;
     log_stream.write(data, size);
     logger::info("[{}](size:{}){}", get_name(), log_stream.str().size(), log_stream.str());
-}
-
-void dk_level2_interface::lv2_connect(){
-    boost::asio::ip::tcp::resolver::results_type endpoints;
-    try {
-            endpoints = _resolver_.resolve(host_, std::to_string(port_));
-        } catch (const boost::system::system_error& error) {
-            std::cerr << "Resolve failed: " << error.what() << std::endl;
-            reconnect();
-            return;
-        }
-
-        socket_ = std::make_unique<boost::asio::ip::tcp::socket>(io_context_);
-        boost::asio::async_connect(*socket_, endpoints,
-            [this](const boost::system::error_code& error, const boost::asio::ip::tcp::endpoint& /*endpoint*/) {
-                if (!error) {
-                    std::cout << "Connected to server!" << std::endl;
-                    start_read();
-                } else {
-                    std::cerr << "Connect failed: " << error.message() << std::endl;
-                    reconnect();
-                }
-            });
 }

@@ -44,16 +44,10 @@ class dk_level2_interface : public flame::component::object {
         int _alive_interval {1};
         atomic<bool> _show_raw_packet {false};
 
-        /* tcp-client related */
-        unique_ptr<tcp::socket> _client_socket;
-        tcp::endpoint _lv2_endpoint;
-        boost::asio::steady_timer _reconnect_timer;
-
-        
-
-        /* tcp-server related */
-        tcp::acceptor _acceptor;
-        unique_ptr<tcp::socket> _server_socket;
+    private:
+        void on_server_connected(const tcp::endpoint& endpoint);
+        void on_server_disconnected(const tcp::endpoint& endpoint);
+        void on_server_received(const std::string& data);
 
     private:
         /* useful functions */
@@ -64,12 +58,6 @@ class dk_level2_interface : public flame::component::object {
         dk_sdd_alive generate_packet_alive();
         dk_sdd_alarm generate_packet_alarm();
         dk_sdd_job_result generate_packet_job_result();
-
-        /* client-related */
-        void lv2_connect();
-
-    private:
-        void _server_proc();
 
     private:
         boost::asio::io_context _io_context;

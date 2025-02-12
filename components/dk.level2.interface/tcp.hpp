@@ -77,31 +77,44 @@ private:
     char _read_buffer[1024];
 }; /* tcp client */
 
+
+using connect_callback = std::function<void(const tcp::endpoint&)>;
+using disconnect_callback = std::function<void(const tcp::endpoint&)>;
+using received_callback = std::function<void(const std::string&)>;
+
 class tcp_server {
     public:
-    tcp_server(boost::asio::io_context& io_context, short port)
-    : io_context_(io_context),acceptor_(io_context_, tcp::endpoint(tcp::v4(), port)),socket_(io_context_) { // 소켓을 멤버 변수로 생성
+    tcp_server(boost::asio::io_context& io_context, short port,
+        connect_callback fp_connect, disconnect_callback fp_disconnect, received_callback fp_received)
+    : _io_context(io_context),_acceptor(_io_context, tcp::endpoint(tcp::v4(), port)){ // 소켓을 멤버 변수로 생성
         start_accept();
     }
     
     private:
         void start_accept() {
-            acceptor_.async_accept(socket_, // 멤버 변수 소켓 사용
-                [this](const boost::system::error_code& error) {
-                    if (!error) {
-                        logger::info("<server> accepted connection");
-                        start_read(); // 바로 읽기 시작
+            tcp::socket socket(_io_context);
+            _acceptor.async_accept(socket,
+                [this, socket = std::move(socket)](const boost::system::error_code& error) mutable {
+                    if(!error) {
+                        logger::info("<server> accepted connection from {}", socket.remote_endpoint().address().to_string());
+                        if(_fp_connect_callback) {
+                            connect_callback_(socket.remote_endpoint()); // 콜백 호출 (연결 정보 전달)
+                        }
+                        start_read(std::move(socket)); // 바로 읽기 시작
                     } else {
                         logger::error("<server> accept failed, {}", error.message());
                     }
                 });
         }
     
-        void start_read() {
-            boost::asio::async_read(socket_, boost::asio::buffer(read_buffer_),
-                [this](const boost::system::error_code& error, size_t bytes_transferred) {
-                    if (!error) {
+        void start_read(tcp::socket socket) {
+            boost::asio::async_read(socket, boost::asio::buffer(read_buffer_),
+                [this](const boost::system::error_code& error, size_t bytes_transferred) mutable {
+                    if(!error) {
                         logger::info("<server> received : {}",std::string(read_buffer_, bytes_transferred));
+                        if(_fp_receive_callback) {
+                            receive_callback_(received_data); // 콜백 호출 (수신 데이터 전달)
+                        }
                         start_write(std::string(read_buffer_, bytes_transferred)); // Echo back
                     } else {
                         logger::error("<server> read failed, {}", error.message());
@@ -111,9 +124,9 @@ class tcp_server {
                 });
         }
     
-        void start_write(const std::string& message) {
-            boost::asio::async_write(socket_, boost::asio::buffer(message),
-                [this](const boost::system::error_code& error, size_t /*bytes_transferred*/) {
+        void start_write(tcp::socket socket, const std::string& message) {
+            boost::asio::async_write(socket, boost::asio::buffer(message),
+                [this, socket = std::move(socket)](const boost::system::error_code& error, size_t /*bytes_transferred*/) {
                     if (error) {
                         logger::error("<server> write failed, {}", error.message());
                         socket_.close(); // 연결 닫기
@@ -123,10 +136,15 @@ class tcp_server {
         }
     
     private:
-        boost::asio::io_context& io_context_;
-        tcp::acceptor acceptor_;
+        boost::asio::io_context& _io_context;
+        tcp::acceptor _acceptor;
         tcp::socket socket_; // 멤버 변수 소켓
         char read_buffer_[1024];
+
+    private:
+        connect_callback _fp_connect_callback; // 함수 포인터
+        disconnect_callback _fp_disconnect_callback; // 함수 포인터
+        received_callback _fp_receive_callback;
     };
 
 #endif
