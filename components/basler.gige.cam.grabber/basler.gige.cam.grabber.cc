@@ -46,6 +46,9 @@ bool basler_gige_cam_grabber::on_init(){
             logger::info("[{}] Camera #{} Grabber is running...", get_name(), camera.first);
         }
 
+        /* image stream control worker */
+        _image_stream_control_worker = thread(&basler_gige_cam_grabber::_image_stream_control_task, this);
+
     }
     catch(const GenericException& e){
         logger::error("[{}] Pylon Generic Exception : {}", get_name(), e.GetDescription());
@@ -79,7 +82,6 @@ void basler_gige_cam_grabber::on_loop(){
 
     /* send status */
     msg_multipart.send(*get_port("status"), ZMQ_DONTWAIT);
-    logger::info("[{}] Publish Camera Status", get_name());
 
 }
 
@@ -93,6 +95,12 @@ void basler_gige_cam_grabber::on_close(){
 
     /* work stop signal */
     _worker_stop.store(true);
+    _image_stream_enable.store(false);
+
+    if(_image_stream_control_worker.joinable()){
+        _image_stream_control_worker.join();
+        logger::info("[{}] Image Stream Control Worker is now stopped", get_name());
+    }
 
     for_each(_camera_control_worker.begin(), _camera_control_worker.end(), [](auto& t) {
         if(t.second.joinable()){
@@ -172,7 +180,43 @@ void basler_gige_cam_grabber::_camera_control_task(int camera_id, CBaslerUnivers
 
     }
     catch(const zmq::error_t& e){
-        logger::error("[{}] Pipeline error : {}", get_name(), e.what()); // ETERM
+        logger::error("[{}] Pipeline error : {}", get_name(), e.what());
+    }
+    catch(const std::runtime_error& e){
+        logger::error("[{}] Runtime error occurred!", get_name());
+    }
+    catch(const json::parse_error& e){
+        logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());
+    }
+}
+
+void basler_gige_cam_grabber::_image_stream_control_task(){
+    try{
+        while(!_worker_stop.load()){
+            try{
+                /* wait for hmd_signal subscription */
+                zmq::multipart_t msg_multipart;
+                bool success = msg_multipart.recv(*get_port("hmd_signal"));
+
+                if(success){
+                    string topic = msg_multipart.popstr();
+                    string data = msg_multipart.popstr();
+                    auto json_data = json::parse(data);
+
+                    if(json_data.contains("signal_on")){
+                        bool signal_on = json_data["signal_on"].get<bool>();
+                        _image_stream_enable.store(signal_on);
+                        logger::info("[{}] HMD Signal : {}", get_name(), signal_on);
+                    }
+                }
+            }
+            catch(const zmq::error_t& e){
+                break;
+            }
+        }
+    }
+    catch(const zmq::error_t& e){
+        logger::error("[{}] Pipeline error : {}", get_name(), e.what());
     }
     catch(const std::runtime_error& e){
         logger::error("[{}] Runtime error occurred!", get_name());
@@ -184,7 +228,6 @@ void basler_gige_cam_grabber::_camera_control_task(int camera_id, CBaslerUnivers
 
 void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversalInstantCamera* camera, json parameters){
     try{
-
         camera->Open();
         string acquisition_mode = parameters.value("acquisition_mode", "Continuous"); // Continuous, SingleFrame, MultiFrame
         double acquisition_fps = parameters.value("acquisition_fps", 30.0);
@@ -240,9 +283,6 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
 
                         auto start = std::chrono::system_clock::now();
 
-                        /* camera grab status update */
-                        _camera_grab_counter[camera_id].store(++camera_grab_counter);
-
                         /* grabbed imgae stores into buffer */
                         const uint8_t* pImageBuffer = (uint8_t*)ptrGrabResult->GetBuffer();
 
@@ -256,19 +296,25 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
 
                         /* common transport parameters */
                         string id_str = fmt::format("{}",camera_id);
-                        pipe_data msg_id(id_str.data(), id_str.size());
-                        pipe_data msg_image(serialized_image.data(), serialized_image.size());
 
                         /* push image data */
-                        string image_stream_port = fmt::format("image_stream_{}", camera_id);
-                        if(get_port(image_stream_port)->handle()!=nullptr){
-                            zmq::multipart_t msg_multipart_image;
-                            msg_multipart_image.addstr(id_str);
-                            msg_multipart_image.addmem(serialized_image.data(), serialized_image.size());
-                            msg_multipart_image.send(*get_port(image_stream_port), ZMQ_DONTWAIT);
-                        }
-                        else{
-                            logger::warn("[{}] {} socket handle is not valid ", get_name(), camera_id);
+                        if(_image_stream_enable.load()){
+                            /* camera grab status update */
+                            _camera_grab_counter[camera_id].store(++camera_grab_counter);
+
+                            pipe_data msg_id(id_str.data(), id_str.size());
+                            pipe_data msg_image(serialized_image.data(), serialized_image.size());
+
+                            string image_stream_port = fmt::format("image_stream_{}", camera_id);
+                            if(get_port(image_stream_port)->handle()!=nullptr){
+                                zmq::multipart_t msg_multipart_image;
+                                msg_multipart_image.addstr(id_str);
+                                msg_multipart_image.addmem(serialized_image.data(), serialized_image.size());
+                                msg_multipart_image.send(*get_port(image_stream_port), ZMQ_DONTWAIT);
+                            }
+                            else{
+                                logger::warn("[{}] {} socket handle is not valid ", get_name(), camera_id);
+                            }
                         }
 
 

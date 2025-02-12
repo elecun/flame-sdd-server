@@ -40,6 +40,7 @@ from subscriber.temperature import TemperatureMonitorSubscriber
 from subscriber.camera_status import CameraStatusMonitorSubscriber
 from publisher.lens_control import LensControlPublisher
 from publisher.camera_control import CameraControlPublisher
+from publisher.hmd_signal_control import HMDSignalControlPublisher
 from requester.light_control import LightControlRequester
 from requester.pulse_generator import PulseGeneratorRequester
 from subscriber.camera import CameraMonitorSubscriber
@@ -59,10 +60,11 @@ class AppWindow(QMainWindow):
         self.__frame_defect_grid_layout = QVBoxLayout()
         self.__frame_defect_grid_plot = graph.PlotWidget()
 
-        # device control interfaces
+        # device/service control interfaces
         self.__temp_monitor_subscriber = None
         self.__camera_status_monitor_subscriber = None
         self.__lens_control_publisher = None
+        self.__hmd_signal_control_publisher = None
         self.__light_control_requester = None
         self.__pulse_generator_requester = None
         self.__camera_image_subscriber_map = {}
@@ -126,6 +128,8 @@ class AppWindow(QMainWindow):
                 self.btn_focus_initialize_all.clicked.connect(self.on_btn_focus_initialize_all)
                 self.btn_focus_preset_set_all.clicked.connect(self.on_btn_focus_preset_set_all)
                 self.btn_focus_preset_load.clicked.connect(self.on_btn_focus_preset_load)
+                self.btn_test_hmd_signal_on.clicked.connect(self.on_btn_hmd_signal_on)
+                self.btn_test_hmd_signal_off.clicked.connect(self.on_btn_hmd_signal_off)
 
                 # register dial event callback function
                 self.dial_light_control.valueChanged.connect(self.on_change_light_control)
@@ -175,6 +179,12 @@ class AppWindow(QMainWindow):
                         #self.__lens_control_publisher.focus_read_update_signal.connect(self.on_update_focus)
                 else:
                     self.__console.warning("Lens Control is not enabled.")
+
+                # create hmd signal control publisher (test use only)
+                if "use_hmd_signal_control" in config and config["use_hmd_signal_control"]:
+                    if "hmd_signal_control_source" in config:
+                        self.__console.info("+ Create HMD Signal Control Publisher...")
+                        self.__hmd_signal_control_publisher = HMDSignalControlPublisher(self.__pipeline_context, connection=config["hmd_signal_control_source"])
 
                 # create camera control publisher
                 if "use_camera_control" in config and config["use_camera_control"]:
@@ -244,7 +254,7 @@ class AppWindow(QMainWindow):
 
                 # apply to the gui
                 for lens_id in focus_preset["focus_value"]:
-                    edit_focus = self.findChild(QLineEdit, name=f"edit_focus_value_{remap_id[lens_id]}")
+                    edit_focus = self.findChild(QLineEdit, name=f"edit_focus_value_{lens_id}")
                     if edit_focus:
                         edit_focus.setText(str(focus_preset["focus_value"][lens_id]))
 
@@ -258,6 +268,16 @@ class AppWindow(QMainWindow):
         """ set focus preset for all lens """
         for lens_id in self.__config["camera_ids"]:
             self.on_btn_focus_set(lens_id)
+
+    def on_btn_hmd_signal_on(self):
+        """ (test) hmd on signal """
+        if self.__hmd_signal_control_publisher:
+            self.__hmd_signal_control_publisher.set_signal_on(True)
+
+    def on_btn_hmd_signal_off(self):
+        """ (test) hmd off signal """
+        if self.__hmd_signal_control_publisher:
+            self.__hmd_signal_control_publisher.set_signal_on(False)
 
 
     def on_change_light_control(self, value):
@@ -328,6 +348,11 @@ class AppWindow(QMainWindow):
         if self.__lens_control_publisher:
             self.__lens_control_publisher.close()
             self.__console.info("Close Lens Control Publisher")
+
+        # close hmd signal control publisher
+        if self.__hmd_signal_control_publisher:
+            self.__hmd_signal_control_publisher.close()
+            self.__console.info("Close HMD Signal Control Publisher")
 
         # close pulse generator requester
         if self.__pulse_generator_requester:

@@ -146,7 +146,7 @@ dk_sys_op_trigger.comp:	$(BUILDDIR)dk.sys.op.trigger.o
 $(BUILDDIR)dk.sys.op.trigger.o:	$(CURRENT_DIR)/components/dk.sys.op.trigger/dk.sys.op.trigger.cc
 								$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
 
-synology_nas_file_stacker.comp:	$(BUILDDIR)synology_nas.file.stacker.o
+synology_nas_file_stacker.comp:	$(BUILDDIR)synology.nas.file.stacker.o
 						$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(BUILDDIR)$@ $^ $(LDLIBS) -lopencv_core -lopencv_imgcodecs -lopencv_highgui -lopencv_imgproc
 $(BUILDDIR)synology.nas.file.stacker.o:	$(CURRENT_DIR)/components/synology.nas.file.stacker/synology.nas.file.stacker.cc
 							$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
@@ -226,7 +226,7 @@ $(BUILDDIR)dk.image.push.unittest.o:	$(CURRENT_DIR)/components/dk.image.push.uni
 
 all : flame
 
-dk_h_inspector : flame basler_gige_cam_grabber.comp synology_nas_file_stacker.comp ni_daq_pulse_generator.comp ni_daq_controller.comp dk_level2_interface.comp
+dk_h_inspector : flame basler_gige_cam_grabber.comp synology_nas_file_stacker.comp dk_level2_interface.comp
 
 dk_h_inspector_onsite : flame system_status_monitor.comp autonics_temp_controller.comp computar_vlmpz_controller.comp
 

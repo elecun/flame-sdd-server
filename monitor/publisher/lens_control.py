@@ -101,7 +101,7 @@ class LensControlPublisher(QObject):
             topic = "focus_control"
             message = {
                 "function":"move_focus",
-                "id":lens_id,
+                "camera_id":lens_id,
                 "value":value
             }
 

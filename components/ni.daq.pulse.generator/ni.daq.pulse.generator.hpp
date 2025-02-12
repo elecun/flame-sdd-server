@@ -29,6 +29,20 @@ class ni_daq_pulse_generator : public flame::component::object {
         void on_message() override;
 
     private:
+        /* subtasks */
+        TaskHandle _task_handle_pulse_generation { nullptr };
+        TaskHandle _task_handle_dio_reader { nullptr };
+
+    private:
+        /* daq parameters */
+        string _daq_device_name {""};
+        string _daq_counter_channel {""};
+        double _daq_pulse_freq {30.0};
+        double _daq_pulse_duty {0.5};
+
+
+
+    private:
         /* start or stop the pulse generation continuously */
         bool _start_pulse_generation(double freq, unsigned long long n_pulses, double duty);
         void _stop_pulse_generation();
@@ -37,12 +51,6 @@ class ni_daq_pulse_generator : public flame::component::object {
         void _response(json parameters);
 
     private:
-        string _daq_device_name {""};
-        string _daq_counter_channel {""};
-        double _daq_pulse_freq {30};
-        unsigned long long _daq_pulse_samples { 1000 };
-        double _daq_pulse_duty {0.5};
-        TaskHandle _handle_pulsegen_task { nullptr };
 
         /* status */
         std::atomic<bool> _triggering { false };

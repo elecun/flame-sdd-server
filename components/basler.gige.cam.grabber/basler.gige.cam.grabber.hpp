@@ -59,7 +59,9 @@ class basler_gige_cam_grabber : public flame::component::object {
         /* for worker threads handle */
         unordered_map<int, thread> _camera_grab_worker; // (camera id, thread)
         unordered_map<int, thread> _camera_control_worker; // (camera id, thread)
+        thread _image_stream_control_worker;    //image stream control worker
         atomic<bool> _worker_stop {false};
+        atomic<bool> _image_stream_enable {false};
 
         /* camera-related status */
         unordered_map<int, atomic<unsigned long long>> _camera_grab_counter; // (camera id, counter)
@@ -71,7 +73,8 @@ class basler_gige_cam_grabber : public flame::component::object {
     private:
         /* subtasks */
         void _camera_control_task(int camera_id, CBaslerUniversalInstantCamera* camera); /* camera control */
-        void _image_stream_task(int camera_id, CBaslerUniversalInstantCamera* camera, json parameters); /* image capture & flush in pipeline */        
+        void _image_stream_task(int camera_id, CBaslerUniversalInstantCamera* camera, json parameters); /* image capture & flush in pipeline */ 
+        void _image_stream_control_task(); /* image stream control task */       
 
 }; /* class */
 

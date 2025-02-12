@@ -22,7 +22,7 @@
         "lv2_dispatch" : {
             "transport" : "inproc",
             "socket_type" : "pub",
-            "queue_size" : 1000
+            "queue_size" : 100
         }
     }
 }

@@ -2,6 +2,7 @@
 #include "computar.vlmpz.controller.hpp"
 #include <flame/log.hpp>
 #include <flame/config_def.hpp>
+#include <cmath>
 
 using namespace flame;
 
@@ -16,23 +17,20 @@ bool computar_vlmpz_controller::on_init(){
         /* usb device scan and insert into container, lens controller map will be built*/
         _usb_device_scan();
 
-        for (map<int, controlImpl*>::iterator it=_lens_controller_map.begin(); it != _lens_controller_map.end(); ++it) {
+        for(map<int, controlImpl*>::iterator it=_lens_controller_map.begin(); it != _lens_controller_map.end(); ++it) {
             if(it->second->open()){
                 logger::info("[{}] Lens #{} successfully opened", get_name(), it->second->get_camera_id());
                 logger::info("[{}] Lens #{} Focus Initializing...", get_name(), it->second->get_camera_id());
                 it->second->focus_initialize();
+                it->second->_is_opened.store(true);
             }
             else{
+                it->second->_is_opened.store(false);
                 logger::warn("[{}] Lens #{} cannot be opened", get_name(), it->second->get_camera_id());
             }
         }
 
-        /* lens control with req/rep processing */
-        thread lens_control_responser = thread(&computar_vlmpz_controller::_lens_control_subscribe, this, get_profile()->parameters());
-        _lens_control_responser_handle = lens_control_responser.native_handle();
-        lens_control_responser.detach();
-
-
+        _lens_control_worker = thread(&computar_vlmpz_controller::_lens_control_subscribe, this, get_profile()->parameters());
     }
     catch(json::exception& e){
         logger::error("[{}] Profile Error : {}", get_name(), e.what());
@@ -47,17 +45,21 @@ void computar_vlmpz_controller::on_loop(){
 
 void computar_vlmpz_controller::on_close(){
 
+    /* work stop signal */
+    _worker_stop.store(true);
+
+    /* wait for thread termination */
+    if(_lens_control_worker.joinable())
+        _lens_control_worker.join();
+
+    /* device close */
     for(map<int, controlImpl*>::iterator it=_lens_controller_map.begin(); it!=_lens_controller_map.end(); ++it){
         it->second->close();
     }
+
+    /* clear */
     _lens_controller_map.clear();
 
-    /* terminate len control responser */
-    _thread_stop_signal.store(true);
-    pthread_cancel(_lens_control_responser_handle);
-    pthread_join(_lens_control_responser_handle, nullptr);
-
-    logger::info("close computar_vlmpz_controller");
 }
 
 void computar_vlmpz_controller::on_message(){
@@ -80,86 +82,70 @@ void computar_vlmpz_controller::_usb_device_scan(){
     UsbGetNumDevices(&_n_devices);
     logger::info("[{}] Found {} Lens connected", get_name(), _n_devices);
 
-    // device insert by force
-    json defined_devices = get_profile()->parameters()["devices"];
-    for(auto& device:defined_devices){
-        int cam_id = device["camera_id"].get<int>();
-        int dev_id = device["device_id"].get<int>();
-        _lens_controller_map.insert({cam_id, new controlImpl(get_name(), dev_id, cam_id)});
-        _device_id_mapper.insert({cam_id, dev_id});
+    // device map from profile
+    if(get_profile()->parameters().contains("devices")){
+        json defined_devices = get_profile()->parameters()["devices"];
+        for(auto& device:defined_devices){
+            int cam_id = device["camera_id"].get<int>();
+            int dev_id = device["device_id"].get<int>();
+            _lens_controller_map.insert({cam_id, new controlImpl(get_name(), dev_id, cam_id)});
+            _device_id_mapper.insert({cam_id, dev_id});
+
+            char serial_number[260] = {0, };
+            int retval = UsbGetSnDevice(dev_id, serial_number);
+            if(!retval){
+                logger::info("[{}] Found USB Lens Controller Device ID#{} - SN {}", get_name(), dev_id, string(serial_number));
+            }
+        }
     }
-
-
-    // 2. get device information
-    // json defined_devices = get_profile()->parameters()["devices"];
-    // if(_n_devices>0){
-    //     for(uint16_t device_id=0; device_id<_n_devices; device_id++){ //start index from 0
-    //         char serial_number[260] = {0, }; // device name is 260bytes according to the instructions of the USB IC
-    //         int retval = UsbGetSnDevice(device_id, serial_number);
-    //         string sn = string(serial_number);
-
-    //         if(!retval){ // no error
-    //             logger::info("[{}] Found USB Lens Controller #{} - SN {}", get_name(), device_id, sn);
-
-    //             // found camera id with device id
-    //             for(auto& device:defined_devices){ // find in parameters
-    //                 if(!device["sn"].get<string>().compare(sn)){ //found
-    //                     int cid = device["camera_id"].get<int>();
-    //                     _lens_controller_map.insert({cid, new controlImpl(get_name(), (int)device_id, cid)});
-    //                     _device_id_mapper.insert({cid, device_id});
-    //                     logger::info("[{}] Registered Lens Controller, User ID({})-Device ID({})-SN({})",get_name(), device["camera_id"].get<int>(), (int)device_id, sn);
-    //                     break;
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
-    // else{
-    //     logger::error("[{}] No device found");
-    // }
 }
 
 void computar_vlmpz_controller::_lens_control_subscribe(json parameters){
-    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
-    pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, nullptr);
 
-    while(!_thread_stop_signal.load()){
-        try{
+    try {
+        while(!_worker_stop.load()){
+            try{
 
-            zmq::multipart_t msg_multipart;
-            bool ret = msg_multipart.recv(*get_port("focus_control"));
-            
-            if(ret){
-                string topic = msg_multipart.popstr();
-                std::string message(static_cast<char*>(msg_multipart.at(0).data()), msg_multipart.at(0).size()); //jsonized message
-                auto json_data = json::parse(message);
+                /* read control message */
+                zmq::multipart_t msg_multipart;
+                bool success = msg_multipart.recv(*get_port("focus_control"));
+                if(success){
+                    string topic = msg_multipart.popstr();
+                    string data = msg_multipart.popstr();
+                    auto json_data = json::parse(data);
 
-                if(json_data.contains("function")){
+                    if(json_data.contains("function")){
 
-                    /* 1. for move focus function processing */
-                    if(!json_data["function"].get<string>().compare("move_focus")){
-                        int camera_id = json_data["id"].get<int>();
-                        int value = json_data["value"].get<int>();
-                        logger::info("[{}] Move focus ID:{} (Device ID : {}) to {}",get_name(), camera_id, _device_id_mapper[camera_id], value);
-                        if(_lens_controller_map.contains(_device_id_mapper[camera_id])){
-                            _lens_controller_map[_device_id_mapper[camera_id]]->focus_move(value);
+                        /* 1. for move focus function processing */
+                        if(!json_data["function"].get<string>().compare("move_focus")){
+                            int camera_id = json_data["camera_id"].get<int>();
+                            int value = json_data["value"].get<int>();
+                            if(_lens_controller_map.contains(camera_id)){
+                                if(_lens_controller_map[camera_id]->_is_opened.load()){
+                                    _lens_controller_map[camera_id]->focus_move(value);
+                                    logger::info("[{}] Focus Lens moves for Camera ID #{}", get_name(), camera_id);
+                                }
+                            }
                         }
                     }
                 }
             }
-        }
-        catch(const json::parse_error& e){
-            logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());
-        }
-        catch(const std::runtime_error& e){
-            logger::error("[{}] Runtime error occurred!", get_name());
-        }
-        catch(const zmq::error_t& e){
-            logger::error("[{}] Pipeline error : {}", get_name(), e.what());
-        }
-    }
+            catch(const zmq::error_t& e){
+                break;
+            }
 
-    logger::info("terminated");
+        }
+
+    }
+    catch(const zmq::error_t& e){
+        logger::error("[{}] Pipeline error : {}", get_name(), e.what());
+    }
+    catch(const std::runtime_error& e){
+        logger::error("[{}] Runtime error occurred!", get_name());
+    }
+    catch(const json::parse_error& e){
+        logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());
+    }
 }
 
 void computar_vlmpz_controller::_lens_control_responser(json parameters){

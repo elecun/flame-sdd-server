@@ -32,6 +32,13 @@
             "socket_type" : "pub",
             "queue_size" : 1000
         },
+        "hmd_signal":{
+            "transport":"tcp",
+            "host":"127.0.0.1",
+            "port":5401,
+            "socket_type" : "sub",
+            "queue_size" : 1000
+        },
         "camera_control_1":{
             "transport":"tcp",
             "host":"127.0.0.1",

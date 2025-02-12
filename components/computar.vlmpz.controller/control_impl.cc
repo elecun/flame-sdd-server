@@ -1,5 +1,7 @@
 #include "computar.vlmpz.controller.hpp"
 #include <time.h>
+#include <cmath>
+#include <limits>
 
 #define SATURATE(x, min, max) ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
 #define MILLI_SEC 1000000L
@@ -73,15 +75,19 @@ void controlImpl::iris_initialize(){
 	caller(api);
 }
 
-void controlImpl::focus_move(int value){
-	// json api = {
-	// 	{"function","move_focus"},
-	// 	{"value", value}
-	// };
-	// caller(api);
-	//value = SATURATE(value, 0, 9091);
-	this->FocusMove((unsigned short)value);
-	logger::info("Lens #{} move focus : {}", _lens_device_id, value);
+bool controlImpl::focus_move(int value){
+
+	if(std::isnan(value) && (value>=std::numeric_limits<unsigned short>::max())){
+		logger::warn("Value is NaN or over limits",value);
+		return false;
+	}
+
+	unsigned short val = static_cast<unsigned short>(value);
+	if(!this->FocusMove(val)){
+		logger::info("Camera ID({}) & Lens ID({}) Focus moved : {}", _lens_camera_id, _lens_device_id, (unsigned short)value);
+		return true;
+	}
+	return false;
 }
 
 void controlImpl::iris_move(int value){
@@ -114,7 +120,7 @@ void controlImpl::execute(const json& api){
 			switch(fcode){
 				case 1: { //focus initialize
 					this->FocusInit();
-					logger::info("Lens #{} Focus is initialized",_lens_device_id);
+					logger::info("Camera ID({}), Lens ID({}) Focus is initialized",_lens_camera_id, _lens_device_id);
 				}
 				break;
 
@@ -127,7 +133,7 @@ void controlImpl::execute(const json& api){
 				case 3: { // focus_move
 					int value = api["value"].get<int>();
 					value = SATURATE(value, 0, 9091);
-					this->FocusMove((uint16_t)value);
+					this->FocusMove((unsigned short)value);
 					logger::info("Lens #{} move focus : {}", _lens_device_id, value);
 				}
 				break;
@@ -135,7 +141,7 @@ void controlImpl::execute(const json& api){
 				case 4: { //iris move
 					int value = api["value"].get<int>();
 					value = SATURATE(value, 0, 12636);
-					this->IrisMove((uint16_t)value);
+					this->IrisMove((unsigned short)value);
 				}
 
 				default:

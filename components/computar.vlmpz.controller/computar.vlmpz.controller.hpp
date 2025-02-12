@@ -44,7 +44,7 @@ class controlImpl {
         /* function supports (working in thread)*/
         void focus_initialize();  //focus initialize
         void iris_initialize();   //iris initialize
-        void focus_move(int value); //focus move
+        bool focus_move(int value); //focus move
         void iris_move(int value);  //iris move
         int read_focus_position(); //read focus position
 
@@ -85,6 +85,10 @@ class controlImpl {
     private:
         void run_process(); /* run process in thread */
         void execute(const json& api);
+
+    public:
+        /* flag */
+        atomic<bool> _is_opened = {false};
        
     private:
 
@@ -122,7 +126,7 @@ class computar_vlmpz_controller : public flame::component::object {
         computar_vlmpz_controller() = default;
         virtual ~computar_vlmpz_controller() = default;
 
-        // default interface functions
+        /* common interface functions */
         bool on_init() override;
         void on_loop() override;
         void on_close() override;
@@ -132,6 +136,10 @@ class computar_vlmpz_controller : public flame::component::object {
         /* pipieline processing */
         void _lens_control_responser(json parameters); // lens control port
         void _lens_control_subscribe(json parameters); // focus_control port
+
+    private:
+        thread _lens_control_worker;  /* control message subscriber */
+        atomic<bool> _worker_stop {false};
 
     private:
         /* task impl. of status publisher for every 1 sec */
@@ -150,7 +158,7 @@ class computar_vlmpz_controller : public flame::component::object {
 
         /* scanned lens info. */
         vector<string> _lens_device_sn; // lens serial number
-        map<int, controlImpl*> _lens_controller_map; // device id, controller instance
+        map<int, controlImpl*> _lens_controller_map; // camera id, controller instance
         map<int, int> _device_id_mapper; // user id : device id
 
     private:

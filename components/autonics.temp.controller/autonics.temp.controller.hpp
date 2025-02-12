@@ -23,27 +23,32 @@ class autonics_temp_controller : public flame::component::object {
         autonics_temp_controller() = default;
         virtual ~autonics_temp_controller() = default;
 
-        // default interface functions
+        /* common interface functions */
         bool on_init() override;
         void on_loop() override;
         void on_close() override;
         void on_message() override;
 
     private:
-        /* task impl. of status publisher for every 1 sec */
-        void _subtask_status_publish(json parameters);
-        void _update_status();
-        bool _init_modbus();    /* initialize modbus RTU */
-
-    private:
-        /* sub-tasks */
-        pthread_t _subtask_status_publisher; /* for status publish */
 
         /* modbus RTU */
         modbus_t* _modbus_ctx { nullptr };
         vector<int> _slave_addrs;
 
+    private:
+
+        /* device/fieldbus functions */
+        bool _init_modbus();    /* initialize modbus RTU */
+
+
+    private:
+        /* task impl. of status publisher for every 1 sec */
+        // void _subtask_status_publish(json parameters);
+        // void _update_status();
+
+
 }; /* class */
+
 
 EXPORT_COMPONENT_API
 
