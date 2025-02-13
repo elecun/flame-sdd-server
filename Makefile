@@ -226,7 +226,7 @@ $(BUILDDIR)dk.image.push.unittest.o:	$(CURRENT_DIR)/components/dk.image.push.uni
 
 all : flame
 
-dk_h_inspector : flame basler_gige_cam_grabber.comp synology_nas_file_stacker.comp dk_level2_interface.comp
+dk_h_inspector : flame basler_gige_cam_grabber.comp synology_nas_file_stacker.comp ni_daq_controller.comp
 
 dk_h_inspector_onsite : flame system_status_monitor.comp autonics_temp_controller.comp computar_vlmpz_controller.comp
 

@@ -89,36 +89,37 @@ void basler_gige_cam_grabber::on_loop(){
 void basler_gige_cam_grabber::on_close(){
 
     /* stop grabbing */
-    for(auto& camera:_device_map){
-        camera.second->StopGrabbing();
-    }
+    // for(auto& camera:_device_map){
+    //     camera.second->StopGrabbing();
+    // }
 
     /* work stop signal */
-    _worker_stop.store(true);
     _image_stream_enable.store(false);
+    _worker_stop.store(true);
+
 
     if(_image_stream_control_worker.joinable()){
-        _image_stream_control_worker.join();
         logger::info("[{}] Image Stream Control Worker is now stopped", get_name());
+        _image_stream_control_worker.join();
     }
 
     for_each(_camera_control_worker.begin(), _camera_control_worker.end(), [](auto& t) {
         if(t.second.joinable()){
-            t.second.join();
             logger::info("- Camera #{} Controller is now stopped", t.first);
+            t.second.join();
         }
     });
 
     for_each(_camera_grab_worker.begin(), _camera_grab_worker.end(), [](auto& t) {
         if(t.second.joinable()){
-            t.second.join();
             logger::info("- Camera #{} Grabber is now stopped", t.first);
+            t.second.join();
         }
     });
 
-
-
     _camera_grab_worker.clear();
+
+    logger::info("closing");
 
     /* camera close and delete */
     for(auto& camera:_device_map){
@@ -273,9 +274,12 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
         camera->StartGrabbing(Pylon::GrabStrategy_OneByOne, Pylon::GrabLoop_ProvidedByUser);
         CGrabResultPtr ptrGrabResult;
 
+        logger::info("[{}] Camera #{} grabber is now running...",get_name(), camera_id);
         unsigned long long camera_grab_counter = 0;
-        while(camera->IsGrabbing() && !_worker_stop.load()){
+        while(!_worker_stop.load()){
             try{
+                if(!camera->IsGrabbing())
+                    return;
                 
                 camera->RetrieveResult(5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException); //trigger mode makes it blocked
                 if(ptrGrabResult.IsValid()){
@@ -356,7 +360,12 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
             }
         }
 
+        /* stop grabbing */
+        logger::info("[{}] Camera #{} worker is now terminating...", get_name(), camera_id);
+        camera->StopGrabbing();
+        logger::info("[{}] Camera #{} grabber is now stopped", get_name(), camera_id);
         camera->Close();
+        logger::info("[{}] Camera #{} grabber is now closed", get_name(), camera_id);
     }
     catch(const GenericException& e){
         logger::error("[{}] {}", get_name(), e.GetDescription());

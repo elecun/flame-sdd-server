@@ -42,3 +42,8 @@ $ sudo apt-get install ni-daqmx
 ```
 $ sudo apt-get install libusb-1.0.0-dev libudev-dev
 ```
+
+## lv2 interface
+```
+$ sudo apt-get install libboost-system-dev
+```

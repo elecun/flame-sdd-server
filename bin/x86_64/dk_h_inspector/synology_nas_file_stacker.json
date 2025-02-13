@@ -3,10 +3,9 @@
     "verbose" : 1,
 
     "parameters":{
-        "mount_path_org" : "/home/dk-sdd/nas_storage",
-        "mount_path" : "/home/dev/nas_storage",
+        "mount_path" : "/home/dk-sdd/nas_storage",
         "stream_timeout":1000,
-        "use_level2_interface":true,
+        "use_level2_interface":false,
         "image_streams" : [
             {"id":1, "dirname":"camera_1"},
             {"id":2, "dirname":"camera_2"},
