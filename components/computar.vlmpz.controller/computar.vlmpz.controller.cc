@@ -114,6 +114,8 @@ void computar_vlmpz_controller::_lens_control_subscribe(json parameters){
                     string data = msg_multipart.popstr();
                     auto json_data = json::parse(data);
 
+                    logger::info("recv from {}", topic);
+
                     if(json_data.contains("function")){
 
                         /* 1. for move focus function processing */
