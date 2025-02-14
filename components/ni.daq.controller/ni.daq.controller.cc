@@ -17,7 +17,7 @@ bool ni_daq_controller::on_init(){
     /* read profile */
     _daq_device_name = get_profile()->parameters().value("device_name", "Dev1");
     _daq_counter_channel = get_profile()->parameters().value("counter_channel", "ctr0:1");
-    _daq_di_channel = get_profile()->parameters().value("di_channel", "port0/line0:7");
+    _daq_di_channel = get_profile()->parameters().value("di_channel", "PFI0");
     _daq_pulse_freq = get_profile()->parameters().value("counter_pulse_freq", 30.0);
     _daq_pulse_duty = get_profile()->parameters().value("counter_pulse_duty", 0.5);
 
@@ -41,6 +41,11 @@ bool ni_daq_controller::on_init(){
         )!=DAQmxSuccess){
             logger::error("[{}] Failed to create pulse channel", get_name());
             DAQmxClearTask(_task_handle_pulse_generation);
+            return false;
+        }
+
+        if(DAQmxCfgImplicitTiming(_task_handle_pulse_generation, DAQmx_Val_ContSamps, 1000)){
+            logger::error("[{}] Failed to set continuous sampling mode", get_name());
             return false;
         }
 
@@ -152,7 +157,8 @@ void ni_daq_controller::_daq_pulse_gen_task(){
     try {
         while(!_worker_stop.load()){
             if(_task_handle_pulse_generation!=0){
-                //code here
+                
+                //this_thread::sleep_for(chrono::milliseconds)
             }
             else {
                 logger::info("[{}] Pulse Generation Task is stopped", get_name());
