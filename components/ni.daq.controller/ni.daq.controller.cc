@@ -4,6 +4,7 @@
 #include <flame/config_def.hpp>
 #include <algorithm>
 #include <execution> // parallel
+#include <iostream>
 
 using namespace flame;
 
@@ -21,6 +22,9 @@ bool ni_daq_controller::on_init(){
     _daq_pulse_freq = get_profile()->parameters().value("counter_pulse_freq", 30.0);
     _daq_pulse_duty = get_profile()->parameters().value("counter_pulse_duty", 0.5);
 
+    string counter_dev_channel = fmt::format("{}/{}", _daq_device_name, _daq_counter_channel);
+    string di_dev_channel = fmt::format("{}/{}", _daq_device_name, _daq_di_channel);
+
     /* start workers */
     bool auto_start = get_profile()->parameters().value("auto_start", false);
     if(auto_start){
@@ -31,7 +35,7 @@ bool ni_daq_controller::on_init(){
             return false;
         }
 
-        if(DAQmxCreateCOPulseChanFreq(_task_handle_pulse_generation, _daq_counter_channel.c_str(),  // device_name / counter_channel
+        if(DAQmxCreateCOPulseChanFreq(_task_handle_pulse_generation, counter_dev_channel.c_str(),  // device_name / counter_channel
                                     "",               // Name of the virtual channel (optional)
                                     DAQmx_Val_Hz,     // units
                                     DAQmx_Val_Low,    // idle state
@@ -44,7 +48,7 @@ bool ni_daq_controller::on_init(){
             return false;
         }
 
-        if(DAQmxCfgImplicitTiming(_task_handle_pulse_generation, DAQmx_Val_ContSamps, 1000)){
+        if(DAQmxCfgImplicitTiming(_task_handle_pulse_generation, DAQmx_Val_ContSamps, 1000)!=DAQmxSuccess){
             logger::error("[{}] Failed to set continuous sampling mode", get_name());
             return false;
         }
@@ -55,7 +59,7 @@ bool ni_daq_controller::on_init(){
             return false;
         }
 
-        if(DAQmxCreateDIChan(_task_handle_dio_reader, _daq_counter_channel.c_str(), "", DAQmx_Val_ChanPerLine)!=DAQmxSuccess){
+        if(DAQmxCreateDIChan(_task_handle_dio_reader, di_dev_channel.c_str(), "", DAQmx_Val_ChanForAllLines)!=DAQmxSuccess){
             logger::error("[{}] Failed to DIO read channel", get_name());
             DAQmxClearTask(_task_handle_dio_reader);
             return false;
@@ -78,23 +82,22 @@ void ni_daq_controller::on_loop(){
 
 void ni_daq_controller::on_close(){
 
-    /* NI DAQ Task stop */
-    if(_task_handle_pulse_generation!=0){
-        DAQmxStopTask(_task_handle_pulse_generation);
-        DAQmxClearTask(_task_handle_pulse_generation);
-    }
-
-    if(_task_handle_dio_reader!=0){
-        DAQmxStopTask(_task_handle_dio_reader);
-        DAQmxClearTask(_task_handle_dio_reader);
-    }
-
     /* work stop signal */
     _worker_stop.store(true);
 
     /* wait for thread termination */
-    if(_daq_control_worker.joinable())
-    _daq_control_worker.join();
+    if(_daq_control_worker.joinable()){
+        _daq_control_worker.join();
+        logger::info("[{}] DAQ Control worker is now stopped.", get_name());
+    }
+    if(_daq_dio_read_worker.joinable()){
+        _daq_dio_read_worker.join();
+        logger::info("[{}] DI Reader worker is now stopped.", get_name());
+    }
+    if(_daq_pulse_generation_worker.joinable()){
+        _daq_pulse_generation_worker.join();
+        logger::info("[{}] Pulse Generation worker is now stopped.", get_name());
+    }
 }
 
 void ni_daq_controller::on_message(){
@@ -157,14 +160,14 @@ void ni_daq_controller::_daq_pulse_gen_task(){
     try {
         while(!_worker_stop.load()){
             if(_task_handle_pulse_generation!=0){
-                
-                //this_thread::sleep_for(chrono::milliseconds)
+                // no code
             }
             else {
                 logger::info("[{}] Pulse Generation Task is stopped", get_name());
                 break;
             }
 
+            this_thread::sleep_for(chrono::milliseconds(1000));
         }
     }
     catch(const zmq::error_t& e){
@@ -176,6 +179,10 @@ void ni_daq_controller::_daq_pulse_gen_task(){
     catch(const json::parse_error& e){
         logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());
     }
+
+    /* stop task */
+    DAQmxStopTask(_task_handle_pulse_generation);  
+    DAQmxClearTask(_task_handle_pulse_generation);  
 }
 
 void ni_daq_controller::_daq_dio_read_task(){
@@ -188,23 +195,44 @@ void ni_daq_controller::_daq_dio_read_task(){
 
     try {
         while(!_worker_stop.load()){
-            if(_task_handle_dio_reader!=0){
-                if(DAQmxReadDigitalU8(_task_handle_dio_reader, 1, 5.0, DAQmx_Val_GroupByChannel, &dio_value, 1, &read_samples, nullptr)==DAQmxSuccess){
-                    if(dio_value==1 && prev_dio_value==0){ //rising edge
-                        _publish_hmd_signal("hmd_signal", true);                      
-                    }
-                    else if(dio_value=0 && prev_dio_value==1){ //falling edge
-                        _publish_hmd_signal("hmd_signal", false);
-                    }
+            try{
+                if(_task_handle_dio_reader!=0){
+                    if(DAQmxReadDigitalU8(_task_handle_dio_reader, 1, 10.0, DAQmx_Val_GroupByChannel, &dio_value, 1, &read_samples, nullptr)==DAQmxSuccess){
+                        std::cout << std::hex << dio_value << endl;
 
-                    /* value update */
-                    prev_dio_value = dio_value;
+                        // if(dio_value==1 && prev_dio_value==0){ //rising edge
+                        //     _publish_hmd_signal("hmd_signal", true);                      
+                        // }
+                        // else if(dio_value=0 && prev_dio_value==1){ //falling edge
+                        //     _publish_hmd_signal("hmd_signal", false);
+                        // }
+    
+                        // /* value update */
+                        // prev_dio_value = dio_value;
+                    }
                 }
             }
-            else {
-                logger::info("[{}] DIO Read Task is stopped", get_name());
+            catch(const zmq::error_t& e){
                 break;
             }
+
+            // if(_task_handle_dio_reader!=0){
+            //     if(DAQmxReadDigitalU8(_task_handle_dio_reader, 1, 5.0, DAQmx_Val_GroupByChannel, &dio_value, 1, &read_samples, nullptr)==DAQmxSuccess){
+            //         if(dio_value==1 && prev_dio_value==0){ //rising edge
+            //             _publish_hmd_signal("hmd_signal", true);                      
+            //         }
+            //         else if(dio_value=0 && prev_dio_value==1){ //falling edge
+            //             _publish_hmd_signal("hmd_signal", false);
+            //         }
+
+            //         /* value update */
+            //         prev_dio_value = dio_value;
+            //     }
+            // }
+            // else {
+            //     logger::info("[{}] DIO Read Task is stopped", get_name());
+            //     break;
+            // }
         }
     }
     catch(const zmq::error_t& e){
@@ -216,6 +244,10 @@ void ni_daq_controller::_daq_dio_read_task(){
     catch(const json::parse_error& e){
         logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());
     }
+
+    /* stop task */
+    DAQmxStopTask(_task_handle_dio_reader);    
+    DAQmxClearTask(_task_handle_dio_reader);
 }
 
 void ni_daq_controller::_publish_hmd_signal(const char* portname, bool value){

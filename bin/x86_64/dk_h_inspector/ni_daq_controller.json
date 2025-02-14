@@ -5,7 +5,7 @@
     "parameters":{
         "device_name":"Dev1",
         "counter_channel":"ctr0:1",
-        "di_channel":"port0/line0",
+        "di_channel":"PFI0",
         "counter_pulse_freq":30.0,
         "counter_pulse_duty":0.5,
         "auto_start":true
