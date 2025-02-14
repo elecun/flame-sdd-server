@@ -23,8 +23,11 @@ bool dk_level2_interface::on_init(){
 
     /* client */
     try{
-        _tcp_client = make_unique<tcp_client>(_io_context, lv2_access_ip, lv2_access_port);
-        _tcp_server = make_unique<tcp_server>(_io_context, sdd_host_port);
+        // _tcp_client = make_unique<tcp_client>(_io_context, lv2_access_ip, lv2_access_port);
+        _tcp_server = make_unique<tcp_server>(_io_context, sdd_host_port,
+            dk_level2_interface::on_server_connected, 
+            dk_level2_interface::on_server_disconnected, 
+            dk_level2_interface::on_server_received);
 
         _io_context.run();
     }
@@ -46,8 +49,8 @@ void dk_level2_interface::on_loop(){
     alive_time++;
 
     /* show raw packet data */
-    if(_show_raw_packet.load())
-        show_raw_packet(reinterpret_cast<char*>(&alive_packet), sizeof(alive_packet));
+    // if(_show_raw_packet.load())
+    //     show_raw_packet(reinterpret_cast<char*>(&alive_packet), sizeof(alive_packet));
 }
 
 void dk_level2_interface::on_close(){
@@ -75,7 +78,8 @@ void dk_level2_interface::on_server_received(const std::string& data){
 dk_sdd_alive dk_level2_interface::generate_packet_alive(){
 
     dk_sdd_alive packet;
-    static unsigned long alive_msg_counter = 0
+    std::stringstream ss;
+    static unsigned long alive_msg_counter = 0;
 
     /* 1. cTcCode (4) */
     string code = "1199";
@@ -139,7 +143,7 @@ dk_sdd_alarm dk_level2_interface::generate_packet_alarm(){
     return packet;
 }
 
-dk_sdd_job_result dk_level2_interface::generate_packet_job_result(string lot_no, string mt_no, string mt_type_cd, string mt_stand, vector<dk_sdd_defect>* ){
+dk_sdd_job_result dk_level2_interface::generate_packet_job_result(string lot_no, string mt_no, string mt_type_cd, string mt_stand, vector<dk_sdd_defect>* defect_list){
 
     dk_sdd_job_result packet;
     std::stringstream ss;

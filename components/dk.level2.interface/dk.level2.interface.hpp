@@ -37,7 +37,7 @@ class dk_level2_interface : public flame::component::object {
 
     private:
         asio::io_context _io_context;
-        unique_ptr<tcp_client> _tcp_client;
+        // unique_ptr<tcp_client> _tcp_client;
         unique_ptr<tcp_server> _tcp_server;
 
         /* local vairables */
@@ -45,9 +45,9 @@ class dk_level2_interface : public flame::component::object {
         atomic<bool> _show_raw_packet {false};
 
     private:
-        void on_server_connected(const tcp::endpoint& endpoint);
-        void on_server_disconnected(const tcp::endpoint& endpoint);
-        void on_server_received(const std::string& data);
+        static void on_server_connected(const tcp::endpoint& endpoint);
+        static void on_server_disconnected(const tcp::endpoint& endpoint);
+        static void on_server_received(const std::string& data);
 
     private:
         /* useful functions */
@@ -57,11 +57,9 @@ class dk_level2_interface : public flame::component::object {
         /* packet generation */
         dk_sdd_alive generate_packet_alive();
         dk_sdd_alarm generate_packet_alarm();
-        dk_sdd_job_result generate_packet_job_result();
+        dk_sdd_job_result generate_packet_job_result(string lot_no, string mt_no, string mt_type_cd, string mt_stand, vector<dk_sdd_defect>* defect_list);
 
     private:
-        boost::asio::io_context _io_context;
-
         string lv2_access_ip {"127.0.0.1"};
         int lv2_access_port;
         string sdd_host_ip {"127.0.0.1"} ;
