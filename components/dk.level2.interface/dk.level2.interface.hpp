@@ -17,7 +17,8 @@
 #include <boost/asio.hpp>
 #include "protocol.hpp"
 #include <memory>
-#include "tcp.hpp"
+
+#include "tcpsocket.hpp"
 
 using namespace std;
 using namespace boost;
@@ -35,10 +36,12 @@ class dk_level2_interface : public flame::component::object {
         void on_close() override;
         void on_message() override;
 
+        private:
+        /* tcp client */
+        TCPSocket _tcp_client;
+
+
     private:
-        asio::io_context _io_context;
-        // unique_ptr<tcp_client> _tcp_client;
-        unique_ptr<tcp_server> _tcp_server;
 
         /* local vairables */
         int _alive_interval {1};

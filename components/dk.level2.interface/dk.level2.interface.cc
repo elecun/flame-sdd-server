@@ -23,13 +23,7 @@ bool dk_level2_interface::on_init(){
 
     /* client */
     try{
-        // _tcp_client = make_unique<tcp_client>(_io_context, lv2_access_ip, lv2_access_port);
-        _tcp_server = make_unique<tcp_server>(_io_context, sdd_host_port,
-            dk_level2_interface::on_server_connected, 
-            dk_level2_interface::on_server_disconnected, 
-            dk_level2_interface::on_server_received);
-
-        _io_context.run();
+        
     }
     catch(std::exception& e) {
         logger::error("[{}] Create client exception : {}", get_name(), e.what());
