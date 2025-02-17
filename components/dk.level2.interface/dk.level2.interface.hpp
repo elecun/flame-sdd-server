@@ -19,6 +19,7 @@
 #include <memory>
 
 #include "tcpsocket.hpp"
+#include "tcpserver.hpp"
 
 using namespace std;
 using namespace boost;
@@ -38,9 +39,11 @@ class dk_level2_interface : public flame::component::object {
 
         private:
         /* tcp client */
-        tcp_socket* _tcp_client {nullptr};
+        tcp_socket<> _tcp_client { nullptr };
 
-
+        /* tcp server */
+        tcp_server<> _tcp_server { nullptr };
+        
     private:
 
         /* local vairables */
@@ -51,6 +54,18 @@ class dk_level2_interface : public flame::component::object {
         static void on_server_connected(const tcp::endpoint& endpoint);
         static void on_server_disconnected(const tcp::endpoint& endpoint);
         static void on_server_received(const std::string& data);
+
+        static void on_client_connected(const tcp::endpoint& endpoint);
+        static void on_server_disconnected(const tcp::endpoint& endpoint);
+        static void on_server_received(const std::string& data);
+
+        /* worker */
+        thread _client_worker;
+        thread _server_worker;
+        atomic<bool> _worker_stop {false};
+
+        void _do_client_work(json parameters);
+        void _do_server_work(json parameters);
 
     private:
         /* useful functions */

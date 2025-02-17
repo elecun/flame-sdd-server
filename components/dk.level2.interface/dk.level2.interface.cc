@@ -23,13 +23,37 @@ bool dk_level2_interface::on_init(){
 
     /* client */
     try{
-        
+        _client_worker = thread(&dk_level2_interface::_do_client_work, this, get_profile()->parameters());
+        _server_worker = thread(&dk_level2_interface::_do_server_work, this, get_profile()->parameters());
     }
     catch(std::exception& e) {
         logger::error("[{}] Create client exception : {}", get_name(), e.what());
     }
 
     return true;
+}
+
+void dk_level2_interface::_do_client_work(json parameters){
+
+    while(!_worker_stop.load()){
+        try{
+
+        }
+        catch(const zmq::error_t& e){
+            break;
+        }
+    }
+}
+
+void dk_level2_interface::_do_server_work(json parameters){
+    while(!_worker_stop.load()){
+        try{
+
+        }
+        catch(const zmq::error_t& e){
+            break;
+        }
+    }
 }
 
 void dk_level2_interface::on_loop(){
@@ -49,7 +73,18 @@ void dk_level2_interface::on_loop(){
 
 void dk_level2_interface::on_close(){
 
+    /* work stop signal */
+    _worker_stop.store(true);
 
+    /* thread terminate */
+    if(_client_worker.joinable()){
+        logger::info("[{}] waiting for stopping client...", get_name());
+        _client_worker.join();
+    }
+    if(_server_worker.joinable()){
+        logger::info("[{}] waiting for stopping server...", get_name());
+        _server_worker.join();
+    }
     
 }
 

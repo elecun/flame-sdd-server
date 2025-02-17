@@ -23,7 +23,7 @@ public:
     // Event Listeners:
     std::function<void(tcp_socket<BUFFER_SIZE>*)> onNewConnection = [](tcp_socket<BUFFER_SIZE>* sock){FDR_UNUSED(sock)};
 
-    explicit tcp_server(FDR_ON_ERROR): base_socket(onError, SocketType::TCP)
+    explicit tcp_server(FDR_ON_ERROR): base_socket(onError, type_socket::TCP)
     {
         int opt = 1;
         setsockopt(this->sock,SOL_SOCKET,SO_REUSEADDR,&opt,sizeof(int));
@@ -66,7 +66,7 @@ public:
             return;
         }
 
-        std::thread t(Accept, this, onError);
+        std::thread t(accept, this, onError);
         t.detach();
     }
 
@@ -89,7 +89,7 @@ private:
                 return;
             }
 
-            TCPSocket<BUFFER_SIZE>* newSocket = new tcp_server<BUFFER_SIZE>(onError, newSocketFileDescriptor);
+            tcp_socket<BUFFER_SIZE>* newSocket = new tcp_server<BUFFER_SIZE>(onError, newSocketFileDescriptor);
             newSocket->deleteAfterClosed = true;
             newSocket->setAddressStruct(newSocketInfo);
 
