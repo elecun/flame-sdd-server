@@ -1,4 +1,6 @@
-#pragma once
+
+#ifndef FLAME_DK_LEVLE2_INTERFACE_UDP_SERVER_HPP_INCLUDED
+#define FLAME_DK_LEVLE2_INTERFACE_UDP_SERVER_HPP_INCLUDED
 
 #include "udpsocket.hpp"
 #include <thread>
@@ -51,3 +53,5 @@ public:
         }
     }
 };
+
+#endif

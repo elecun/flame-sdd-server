@@ -1,4 +1,6 @@
-#pragma once
+
+#ifndef FLAME_DK_LEVLE2_INTERFACE_TCP_SOCKET_HPP_INCLUDED
+#define FLAME_DK_LEVLE2_INTERFACE_TCP_SOCKET_HPP_INCLUDED
 
 #include "basesocket.hpp"
 #include <string>
@@ -7,49 +9,50 @@
 #include <thread>
 
 template <uint16_t BUFFER_SIZE = AS_DEFAULT_BUFFER_SIZE>
-class TCPSocket : public BaseSocket
+class tcp_socket : public base_socket
 {
 public:
-    // Event Listeners:
+    /* event listener */
     std::function<void(std::string)> onMessageReceived;
     std::function<void(const char*, ssize_t)> onRawMessageReceived;
     std::function<void(int)> onSocketClosed;
 
-    explicit TCPSocket(FDR_ON_ERROR, int socketId = -1) : BaseSocket(onError, TCP, socketId){}
+    explicit tcp_socket(FDR_ON_ERROR, int socketId = -1) : base_socket(onError, TCP, socketId){}
 
-    // Send raw bytes
-    ssize_t Send(const char* bytes, size_t byteslength) { return send(this->sock, bytes, byteslength, 0); }
-    // Send std::string
-    ssize_t Send(const std::string& message) { return this->Send(message.c_str(), message.length()); }
+    /* send raw bytes */
+    ssize_t send_bytes(const char* bytes, size_t byteslength) { return send(this->sock, bytes, byteslength, 0); }
+
+    /* send string */
+    ssize_t send_string(const std::string& message) { return this->Send(message.c_str(), message.length()); }
 
     // Connect to a TCP Server with `uint32_t ipv4` & `uint16_t port` values
-    void Connect(uint32_t ipv4, uint16_t port, std::function<void()> onConnected = [](){}, FDR_ON_ERROR)
+    void connect(uint32_t ipv4, uint16_t port, std::function<void()> onConnected = [](){}, FDR_ON_ERROR)
     {
         this->address.sin_family = AF_INET;
         this->address.sin_port = htons(port);
         this->address.sin_addr.s_addr = ipv4;
 
-        this->setTimeout(5);
+        this->set_timeout(5);
 
         // Try to connect.
-        int status = connect(this->sock, (const sockaddr*)&this->address, sizeof(sockaddr_in));
+        int status = ::connect(this->sock, (const sockaddr*)&this->address, sizeof(sockaddr_in));
         if ( status == -1)
         {
             onError(errno, "Connection failed to the host.");
-            this->setTimeout(0);
+            this->set_timeout(0);
             return;
         }
 
-        this->setTimeout(0);
+        this->set_timeout(0);
 
         // Connected to the server, fire the event.
         onConnected();
 
         // Start listening from server:
-        this->Listen();
+        this->listen();
     }
     // Connect to a TCP Server with `const char* host` & `uint16_t port` values
-    void Connect(const char* host, uint16_t port, std::function<void()> onConnected = [](){}, FDR_ON_ERROR)
+    void connect(const char* host, uint16_t port, std::function<void()> onConnected = [](){}, FDR_ON_ERROR)
     {
         struct addrinfo hints, *res, *it;
         memset(&hints, 0, sizeof(hints));
@@ -73,18 +76,18 @@ public:
 
         freeaddrinfo(res);
 
-        this->Connect((uint32_t)this->address.sin_addr.s_addr, port, onConnected, onError);
+        this->connect((uint32_t)this->address.sin_addr.s_addr, port, onConnected, onError);
     }
     // Connect to a TCP Server with `const std::string& ipv4` & `uint16_t port` values
-    void Connect(const std::string& host, uint16_t port, std::function<void()> onConnected = [](){}, FDR_ON_ERROR)
+    void connect(const std::string& host, uint16_t port, std::function<void()> onConnected = [](){}, FDR_ON_ERROR)
     {
-        this->Connect(host.c_str(), port, onConnected, onError);
+        this->connect(host.c_str(), port, onConnected, onError);
     }
 
     // Start another thread to listen the socket
-    void Listen()
+    void listen()
     {
-        std::thread t(TCPSocket::Receive, this);
+        std::thread t(tcp_socket::Receive, this);
         t.detach();
     }
 
@@ -94,7 +97,7 @@ public:
     bool deleteAfterClosed = false;
 
 private:
-    static void Receive(TCPSocket* socket)
+    static void receive(tcp_socket* socket)
     {
         char tempBuffer[BUFFER_SIZE+1];
         ssize_t messageLength;
@@ -117,7 +120,7 @@ private:
             delete socket;
     }
 
-    void setTimeout(int seconds)
+    void set_timeout(int seconds)
     {
         struct timeval tv;      
         tv.tv_sec = seconds;
@@ -127,3 +130,5 @@ private:
         setsockopt(this->sock, SOL_SOCKET, SO_SNDTIMEO, (char*)&tv, sizeof(tv));
     }
 };
+
+#endif

@@ -38,7 +38,7 @@ class dk_level2_interface : public flame::component::object {
 
         private:
         /* tcp client */
-        TCPSocket _tcp_client;
+        tcp_socket* _tcp_client {nullptr};
 
 
     private:

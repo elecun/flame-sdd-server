@@ -1,18 +1,27 @@
-#pragma once
+/**
+ * @file basesocket.hpp
+ * @author Byunghun Hwang<bh.hwang@iae.re.kr>
+ * @brief Base Socket class
+ * @version 0.1
+ * @date 2025-02-17
+ * 
+ * @copyright Copyright (c) 2025
+ * 
+ */
 
-#if defined(__linux__) || defined(__APPLE__)
+#ifndef FLAME_DK_LEVLE2_INTERFACE_BASE_SOCKET_HPP_INCLUDED
+#define FLAME_DK_LEVLE2_INTERFACE_BASE_SOCKET_HPP_INCLUDED
+
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <netdb.h>
-#elif _WIN32
-#include <winsock32.h>
-#endif
-
 #include <string>
 #include <functional>
 #include <cerrno>
+#include <flame/log.hpp>
+
 
 #define FDR_UNUSED(expr){ (void)(expr); } 
 #define FDR_ON_ERROR std::function<void(int, std::string)> onError = [](int errorCode, std::string errorMessage){FDR_UNUSED(errorCode); FDR_UNUSED(errorMessage)}
@@ -21,52 +30,54 @@
 #define AS_DEFAULT_BUFFER_SIZE 0x1000 /*4096 bytes*/
 #endif
 
-class BaseSocket
-{
-public:
-    enum SocketType
-    {
-        TCP = SOCK_STREAM,
-        UDP = SOCK_DGRAM
-    };
-    sockaddr_in address;
+class base_socket {
 
-    void Close() {
-        shutdown(this->sock, SHUT_RDWR);
-        close(this->sock);
-    }
-
-    std::string remoteAddress() const { return ipToString(this->address); }
-    int remotePort() const { return ntohs(this->address.sin_port); }
-    int fileDescriptor() const { return this->sock; }
-
-protected:
-    int sock = 0;
-
-    // Get std::string value of the IP from a `sockaddr_in` address struct
-    static std::string ipToString(const sockaddr_in& addr)
-    {
-        char ip[INET_ADDRSTRLEN];
-        inet_ntop(AF_INET, &(addr.sin_addr), ip, INET_ADDRSTRLEN);
-
-        return std::string(ip);
-    }  
-
-    BaseSocket(FDR_ON_ERROR, SocketType sockType = TCP, int socketId = -1)
-    {
-        if (socketId == -1)
+    public:
+        /* socket type */
+        enum type_socket
         {
-            this->sock = socket(AF_INET, sockType, 0);
-            
-            if ( this->sock == -1 )
-            {
-                onError(errno, "Socket creating error.");
+            TCP = SOCK_STREAM,
+            UDP = SOCK_DGRAM
+        };
+        sockaddr_in address;
+
+    public:
+        /* close socket */
+        void close_socket(){
+            shutdown(this->sock, SHUT_RDWR);
+            close(this->sock);
+        }
+
+        std::string get_remote_address() const { return addr_to_string(this->address); }
+        int get_remote_port() const { return ntohs(this->address.sin_port); }
+        int get_file_descriptor() const { return this->sock; }
+
+    protected:
+        /* class constructor */
+        base_socket(FDR_ON_ERROR, type_socket sockType = TCP, int socketId = -1){
+            if (socketId == -1){
+                this->sock = socket(AF_INET, sockType, 0);
+                if ( this->sock == -1 ){
+                    logger::error("Socket create error");
+                }
+            }
+            else{
+                this->sock = socketId;
             }
         }
-        else
-        {
-            this->sock = socketId;
+        
+        /* ip address to string */
+        static std::string addr_to_string(const sockaddr_in& addr){
+            char ip[INET_ADDRSTRLEN];
+            inet_ntop(AF_INET, &(addr.sin_addr), ip, INET_ADDRSTRLEN);
+            return std::string(ip);
         }
-    }
-    virtual ~BaseSocket(){}
-};
+
+        virtual ~base_socket() = default;
+        
+    protected:
+        int sock {0};
+
+}; /* class */
+
+#endif
