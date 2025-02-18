@@ -17,7 +17,9 @@
 #include <boost/asio.hpp>
 #include "protocol.hpp"
 #include <memory>
-#include "tcp.hpp"
+
+#include "tcpsocket.hpp"
+#include "tcpserver.hpp"
 
 using namespace std;
 using namespace boost;
@@ -35,10 +37,14 @@ class dk_level2_interface : public flame::component::object {
         void on_close() override;
         void on_message() override;
 
+        private:
+        /* tcp client */
+        tcp_socket<> _tcp_client { nullptr };
+
+        /* tcp server */
+        tcp_server<> _tcp_server { nullptr };
+        
     private:
-        asio::io_context _io_context;
-        // unique_ptr<tcp_client> _tcp_client;
-        unique_ptr<tcp_server> _tcp_server;
 
         /* local vairables */
         int _alive_interval {1};
@@ -48,6 +54,18 @@ class dk_level2_interface : public flame::component::object {
         static void on_server_connected(const tcp::endpoint& endpoint);
         static void on_server_disconnected(const tcp::endpoint& endpoint);
         static void on_server_received(const std::string& data);
+
+        static void on_client_connected(const tcp::endpoint& endpoint);
+        static void on_server_disconnected(const tcp::endpoint& endpoint);
+        static void on_server_received(const std::string& data);
+
+        /* worker */
+        thread _client_worker;
+        thread _server_worker;
+        atomic<bool> _worker_stop {false};
+
+        void _do_client_work(json parameters);
+        void _do_server_work(json parameters);
 
     private:
         /* useful functions */
