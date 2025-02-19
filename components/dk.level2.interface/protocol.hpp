@@ -3,6 +3,7 @@
 
 using namespace std;
 
+#pragma pack(push, 1)
 struct _type_dk_lv2_mf_instruction {
     char cTcCode[4];        /* TC Code */
     char cDate[14];         /* 송신시간 */
@@ -36,17 +37,20 @@ struct _type_dk_lv2_mf_instruction {
     char cDSCutCoun[1];     /* DS Number of cutting */
     char cSpare[298];       /* Reserved */
 };
+#pragma pack(pop)
 typedef _type_dk_lv2_mf_instruction dk_lv2_mf_instruction;
 
+#pragma pack(push, 1)
 struct _type_dk_lv2_mf_clear {
     char cTcCode[4];    /* TC Code */
     char cDate[14];     /* 송신시간 */
     char cTcLength[6];  /* 전문길이 */
     char cSpare[26];    /* 스페어 */
 };
+#pragma pack(pop)
 typedef _type_dk_lv2_mf_clear dk_lv2_mf_clear;
 
-
+#pragma pack(push, 1)
 struct _type_dk_lv2_mf_alive {
     char cTcCode[4];    /* TC Code */
     char cDate[14];     /* 송신시간 */
@@ -54,8 +58,10 @@ struct _type_dk_lv2_mf_alive {
     char cCount[4];     /* 카운트 */
     char cSpare[22];    /* 스페어 */
 };
+#pragma pack(pop)
 typedef _type_dk_lv2_mf_alive dk_lv2_mf_alive ;
 
+#pragma pack(push, 1)
 struct _type_dk_sdd_job_result {
     char cTcCode[4];        /* TC Code */
     char cDate[14];         /* 송신시간 */
@@ -86,8 +92,10 @@ struct _type_dk_sdd_job_result {
     char cResult10_Code[6];
     char cResult10_Pos[6];
 };
+#pragma pack(pop)
 typedef _type_dk_sdd_job_result dk_sdd_job_result;
 
+#pragma pack(push, 1)
 struct _type_dk_sdd_alarm {
     char cTcCode[4];    /* TC Code */
     char cDate[14];     /* 송신시간 */
@@ -95,8 +103,10 @@ struct _type_dk_sdd_alarm {
     char cMessage[3];   /* 알람메시지번호 */
     char cSpare[23];    /* 스페어 */
 };
+#pragma pack(pop)
 typedef _type_dk_sdd_alarm dk_sdd_alarm;
 
+#pragma pack(push, 1)
 struct _type_dk_sdd_alive {
     char cTcCode[4];    /* TC Code */
     char cDate[14];     /* 송신시간 */
@@ -104,10 +114,13 @@ struct _type_dk_sdd_alive {
     char cCount[4];     /* 카운트 */
     char cSpare[22];    /* 스페어 */
 };
+#pragma pack(pop)
 typedef _type_dk_sdd_alive  dk_sdd_alive;
 
+#pragma pack(push, 1)
 struct _type_dk_sdd_defect {
     char cResult_Code[6];
     char cResult_Pos[6];
 };
+#pragma pack(pop)
 typedef _type_dk_sdd_defect dk_sdd_defect;

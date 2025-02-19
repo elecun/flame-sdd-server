@@ -35,17 +35,37 @@ bool dk_level2_interface::on_init(){
 
 void dk_level2_interface::_do_client_work(json parameters){
 
+    logger::info("[{}] Trying to access to Level2 {}:{}", get_name(), lv2_access_ip, lv2_access_port);
+    tcp_socket<> tcpSocket([this](int errorCode, std::string errorMessage){
+        logger::error("[{}] socket creation error {}", get_name(), errorCode);
+    });
+
     while(!_worker_stop.load()){
         try{
 
+            tcpSocket.connect("localhost", 8888, [&] {
+                cout << "Connected to the server successfully." << endl;
+        
+                // Send String:
+                tcpSocket.send_string("Hello Server!");
+            },
+            [](int errorCode, std::string errorMessage){
+                // CONNECTION FAILED
+                cout << errorCode << " : " << errorMessage << endl;
+            });
         }
         catch(const zmq::error_t& e){
             break;
         }
+
+        this_thread::sleep_for(chrono::milliseconds(100));
     }
 }
 
 void dk_level2_interface::_do_server_work(json parameters){
+
+    logger::info("[{}] Waiting for connection... {}:{}", get_name(), sdd_host_ip, sdd_host_port);
+
     while(!_worker_stop.load()){
         try{
 
@@ -53,6 +73,8 @@ void dk_level2_interface::_do_server_work(json parameters){
         catch(const zmq::error_t& e){
             break;
         }
+
+        this_thread::sleep_for(chrono::milliseconds(100));
     }
 }
 
@@ -66,9 +88,6 @@ void dk_level2_interface::on_loop(){
     }
     alive_time++;
 
-    /* show raw packet data */
-    // if(_show_raw_packet.load())
-    //     show_raw_packet(reinterpret_cast<char*>(&alive_packet), sizeof(alive_packet));
 }
 
 void dk_level2_interface::on_close(){
@@ -92,17 +111,17 @@ void dk_level2_interface::on_message(){
     
 }
 
-void dk_level2_interface::on_server_connected(const tcp::endpoint& endpoint){
+// void dk_level2_interface::on_server_connected(const tcp::endpoint& endpoint){
 
-}
+// }
 
-void dk_level2_interface::on_server_disconnected(const tcp::endpoint& endpoint){
+// void dk_level2_interface::on_server_disconnected(const tcp::endpoint& endpoint){
 
-}
+// }
 
-void dk_level2_interface::on_server_received(const std::string& data){
+// void dk_level2_interface::on_server_received(const std::string& data){
 
-}
+// }
 
 dk_sdd_alive dk_level2_interface::generate_packet_alive(){
 

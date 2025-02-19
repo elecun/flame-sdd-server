@@ -14,7 +14,6 @@
 
 #include <flame/component/object.hpp>
 #include <iostream>
-#include <boost/asio.hpp>
 #include "protocol.hpp"
 #include <memory>
 
@@ -22,9 +21,7 @@
 #include "tcpserver.hpp"
 
 using namespace std;
-using namespace boost;
-using namespace boost::asio::ip;
-using namespace boost::system;
+// using namespace boost;
 
 class dk_level2_interface : public flame::component::object {
     public:
@@ -37,27 +34,30 @@ class dk_level2_interface : public flame::component::object {
         void on_close() override;
         void on_message() override;
 
-        private:
-        /* tcp client */
+    private:
+        /* tcp client & server */
         tcp_socket<> _tcp_client { nullptr };
-
-        /* tcp server */
         tcp_server<> _tcp_server { nullptr };
+
+        /* optional */
+        atomic<bool> _show_raw_packet {false};
         
     private:
 
         /* local vairables */
         int _alive_interval {1};
-        atomic<bool> _show_raw_packet {false};
+        
 
     private:
-        static void on_server_connected(const tcp::endpoint& endpoint);
-        static void on_server_disconnected(const tcp::endpoint& endpoint);
-        static void on_server_received(const std::string& data);
+        // /* server callback */
+        // static void on_server_connected(const tcp::endpoint& endpoint);
+        // static void on_server_disconnected(const tcp::endpoint& endpoint);
+        // static void on_server_received(const std::string& data);
 
-        static void on_client_connected(const tcp::endpoint& endpoint);
-        static void on_server_disconnected(const tcp::endpoint& endpoint);
-        static void on_server_received(const std::string& data);
+        // /* client callback */
+        // static void on_client_connected(const tcp::endpoint& endpoint);
+        // static void on_client_disconnected(const tcp::endpoint& endpoint);
+        // static void on_client_received(const std::string& data);
 
         /* worker */
         thread _client_worker;
@@ -82,10 +82,6 @@ class dk_level2_interface : public flame::component::object {
         int lv2_access_port;
         string sdd_host_ip {"127.0.0.1"} ;
         int sdd_host_port;
-
-    private:
-        vector<thread> _worker_container;
-        atomic<bool> _worker_stop {false};
 
 
 }; /* class */
