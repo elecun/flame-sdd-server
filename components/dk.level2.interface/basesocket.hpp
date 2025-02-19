@@ -52,7 +52,8 @@ class base_socket {
         int get_remote_port() const { return ntohs(this->address.sin_port); }
         int get_file_descriptor() const { return this->sock; }
 
-        int connection_lost() {
+        /* check connection lost (1=lost, 0=ok)*/
+        bool connection_lost() {
             fd_set readSet;
             FD_ZERO(&readSet);
             FD_SET(this->sock, &readSet);
@@ -62,13 +63,15 @@ class base_socket {
             timeout.tv_usec = 100000;
         
             int result = select(this->sock + 1, &readSet, nullptr, nullptr, &timeout);
-            logger::info("select result : {}", result);
-            // if (result > 0 && FD_ISSET(this->sock, &readSet)) {
-            //     char buffer[1];
-            //     int bytes = recv(this->sock, buffer, sizeof(buffer), MSG_PEEK);
-            //     return bytes;
-            // }
-            return result;
+            if(result > 0 && FD_ISSET(this->sock, &readSet)) {
+                char buffer[1];
+                int bytes = recv(this->sock, buffer, sizeof(buffer), MSG_PEEK);
+                logger::info("recv({}), result({})", bytes,result);
+                if(bytes==0) 
+                    return true;
+            }
+            logger::info("result({})",result);
+            return false;
         }
 
         /* check socket is valid */

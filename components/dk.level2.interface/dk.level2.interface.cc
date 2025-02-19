@@ -37,13 +37,8 @@ void dk_level2_interface::_do_client_work(json parameters){
 
     logger::info("[{}] Trying to access to Level2 {}:{}", get_name(), lv2_access_ip, lv2_access_port);
     tcp_socket<>* _tcp_socket = nullptr;
-
-    // _tcp_socket = new tcp_socket<>([this](int error_code, std::string error_msg){
-    //     logger::error("[{}] Socket creation error {}", get_name(), error_code);
-    // });
-    // _tcp_socket->on_socket_closed = [this](int error_code){
-    //     logger::info("[{}] Connection Closed({})", get_name(), error_code);
-    // };
+    int alive_time = 0;
+    bool is_connected = false;
 
     while(!_worker_stop.load()){
         try{
@@ -58,65 +53,97 @@ void dk_level2_interface::_do_client_work(json parameters){
                     logger::info("[{}] Connection Closed({})", get_name(), error_code);
                 };
 
-                logger::info("[{}] TCP socket is created", get_name());
+                logger::info("[{}] TCP client is now start...", get_name());
             }
             else{
-                if(!_tcp_socket->is_available()){
+
+                if(!is_connected){
+                    logger::info("trying connect...");
 
                     int alive_time = 0;
                     _tcp_socket->connect(lv2_access_ip, lv2_access_port, [&] {
                         logger::info("[{}] Connected to Level2 server successfully", get_name());
                         alive_time = 0; // reset counter
-                    },[this](int error_code, std::string error_msg){
+                        is_connected = true;
+                    },[&](int error_code, std::string error_msg){
+                        _tcp_socket->close();
+                        delete _tcp_socket;
+                        _tcp_socket = nullptr;
+                        is_connected = false;
                         logger::error("[{}] Level2 server connection failed({},{}), Retry to connect...", get_name(), error_code, error_msg);
                         this_thread::sleep_for(chrono::milliseconds(1000)); // wait for a second
                     });
                 }
-                else{
-                    logger::info("now available");
-                    int result = _tcp_socket->connection_lost();
-                    if(result==1){
-                        logger::error("losted");
-                        _tcp_socket->close();
-                        this_thread::sleep_for(chrono::milliseconds(1000));
-                        delete _tcp_socket;
+                else {
+                    if(alive_time>=(_alive_interval)){
+                        /* send alive packet for every 30s */
+                        dk_sdd_alive alive_packet = generate_packet_alive();
+                        char* packet = reinterpret_cast<char*>(&alive_packet);
+                        ssize_t sent_bytes = _tcp_socket->send(packet, sizeof(alive_packet));
+                        if(sent_bytes==-1){
+                            logger::error("connection lost");
+                            _tcp_socket->close();
+                            delete _tcp_socket;
                         _tcp_socket = nullptr;
+                            is_connected = false;
+                            this_thread::sleep_for(chrono::milliseconds(500));
+                        }
+                        else if(sent_bytes==0){
+                            logger::error("connection closed");
+                            _tcp_socket->close();
+                            delete _tcp_socket;
+                            _tcp_socket = nullptr;
+                            is_connected = false;
+                        }
+                        else {
+                            logger::info("sent");
+                        }
+                        alive_time = 0;
                     }
+                    alive_time++;
+
                 }
+
+                // if(!_tcp_socket->is_available()){
+
+                //     int alive_time = 0;
+                //     _tcp_socket->connect(lv2_access_ip, lv2_access_port, [&] {
+                //         logger::info("[{}] Connected to Level2 server successfully", get_name());
+                //         alive_time = 0; // reset counter
+                //         is_connected = true;
+                //     },[&](int error_code, std::string error_msg){
+                //         _tcp_socket->close();
+                //         logger::error("[{}] Level2 server connection failed({},{}), Retry to connect...", get_name(), error_code, error_msg);
+                //         this_thread::sleep_for(chrono::milliseconds(1000)); // wait for a second
+                //     });
+                // }
+                // else{
+                //     bool result = _tcp_socket->connection_lost();
+                //     if(result){
+                //         logger::error("[{}] Connection lost. Retry to connect...", get_name());
+                //         _tcp_socket->close();
+                //         delete _tcp_socket;
+                //         _tcp_socket = nullptr;
+                //         this_thread::sleep_for(chrono::milliseconds(1000)); //wait for a second
+                //     }
+                //     else { 
+
+                //         /* send alive check */
+                        // if(alive_time>=(_alive_interval)){
+                        //     /* send alive packet for every 30s */
+                        //     dk_sdd_alive alive_packet = generate_packet_alive();
+                        //     char* packet = reinterpret_cast<char*>(&alive_packet);
+                        //     _tcp_socket->send(packet, sizeof(alive_packet));
+                        //     alive_time = 0;
+                        // }
+                        // alive_time++;
+                        
+                //     }
+                // }
             }
 
 
-            // if(!_tcp_socket->is_available()){
 
-            //     int alive_time = 0;
-            //     //tcp_socket.close();
-            //     _tcp_socket->connect(lv2_access_ip, lv2_access_port, [&] {
-            //         logger::info("[{}] Connected to Level2 server successfully", get_name());
-            //         alive_time = 0; // reset counter
-            //     },[this](int error_code, std::string error_msg){
-            //         logger::error("[{}] Level2 server connection failed({},{}), Retry to connect...", get_name(), error_code, error_msg);
-            //         this_thread::sleep_for(chrono::milliseconds(1000)); // wait for a second
-            //     });
-
-            // }
-            // else {
-            //     // logger::info("now available");
-            //     int result = _tcp_socket->connection_lost();
-            //     if(result==1){
-            //         _tcp_socket->close();
-            //         delete _tcp_socket;
-            //         _tcp_socket = nullptr;
-            //         this_thread::sleep_for(chrono::milliseconds(1000)); // wait for a second
-
-            //         // tcp_socket<> tcp_socket([this](int error_code, std::string error_msg){
-            //         //     logger::error("[{}] Socket creation error {}", get_name(), error_code);
-            //         // });
-            //         // tcp_socket.on_socket_closed = [this](int error_code){
-            //         //     logger::info("[{}] Connection Closed({})", get_name(), error_code);
-            //         // };
-
-            //     }
-            // }
 
             /* connection lost check */
             // int result = tcp_socket.connection_lost();
@@ -143,15 +170,7 @@ void dk_level2_interface::_do_client_work(json parameters){
                 
             // }
             // else{
-            //     /* send alive check */
-            //     if(alive_time>=(_alive_interval*10)){
-            //         /* send alive packet for every 30s */
-            //         dk_sdd_alive alive_packet = generate_packet_alive();
-            //         char* packet = reinterpret_cast<char*>(&alive_packet);
-            //         tcp_socket.send(packet, sizeof(alive_packet));
-            //         alive_time = 0;
-            //     }
-            //     alive_time++;
+                
 
             //     /* send alarm code */
             //     dk_sdd_alarm alarm_packet;
