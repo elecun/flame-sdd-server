@@ -19,6 +19,7 @@
 
 #include "tcpsocket.hpp"
 #include "tcpserver.hpp"
+#include "concurrent_queue.hpp"
 
 using namespace std;
 // using namespace boost;
@@ -63,6 +64,8 @@ class dk_level2_interface : public flame::component::object {
         thread _client_worker;
         thread _server_worker;
         atomic<bool> _worker_stop {false};
+        concurrent_queue<dk_sdd_alarm> _sdd_alarm_queue;
+        concurrent_queue<dk_sdd_job_result> _sdd_job_result_queue;
 
         void _do_client_work(json parameters);
         void _do_server_work(json parameters);
@@ -74,7 +77,7 @@ class dk_level2_interface : public flame::component::object {
 
         /* packet generation */
         dk_sdd_alive generate_packet_alive();
-        dk_sdd_alarm generate_packet_alarm();
+        dk_sdd_alarm generate_packet_alarm(string alarm_code);
         dk_sdd_job_result generate_packet_job_result(string lot_no, string mt_no, string mt_type_cd, string mt_stand, vector<dk_sdd_defect>* defect_list);
 
     private:

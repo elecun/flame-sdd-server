@@ -43,26 +43,59 @@ class base_socket {
 
     public:
         /* close socket */
-        void close_socket(){
+        void close(){
             shutdown(this->sock, SHUT_RDWR);
-            close(this->sock);
+            ::close(this->sock);
         }
 
         std::string get_remote_address() const { return addr_to_string(this->address); }
         int get_remote_port() const { return ntohs(this->address.sin_port); }
         int get_file_descriptor() const { return this->sock; }
 
+        int connection_lost() {
+            fd_set readSet;
+            FD_ZERO(&readSet);
+            FD_SET(this->sock, &readSet);
+        
+            timeval timeout{};
+            timeout.tv_sec = 0;
+            timeout.tv_usec = 100000;
+        
+            int result = select(this->sock + 1, &readSet, nullptr, nullptr, &timeout);
+            logger::info("select result : {}", result);
+            // if (result > 0 && FD_ISSET(this->sock, &readSet)) {
+            //     char buffer[1];
+            //     int bytes = recv(this->sock, buffer, sizeof(buffer), MSG_PEEK);
+            //     return bytes;
+            // }
+            return result;
+        }
+
+        /* check socket is valid */
+        bool is_available() const {
+            // int error {0};
+            // socklen_t len = sizeof(error);
+            // if(getsockopt(this->sock, SOL_SOCKET, SO_ERROR, &error, &len)==-1){
+            //     return false;
+            // }
+            // return error==0;
+
+            struct sockaddr_in peer;
+            socklen_t len = sizeof(peer);
+            return getpeername(this->sock, (struct sockaddr*)&peer, &len)==0;
+        }
+
     protected:
         /* class constructor */
-        base_socket(FDR_ON_ERROR, type_socket sockType = TCP, int socketId = -1){
-            if (socketId == -1){
+        base_socket(FDR_ON_ERROR, type_socket sockType = TCP, int socket_id = -1){
+            if(socket_id == -1){
                 this->sock = socket(AF_INET, sockType, 0);
                 if ( this->sock == -1 ){
                     logger::error("Socket create error");
                 }
             }
             else{
-                this->sock = socketId;
+                this->sock = socket_id;
             }
         }
         
