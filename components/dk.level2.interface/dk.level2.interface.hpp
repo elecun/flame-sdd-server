@@ -40,16 +40,6 @@ class dk_level2_interface : public flame::component::object {
         int _alive_interval {1000}; /* alive packet send interval */
 
     private:
-        // /* server callback */
-        // static void on_server_connected(const tcp::endpoint& endpoint);
-        // static void on_server_disconnected(const tcp::endpoint& endpoint);
-        // static void on_server_received(const std::string& data);
-
-        // /* client callback */
-        // static void on_client_connected(const tcp::endpoint& endpoint);
-        // static void on_client_disconnected(const tcp::endpoint& endpoint);
-        // static void on_client_received(const std::string& data);
-
         /* worker */
         thread _client_worker;
         thread _server_worker;
@@ -71,10 +61,10 @@ class dk_level2_interface : public flame::component::object {
         dk_sdd_job_result generate_packet_job_result(string lot_no, string mt_no, string mt_type_cd, string mt_stand, vector<dk_sdd_defect> defect_list, bool show = false);
 
     private:
-        string lv2_access_ip {"127.0.0.1"};
-        int lv2_access_port;
-        string sdd_host_ip {"127.0.0.1"} ;
-        int sdd_host_port;
+        string _lv2_access_ip {"127.0.0.1"};
+        int _lv2_access_port;
+        string _sdd_host_ip {"127.0.0.1"} ;
+        int _sdd_host_port;
 
 
 }; /* class */

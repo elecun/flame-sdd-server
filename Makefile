@@ -191,32 +191,7 @@ $(BUILDDIR)computar_vlmpz_controller.o:	$(CURRENT_DIR)/components/computar.vlmpz
 									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
 $(BUILDDIR)control_impl.o:	$(CURRENT_DIR)/components/computar.vlmpz.controller/control_impl.cc
 									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
-# $(BUILDDIR)UsbCtrl.o:$(CURRENT_DIR)/components/computar.vlmpz.controller/include/UsbCtrl.c 
-# 					$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -I./ -c $^ -o $@
-# $(BUILDDIR)LensCtrl.o:$(CURRENT_DIR)/components/computar.vlmpz.controller/include/LensCtrl.c 
-# 					$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -I./ -c $^ -o $@
-# $(BUILDDIR)LensAccess.o:$(CURRENT_DIR)/components/computar.vlmpz.controller/include/LensAccess.c 
-# 					$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -I./ -c $^ -o $@
-# $(BUILDDIR)LensConnect.o:$(CURRENT_DIR)/components/computar.vlmpz.controller/include/LensConnect.c 
-# 					$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -I./ -c $^ -o $@
 
-
-# dk_remote_lens_linker.comp:	$(BUILDDIR)dk.remote.lens.linker.o \
-# 							$(BUILDDIR)UsbCtrl.o \
-# 							$(BUILDDIR)LensCtrl.o \
-# 							$(BUILDDIR)LensAccess.o \
-# 							$(BUILDDIR)LensConnect.o
-# 							$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(BUILDDIR)$@ $^ $(LDLIBS) -lslabhidtosmbus -lslabhiddevice -lusb-1.0 -ludev
-# $(BUILDDIR)dk.remote.lens.linker.o:	$(CURRENT_DIR)/components/dk.remote.lens.linker/dk.remote.lens.linker.cc
-# 									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
-# $(BUILDDIR)UsbCtrl.o:$(CURRENT_DIR)/components/dk.remote.lens.linker/controller/UsbCtrl.c 
-# 					$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -I./ -c $^ -o $@
-# $(BUILDDIR)LensCtrl.o:$(CURRENT_DIR)/components/dk.remote.lens.linker/controller/LensCtrl.c 
-# 					$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -I./ -c $^ -o $@
-# $(BUILDDIR)LensAccess.o:$(CURRENT_DIR)/components/dk.remote.lens.linker/controller/LensAccess.c 
-# 					$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -I./ -c $^ -o $@
-# $(BUILDDIR)LensConnect.o:$(CURRENT_DIR)/components/dk.remote.lens.linker/controller/LensConnect.c 
-# 					$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -I./ -c $^ -o $@
 
 dk_image_push_unittest.comp:	$(BUILDDIR)dk.image.push.unittest.o
 							$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(BUILDDIR)$@ $^ $(LDFLAGS) $(LDLIBS)
@@ -226,7 +201,7 @@ $(BUILDDIR)dk.image.push.unittest.o:	$(CURRENT_DIR)/components/dk.image.push.uni
 
 all : flame
 
-dk_h_inspector : flame basler_gige_cam_grabber.comp synology_nas_file_stacker.comp ni_daq_controller.comp
+dk_h_inspector : flame basler_gige_cam_grabber.comp synology_nas_file_stacker.comp ni_daq_controller.comp dk_level2_interface.comp
 
 dk_h_inspector_onsite : flame system_status_monitor.comp autonics_temp_controller.comp computar_vlmpz_controller.comp
 

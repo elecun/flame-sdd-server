@@ -15,10 +15,10 @@ void release(){ if(_instance){ delete _instance; _instance = nullptr; }}
 bool dk_level2_interface::on_init(){
 
     _show_raw_packet.store(get_profile()->parameters().value("show_raw_packet", false));
-    lv2_access_ip = get_profile()->parameters().value("level2_access_ip", "127.0.0.1"); //level2 server ip address
-    lv2_access_port = get_profile()->parameters().value("level2_access_port", 9999);
-    sdd_host_ip = get_profile()->parameters().value("sdd_host_ip", "127.0.0.1"); //sdd server ip address
-    sdd_host_port = get_profile()->parameters().value("sdd_host_port", 9998);
+    _lv2_access_ip = get_profile()->parameters().value("level2_access_ip", "127.0.0.1"); //level2 server ip address
+    _lv2_access_port = get_profile()->parameters().value("level2_access_port", 9999);
+    _sdd_host_ip = get_profile()->parameters().value("sdd_host_ip", "127.0.0.1"); //sdd server ip address
+    _sdd_host_port = get_profile()->parameters().value("sdd_host_port", 9998);
     _alive_interval = get_profile()->parameters().value("alive_interval", 1);
 
     /* client */
@@ -37,7 +37,7 @@ bool dk_level2_interface::on_init(){
 
 void dk_level2_interface::_do_client_work(json parameters){
 
-    logger::info("[{}] Trying to access to Level2 {}:{}", get_name(), lv2_access_ip, lv2_access_port);
+    logger::info("[{}] Trying to access to Level2 {}:{}", get_name(), _lv2_access_ip, _lv2_access_port);
     tcp_socket<>* _tcp_socket = nullptr;
     int alive_time = 0;
     bool is_connected = false;
@@ -60,7 +60,7 @@ void dk_level2_interface::_do_client_work(json parameters){
                 /* if not connected */
                 if(!is_connected){
                     int alive_time = 0;
-                    _tcp_socket->connect(lv2_access_ip, lv2_access_port, [&] {
+                    _tcp_socket->connect(_lv2_access_ip, _lv2_access_port, [&] {
                         logger::info("[{}] Connected to Level2 server({}:{}) successfully", get_name(), _tcp_socket->get_remote_address(), _tcp_socket->get_remote_port());
                         alive_time = 0; // reset counter
                         is_connected = true;
@@ -143,7 +143,7 @@ void dk_level2_interface::_do_client_work(json parameters){
 
 void dk_level2_interface::_do_server_work(json parameters){
 
-    logger::info("[{}] Waiting for connection... {}:{}", get_name(), sdd_host_ip, sdd_host_port);
+    logger::info("[{}] Waiting for connection... {}:{}", get_name(), _sdd_host_ip, _sdd_host_port);
     tcp_server<>* _tcp_server = nullptr;
 
     while(!_worker_stop.load()){
@@ -156,14 +156,70 @@ void dk_level2_interface::_do_server_work(json parameters){
                 _tcp_server->on_new_connection = [&](tcp_socket<> *client) {
                     logger::info("[{}] Connected client : {}:{}", get_name(), client->get_remote_address(), client->get_remote_port());
 
-                    client->on_received = [this, client](string message){
-                        logger::info("[{}] Received : {}", get_name(), message);
-                    };
+                    /* use raw byte packet */
+                    client->on_raw_received = [this, client](const char* data, int length){
+                        logger::info("[{}] Raw Received : {}bytes ", get_name(), length);
 
-                    /* if use raw */
-                    // client->on_raw_received = [this, client](const char* data, int length){
-                    //     logger::info("[{}] Raw Received : {}bytes ", get_name(), length);
-                    // };
+                        /* tc code : alive check */
+                        if(!memcmp(data, "1099", 4)){
+                            dk_lv2_mf_alive packet;
+                            if(length==sizeof(packet)){
+                                memcpy(&packet, data, sizeof(packet));
+                                string str_packet(data, length);
+                                logger::info("[{}] {}", get_name(), str_packet);
+                            }
+                            else {
+                                logger::info("[{}] Wrong packet(TC code:1099) length", get_name());
+                            }
+                        }
+
+                        /* tc code : clear? */
+                        else if(!memcmp(data, "1098", 4)){
+                            dk_lv2_mf_clear packet;
+                            if(length==sizeof(packet)){
+                                memcpy(&packet, data, sizeof(packet));
+                                string str_packet(data, length);
+                                logger::info("[{}] {}", get_name(), str_packet);
+                            }
+                            else {
+                                logger::info("[{}] Wrong packet(TC code:1098) length", get_name());
+                            }
+                        }
+
+                        /* tc code : job instruction */
+                        else if(!memcmp(data, "1001", 4)){
+                            dk_lv2_mf_instruction packet;
+                            if(length==sizeof(packet)){
+                                memcpy(&packet, data, sizeof(packet));
+                                string str_packet(data, length);
+                                logger::info("[{}] {}", get_name(), str_packet);
+
+                                /* abstract data pack */
+                                json data_pack;
+                                data_pack["date"] = string(packet.cDate, sizeof(packet.cDate));
+                                data_pack["lot_no"] = string(packet.cLotNo, sizeof(packet.cLotNo));
+                                data_pack["mt_stand"] = string(packet.cMtStand, sizeof(packet.cMtStand));
+                                data_pack["mt_length"] = string(packet.cMtLength, sizeof(packet.cMtLength));
+
+                                /* publish the level2 data */
+                                string topic = fmt::format("{}/lv2_dispatch", get_name());
+                                string data = data_pack.dump();
+                                zmq::multipart_t msg_multipart;
+                                msg_multipart.addstr(topic);
+                                msg_multipart.addstr(data);
+                                msg_multipart.send(*get_port("lv2_dispatch"), ZMQ_DONTWAIT);
+                                
+                            }
+                            else {
+                                logger::info("[{}] Wrong packet(TC code:1001) length", get_name());
+                            }
+                            
+                        }
+                        else {
+                            logger::warn("[{}] Undefined TC Code : {}", get_name(), string(data,4));
+                        }
+
+                    };
                     
                     client->on_socket_closed = [this, client](int error_code) {
                         logger::info("[{}] Disconnected client : {}:{}", get_name(), client->get_remote_address(), client->get_remote_port());
@@ -171,7 +227,7 @@ void dk_level2_interface::_do_server_work(json parameters){
                 };
 
                 /* bind */
-                _tcp_server->bind(sdd_host_port, [&](int error_code, string error_message){
+                _tcp_server->bind(_sdd_host_port, [&](int error_code, string error_message){
                     logger::error("[{}] bind error({}))", get_name(), error_message);
                 });
 
