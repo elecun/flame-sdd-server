@@ -1,5 +1,5 @@
 import socket
-
+import time
 # 서버 주소 및 포트 설정
 SERVER_IP = "127.0.0.1"  # 로컬 테스트를 위해 localhost 사용
 SERVER_PORT = 5402       # 서버의 포트 번호
@@ -13,7 +13,12 @@ try:
     print(f"서버 {SERVER_IP}:{SERVER_PORT} 에 연결됨")
 
     # 송신할 메시지
-    message = "Hello, Server!"
+    message = "11982025022010323800005012300000000000000000000000"
+    client_socket.sendall(message.encode())  # 문자열을 바이트로 변환하여 송신
+
+    time.sleep(1)
+
+    message = "11982025022010323800005012300000000000000000000000"
     client_socket.sendall(message.encode())  # 문자열을 바이트로 변환하여 송신
 
     # 서버로부터 응답 수신

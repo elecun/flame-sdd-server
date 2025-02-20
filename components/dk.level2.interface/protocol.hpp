@@ -59,8 +59,17 @@ struct _type_dk_lv2_mf_alive {
     char cSpare[22];    /* 스페어 */
 };
 #pragma pack(pop)
-typedef _type_dk_lv2_mf_alive dk_lv2_mf_alive ;
+typedef _type_dk_lv2_mf_alive dk_lv2_mf_alive;
 
+#pragma pack(push, 1)
+struct _type_dk_sdd_defect {
+    char cResult_Code[6];
+    char cResult_Pos[6];
+};
+#pragma pack(pop)
+typedef _type_dk_sdd_defect dk_sdd_defect;
+
+#define MAX_RST_SIZE    60
 #pragma pack(push, 1)
 struct _type_dk_sdd_job_result {
     char cTcCode[4];        /* TC Code */
@@ -71,26 +80,7 @@ struct _type_dk_sdd_job_result {
     char cMtTypeCd[2];      /* 제품형태 */
     char cMtStand[30];      /* 제품규격명 */
     char cCount[4];         /* Data Count */
-    char cResult1_Code[6];  /* 결함 측정1 Code */
-    char cResult1_Pos[6];   /* 결함 측정1 위치 */
-    char cResult2_Code[6];
-    char cResult2_Pos[6];
-    char cResult3_Code[6];
-    char cResult3_Pos[6];
-    char cResult4_Code[6];
-    char cResult4_Pos[6];
-    char cResult5_Code[6];
-    char cResult5_Pos[6];
-    char cResult6_Code[6];
-    char cResult6_Pos[6];
-    char cResult7_Code[6];
-    char cResult7_Pos[6];;
-    char cResult8_Code[6];
-    char cResult8_Pos[6];
-    char cResult9_Code[6];
-    char cResult9_Pos[6];
-    char cResult10_Code[6];
-    char cResult10_Pos[6];
+    dk_sdd_defect cRst[MAX_RST_SIZE]; /* 결함 종류, 위치 정보 */
 };
 #pragma pack(pop)
 typedef _type_dk_sdd_job_result dk_sdd_job_result;
@@ -116,11 +106,3 @@ struct _type_dk_sdd_alive {
 };
 #pragma pack(pop)
 typedef _type_dk_sdd_alive  dk_sdd_alive;
-
-#pragma pack(push, 1)
-struct _type_dk_sdd_defect {
-    char cResult_Code[6];
-    char cResult_Pos[6];
-};
-#pragma pack(pop)
-typedef _type_dk_sdd_defect dk_sdd_defect;

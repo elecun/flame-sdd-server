@@ -13,15 +13,17 @@
 #ifndef FLAME_DK_LEVLE2_INTERFACE_TCP_SERVER_HPP_INCLUDED
 #define FLAME_DK_LEVLE2_INTERFACE_TCP_SERVER_HPP_INCLUDED
 
+#pragma once
+
 #include "tcpsocket.hpp"
 #include <thread>
 
-template <uint16_t BUFFER_SIZE = AS_DEFAULT_BUFFER_SIZE>
+template <uint16_t _buffer_size_ = AS_DEFAULT_BUFFER_SIZE>
 class tcp_server : public base_socket
 {
 public:
     // Event Listeners:
-    std::function<void(tcp_socket<BUFFER_SIZE>*)> onNewConnection = [](tcp_socket<BUFFER_SIZE>* sock){FDR_UNUSED(sock)};
+    std::function<void(tcp_socket<_buffer_size_>*)> on_new_connection = [](tcp_socket<_buffer_size_>* sock){FDR_UNUSED(sock)};
 
     explicit tcp_server(FDR_ON_ERROR): base_socket(onError, type_socket::TCP)
     {
@@ -48,19 +50,19 @@ public:
         this->address.sin_family = AF_INET;
         this->address.sin_port = htons(port);
 
-        if (::bind(this->sock, (const sockaddr*)&this->address, sizeof(this->address)) == -1)
+        if(::bind(this->sock, (const sockaddr*)&this->address, sizeof(this->address)) == -1)
         {
             onError(errno, "Cannot bind the socket.");
             return;
         }
     }
     // Bind the address(0.0.0.0) & port of the server.
-    void bind(uint16_t port, FDR_ON_ERROR) { this->Bind("0.0.0.0", port, onError); }
+    void bind(uint16_t port, FDR_ON_ERROR) { this->bind("0.0.0.0", port, onError); }
 
     // Start listening incoming connections.
     void listen(FDR_ON_ERROR)
     {
-        if (listen(this->sock, 20) == -1)
+        if(::listen(this->sock, 1) == -1)
         {
             onError(errno, "Error: Server can't listen the socket.");
             return;
@@ -71,30 +73,28 @@ public:
     }
 
 private:
-    static void accept(tcp_server<BUFFER_SIZE>* server, FDR_ON_ERROR)
+    static void accept(tcp_server<_buffer_size_>* server, FDR_ON_ERROR)
     {
-        sockaddr_in newSocketInfo;
-        socklen_t newSocketInfoLength = sizeof(newSocketInfo);
+        sockaddr_in new_sock_info;
+        socklen_t new_sock_info_len = sizeof(new_sock_info);
 
-        int newSocketFileDescriptor = -1;
-        while (true)
+        int new_fd = -1;
+        while(true)
         {
-            newSocketFileDescriptor = ::accept(server->sock, (sockaddr*)&newSocketInfo, &newSocketInfoLength);
-            if (newSocketFileDescriptor == -1)
+            new_fd = ::accept(server->sock, (sockaddr*)&new_sock_info, &new_sock_info_len);
+            if (new_fd == -1)
             {
-                if (errno == EBADF || errno == EINVAL) return;
-
+                if(errno == EBADF || errno == EINVAL) return;
                 onError(errno, "Error while accepting a new connection.");
-
                 return;
             }
 
-            tcp_socket<BUFFER_SIZE>* newSocket = new tcp_server<BUFFER_SIZE>(onError, newSocketFileDescriptor);
-            newSocket->deleteAfterClosed = true;
-            newSocket->setAddressStruct(newSocketInfo);
+            tcp_socket<_buffer_size_>* new_sock = new tcp_socket<_buffer_size_>(onError, new_fd);
+            new_sock->deleteAfterClosed = true;
+            new_sock->setAddressStruct(new_sock_info);
 
-            server->onNewConnection(newSocket);
-            newSocket->listen();
+            server->on_new_connection(new_sock);
+            new_sock->listen();
         }
     }
 };

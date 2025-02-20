@@ -8,8 +8,8 @@ template <uint16_t BUFFER_SIZE = AS_DEFAULT_BUFFER_SIZE>
 class UDPSocket : public BaseSocket
 {
 public:
-    std::function<void(std::string, std::string, std::uint16_t)> onMessageReceived;
-    std::function<void(const char*, ssize_t, std::string, std::uint16_t)> onRawMessageReceived;
+    std::function<void(std::string, std::string, std::uint16_t)> on_received;
+    std::function<void(const char*, ssize_t, std::string, std::uint16_t)> on_raw_received;
 
     explicit UDPSocket(bool useConnect = false, FDR_ON_ERROR, int socketId = -1): BaseSocket(onError, SocketType::UDP, socketId)
     {
@@ -141,11 +141,11 @@ private:
         while ((messageLength = recv(udpSocket->sock, tempBuffer, BUFFER_SIZE, 0)) != -1)
         {
             tempBuffer[messageLength] = '\0';
-            if (udpSocket->onMessageReceived)
-                udpSocket->onMessageReceived(std::string(tempBuffer, messageLength), ipToString(udpSocket->address), ntohs(udpSocket->address.sin_port));
+            if (udpSocket->on_received)
+                udpSocket->on_received(std::string(tempBuffer, messageLength), ipToString(udpSocket->address), ntohs(udpSocket->address.sin_port));
 
-            if (udpSocket->onRawMessageReceived)
-                udpSocket->onRawMessageReceived(tempBuffer, messageLength, ipToString(udpSocket->address), ntohs(udpSocket->address.sin_port));
+            if (udpSocket->on_raw_received)
+                udpSocket->on_raw_received(tempBuffer, messageLength, ipToString(udpSocket->address), ntohs(udpSocket->address.sin_port));
         }
     }
 
@@ -160,11 +160,11 @@ private:
         while ((messageLength = recvfrom(udpSocket->sock, tempBuffer, BUFFER_SIZE, 0, (sockaddr* )&hostAddr, &hostAddrSize)) != -1)
         {
             tempBuffer[messageLength] = '\0';
-            if (udpSocket->onMessageReceived)
-                udpSocket->onMessageReceived(std::string(tempBuffer, messageLength), ipToString(hostAddr), ntohs(hostAddr.sin_port));
+            if (udpSocket->on_received)
+                udpSocket->on_received(std::string(tempBuffer, messageLength), ipToString(hostAddr), ntohs(hostAddr.sin_port));
 
-            if (udpSocket->onRawMessageReceived)
-                udpSocket->onRawMessageReceived(tempBuffer, messageLength, ipToString(hostAddr), ntohs(hostAddr.sin_port));
+            if (udpSocket->on_raw_received)
+                udpSocket->on_raw_received(tempBuffer, messageLength, ipToString(hostAddr), ntohs(hostAddr.sin_port));
         }
     }
 };

@@ -36,18 +36,8 @@ class dk_level2_interface : public flame::component::object {
         void on_message() override;
 
     private:
-        /* tcp client & server */
-        tcp_socket<> _tcp_client { nullptr };
-        tcp_server<> _tcp_server { nullptr };
-
-        /* optional */
-        atomic<bool> _show_raw_packet {false};
-        
-    private:
-
-        /* local vairables */
-        int _alive_interval {1};
-        
+        atomic<bool> _show_raw_packet {false}; /* if true, show packet via logger*/
+        int _alive_interval {1000}; /* alive packet send interval */
 
     private:
         // /* server callback */
@@ -76,9 +66,9 @@ class dk_level2_interface : public flame::component::object {
         void show_raw_packet(char* data, size_t size);  /* show raw packet data */
 
         /* packet generation */
-        dk_sdd_alive generate_packet_alive();
-        dk_sdd_alarm generate_packet_alarm(string alarm_code);
-        dk_sdd_job_result generate_packet_job_result(string lot_no, string mt_no, string mt_type_cd, string mt_stand, vector<dk_sdd_defect>* defect_list);
+        dk_sdd_alive generate_packet_alive(bool show = false);
+        dk_sdd_alarm generate_packet_alarm(string alarm_code, bool show = false);
+        dk_sdd_job_result generate_packet_job_result(string lot_no, string mt_no, string mt_type_cd, string mt_stand, vector<dk_sdd_defect> defect_list, bool show = false);
 
     private:
         string lv2_access_ip {"127.0.0.1"};

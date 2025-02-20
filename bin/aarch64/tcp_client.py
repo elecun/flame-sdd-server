@@ -13,7 +13,7 @@ try:
     print(f"서버 {SERVER_IP}:{SERVER_PORT} 에 연결됨")
 
     # 송신할 메시지
-    message = "Hello, Server!"
+    message = "11982025022010323800005012300000000000000000000000"
     client_socket.sendall(message.encode())  # 문자열을 바이트로 변환하여 송신
 
     # 서버로부터 응답 수신

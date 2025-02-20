@@ -24,8 +24,8 @@ class tcp_socket : public base_socket
 public:
     
     /* event listener*/
-    std::function<void(std::string)> on_message_received;
-    std::function<void(const char*, ssize_t)> on_raw_message_received;
+    std::function<void(std::string)> on_received;
+    std::function<void(const char*, ssize_t)> on_raw_received;
     std::function<void(int)> on_socket_closed;
 
     /* constructor */
@@ -57,8 +57,6 @@ public:
         // Connected to the server, fire the event.
         on_connected();
 
-        // Start listening from server:
-        //this->listen();
     }
     // Connect to a TCP Server with `const char* host` & `uint16_t port` values
     void connect(const char* host, uint16_t port, std::function<void()> on_connected = [](){}, FDR_ON_ERROR)
@@ -116,11 +114,11 @@ private:
         while ((messageLength = recv(socket->sock, tempBuffer, _buffer_size_, 0)) > 0)
         {
             tempBuffer[messageLength] = '\0';
-            if(socket->on_message_received)
-                socket->on_message_received(std::string(tempBuffer, messageLength));
+            if(socket->on_received)
+                socket->on_received(std::string(tempBuffer, messageLength));
             
-            if(socket->on_raw_message_received)
-                socket->on_raw_message_received(tempBuffer, messageLength);
+            if(socket->on_raw_received)
+                socket->on_raw_received(tempBuffer, messageLength);
         }
 
         socket->close();

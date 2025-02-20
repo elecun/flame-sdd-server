@@ -4,7 +4,9 @@
 
     "parameters":{
         "show_raw_packet":true,
-        "alive_interval":30,
+        "enable_sdd_host":true,
+        "enable_level2_access":false,
+        "alive_interval_ms":30000,
         "level2_access_ip":"127.0.0.1",
         "level2_access_port":5401,
         "sdd_host_ip":"127.0.0.1",
