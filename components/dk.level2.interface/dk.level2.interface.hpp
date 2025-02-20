@@ -54,6 +54,9 @@ class dk_level2_interface : public flame::component::object {
         /* useful functions */
         string get_current_time();                      /* return localtime to string */
         void show_raw_packet(char* data, size_t size);  /* show raw packet data */
+        string remove_space(const char* in, int size);
+        dk_h_standard_dim extract_stand_dim(const char* in, int size); /* extract lot no. from packet */
+        std::vector<std::string> split(const std::string& str, const std::string& delimiters);
 
         /* packet generation */
         dk_sdd_alive generate_packet_alive(bool show = false);

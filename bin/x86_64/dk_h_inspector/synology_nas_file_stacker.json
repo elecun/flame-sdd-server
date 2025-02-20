@@ -88,7 +88,7 @@
             "queue_size" : 1000,
             "timeout_ms":1000
         },
-        "level2_dispatch" : {
+        "lv2_dispatch" : {
             "transport" : "tcp",
             "host":"127.0.0.1",
             "port" : 5604,

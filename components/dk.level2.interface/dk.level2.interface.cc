@@ -196,10 +196,14 @@ void dk_level2_interface::_do_server_work(json parameters){
 
                                 /* abstract data pack */
                                 json data_pack;
-                                data_pack["date"] = string(packet.cDate, sizeof(packet.cDate));
-                                data_pack["lot_no"] = string(packet.cLotNo, sizeof(packet.cLotNo));
-                                data_pack["mt_stand"] = string(packet.cMtStand, sizeof(packet.cMtStand));
-                                data_pack["mt_length"] = string(packet.cMtLength, sizeof(packet.cMtLength));
+                                data_pack["date"] = remove_space(packet.cDate, sizeof(packet.cDate));
+                                data_pack["lot_no"] = remove_space(packet.cLotNo, sizeof(packet.cLotNo));
+                                dk_h_standard_dim dim = extract_stand_dim(packet.cMtStand, sizeof(packet.cMtStand));
+                                data_pack["mt_stand_height"] = dim.height;
+                                data_pack["mt_stand_width"] = dim.width;
+                                data_pack["mt_stand_t1"] = dim.t1;
+                                data_pack["mt_stand_t2"] = dim.t2;
+                                data_pack["mt_length"] = stol(remove_space(packet.cMtLength, sizeof(packet.cMtLength)));
 
                                 /* publish the level2 data */
                                 string topic = fmt::format("{}/lv2_dispatch", get_name());
@@ -343,7 +347,6 @@ dk_sdd_alarm dk_level2_interface::generate_packet_alarm(string alarm_code = "000
 
     return packet;
 }
-
 dk_sdd_job_result dk_level2_interface::generate_packet_job_result(string lot_no, string mt_no, string mt_type_cd, string mt_stand, vector<dk_sdd_defect> defect_list, bool show){
 
     dk_sdd_job_result packet;
@@ -426,4 +429,64 @@ void dk_level2_interface::show_raw_packet(char* data, size_t size){
     std::stringstream log_stream;
     log_stream.write(data, size);
     logger::info("[{}](size:{}){}", get_name(), log_stream.str().size(), log_stream.str());
+}
+
+string dk_level2_interface::remove_space(const char* in, int size){
+    string str = string(in, size);
+    str.erase(std::remove_if(str.begin(), str.end(), ::isspace),str.end());
+    return str;
+}
+
+dk_h_standard_dim dk_level2_interface::extract_stand_dim(const char* in, int size){
+    string str_standard = remove_space(in, size);
+    str_standard.erase(0, 1); // remove 'H'
+    const string delimiters = "x/";
+    dk_h_standard_dim result;
+
+    std::vector<std::string> tokens;
+    size_t start = 0, end;
+    while((end = str_standard.find_first_of(delimiters, start))!=std::string::npos) {
+        if(end != start){
+            tokens.push_back(str_standard.substr(start, end - start));
+        }
+        start = end + 1;
+    }
+    if(start < str_standard.size()){
+        tokens.push_back(str_standard.substr(start));
+    }
+
+    if(tokens.size()==4){
+        try{
+            result.height = stoi(tokens[0]);
+            result.width = stoi(tokens[1]);
+            result.t1 = stod(tokens[2]);
+            result.t2 = stod(tokens[3]);
+        }
+        catch(const std::exception& e){
+            logger::error("[{}] extraction error : {}", get_name(), e.what());
+        }
+    }
+    else {
+        logger::warn("[{}] Parse error (tokenization)", get_name());
+        memset(&result, 0, sizeof(result));
+    }
+
+    return result;
+
+}
+
+std::vector<std::string> split(const std::string& str, const std::string& delimiters){
+    std::vector<std::string> tokens;
+    size_t start = 0, end;
+
+    while((end = str.find_first_of(delimiters, start))!=std::string::npos) {
+        if(end != start){
+            tokens.push_back(str.substr(start, end - start));
+        }
+        start = end + 1;
+    }
+    if(start < str.size()){
+        tokens.push_back(str.substr(start));
+    }
+    return tokens;
 }

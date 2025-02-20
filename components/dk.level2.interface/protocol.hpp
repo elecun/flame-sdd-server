@@ -106,3 +106,13 @@ struct _type_dk_sdd_alive {
 };
 #pragma pack(pop)
 typedef _type_dk_sdd_alive  dk_sdd_alive;
+
+#pragma pack(push, 1)
+struct _type_dk_h_standard_dim {
+    int height;
+    int width;
+    double t1;  //web thickness
+    double t2;  //flange thickness
+};
+#pragma pack(pop)
+typedef _type_dk_h_standard_dim dk_h_standard_dim;

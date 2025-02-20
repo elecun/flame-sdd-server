@@ -22,8 +22,17 @@
             "queue_size" : 1000
         },
         "lv2_dispatch" : {
-            "transport" : "inproc",
+            "transport" : "tcp",
+            "host" : "127.0.0.1",
+            "port" : 5604,
             "socket_type" : "pub",
+            "queue_size" : 100
+        },
+        "sdd_dispatch":{
+            "transport" : "tcp",
+            "host" : "127.0.0.1",
+            "port" : 5605,
+            "socket_type" : "sub",
             "queue_size" : 100
         }
     }
