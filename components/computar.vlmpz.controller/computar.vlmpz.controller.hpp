@@ -134,12 +134,14 @@ class computar_vlmpz_controller : public flame::component::object {
 
     private:
         /* pipieline processing */
-        void _lens_control_responser(json parameters); // lens control port
         void _lens_control_subscribe(json parameters); // focus_control port
+        void _level2_dispatch_subscribe(json parameters); // level2_dispatch port
 
     private:
         thread _lens_control_worker;  /* control message subscriber */
+        thread _level2_dispatch_worker; /* control message from lv2 subscriber */
         atomic<bool> _worker_stop {false};
+        string _preset_path;
 
     private:
         /* task impl. of status publisher for every 1 sec */
@@ -151,10 +153,6 @@ class computar_vlmpz_controller : public flame::component::object {
         int UsbGetSnDevice(unsigned short index, char* SnString);
 
     private:
-
-        /* pipeline processing handle*/
-        atomic<bool> _thread_stop_signal { false };
-        pthread_t _lens_control_responser_handle;
 
         /* scanned lens info. */
         vector<string> _lens_device_sn; // lens serial number

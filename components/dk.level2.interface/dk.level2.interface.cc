@@ -205,13 +205,14 @@ void dk_level2_interface::_do_server_work(json parameters){
                                 data_pack["mt_stand_t2"] = dim.t2;
                                 data_pack["mt_length"] = stol(remove_space(packet.cMtLength, sizeof(packet.cMtLength)));
 
-                                /* publish the level2 data */
-                                string topic = fmt::format("{}/lv2_dispatch", get_name());
+                                /* publish the level2 data via lv2_dispatch port */
+                                string topic = fmt::format("lv2_dispatch", get_name());
                                 string data = data_pack.dump();
                                 zmq::multipart_t msg_multipart;
                                 msg_multipart.addstr(topic);
                                 msg_multipart.addstr(data);
                                 msg_multipart.send(*get_port("lv2_dispatch"), ZMQ_DONTWAIT);
+                                logger::info("[{}] Publish to lv2_dispatch : {}", get_name(), data);
                                 
                             }
                             else {
