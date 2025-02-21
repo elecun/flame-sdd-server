@@ -191,7 +191,7 @@ void synology_nas_file_stacker::_level2_dispatch_task(){
         while(!_worker_stop.load()){
             try{
                 zmq::multipart_t msg_multipart;
-                bool success = msg_multipart.recv(*get_port("level2_dispatch"));
+                bool success = msg_multipart.recv(*get_port("lv2_dispatch"));
                 if(success){
                     string topic = msg_multipart.popstr();
                     string data = msg_multipart.popstr();
