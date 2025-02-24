@@ -40,13 +40,6 @@ bool synology_nas_file_stacker::on_init(){
         }
     }
 
-    /* timeout check worker */
-    if(parameters.contains("stream_timeout")){
-        int stream_timeout = parameters.value("stream_timeout", 1000);
-        _timeout_check_worker = thread(&synology_nas_file_stacker::_timeout_check_task, this, stream_timeout);
-        logger::info("[{}] Timeout checker is running...", get_name());
-    }
-
     /* level2 interface worker */
     if(parameters.contains("use_level2_interface")){
         bool enable = parameters.value("use_level2_interface", false);
@@ -76,11 +69,6 @@ void synology_nas_file_stacker::on_close(){
         }
     });
 
-    if(_timeout_check_worker.joinable()){
-        _timeout_check_worker.join();
-        logger::info("[{}] Timeout checker is now stopped", get_name());
-    }
-
     if(_level2_dispatch_worker.joinable()){
         _level2_dispatch_worker.join();
         logger::info("[{}] Level2 Interface Data dispatcher is now stopped", get_name());
@@ -94,13 +82,16 @@ void synology_nas_file_stacker::on_message(){
     
 }
 
+
 void synology_nas_file_stacker::_image_stacker_task(int stream_id, string root, json stream_param)
 {
     try{
         string portname = fmt::format("image_stream_{}", stream_id);
         fs::path root_path = fs::path(root);
-        fs::path save_path = root_path / get_current_time() / stream_param["dirname"].get<string>();
+        fs::path temp_save_path = root_path / "tmp";// / get_current_time() / stream_param["dirname"].get<string>();
         unsigned long stream_counter = 0;
+
+        string working_dirname = stream_param.value("dirname", fmt::format("tmp_{}", stream_id));
 
         while(!_worker_stop.load()){
             try{
@@ -113,10 +104,11 @@ void synology_nas_file_stacker::_image_stacker_task(int stream_id, string root, 
                     
                     /* renew save path */
                     if(_timeout_flag[stream_id].load()){
-                        save_path = root_path / fs::path(get_current_time()) / fs::path(stream_param["dirname"].get<string>());
-                        if(!fs::exists(save_path)){
-                            fs::create_directories(save_path);
-                            logger::info("[{}] Stream #{} data saves into {}", get_name(), stream_id, save_path.string());
+                        string working_tmp_job_path = get_current_time();
+                        temp_save_path = root_path / working_tmp_job_path / working_dirname;
+                        if(!fs::exists(temp_save_path)){
+                            fs::create_directories(temp_save_path);
+                            logger::info("[{}] Stream #{} data saves into {}", get_name(), stream_id, temp_save_path.string());
                         }
                         /* timeout flag set false */
                         _timeout_flag[stream_id].store(false);
@@ -133,12 +125,29 @@ void synology_nas_file_stacker::_image_stacker_task(int stream_id, string root, 
                     /* decode image & save */
                     cv::Mat decoded = cv::imdecode(image, cv::IMREAD_UNCHANGED);                        
                     string filename = fmt::format("{}_{}.jpg", camera_id, ++stream_counter);
-                    cv::imwrite(fmt::format("{}/{}",save_path.string(), filename), decoded);
+                    cv::imwrite(fmt::format("{}/{}",temp_save_path.string(), filename), decoded);
                 }
                 else {
-                    /* set timeout flag true */
+                    /* set timeout flag true (timeout value set to profile )*/
                     if(!_timeout_flag[stream_id].load()){
                         _timeout_flag[stream_id].store(true);
+
+                        try{
+                            if(!_renamed_target_dirname.empty()){
+                                fs::path dest = root_path / _renamed_target_dirname;
+                                if(!fs::exists(dest)){
+                                    fs::create_directories(dest);
+                                }
+                                fs::rename(temp_save_path, dest/working_dirname);
+                                logger::info("[{}] Rename target dir name with LOT No. {}", get_name(), _renamed_target_dirname);
+                            }
+                            else {
+                                logger::warn("[{}] No target directory name to replace the temporary dir.", get_name());
+                            }
+                        }
+                        catch(const fs::filesystem_error& e){
+                            logger::error("[{}] File rename error : {}", get_name(), e.what());
+                        }
                     }
                 }
                 
@@ -148,32 +157,6 @@ void synology_nas_file_stacker::_image_stacker_task(int stream_id, string root, 
             }
         }
 
-    }
-    catch(const zmq::error_t& e){
-        logger::error("[{}] Pipeline error : {}", get_name(), e.what());
-    }
-    catch(const std::runtime_error& e){
-        logger::error("[{}] Runtime error occurred!", get_name());
-    }
-    catch(const json::parse_error& e){
-        logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());
-    }
-}
-
-void synology_nas_file_stacker::_timeout_check_task(int timeout){
-    try{
-        while(!_worker_stop.load()){
-            try{
-                // code here
-                
-
-            }
-            catch(const zmq::error_t& e){
-                break;
-            }
-
-            this_thread::sleep_for(chrono::milliseconds(timeout));
-        }
     }
     catch(const zmq::error_t& e){
         logger::error("[{}] Pipeline error : {}", get_name(), e.what());
@@ -198,6 +181,10 @@ void synology_nas_file_stacker::_level2_dispatch_task(){
                     auto json_data = json::parse(data);
 
                     // level2 data processing
+                    if(json_data.contains("lot_no")){
+                        _renamed_target_dirname = json_data["lot_no"].get<string>();
+                        logger::info("[{}] Replace target dir name with LOT No. {}", get_name(), _renamed_target_dirname);
+                    }
                 }
 
             }

@@ -40,31 +40,18 @@ class synology_nas_file_stacker : public flame::component::object {
         atomic<bool> _worker_stop {false};
         atomic<bool> _new_instruction {false}; // if new instruction is comming from lv2, should be set true
         unordered_map<int, atomic<bool>> _timeout_flag; // timeout flag for each image stream
-        thread _timeout_check_worker;
         thread _level2_dispatch_worker; //level2 data interface
+
+        /* working(save) directory name (by lv2 interface) */
+        string _renamed_target_dirname {""};
 
     private:
         /* subtasks */
         void _image_stacker_task(int stream_id, string root_path, json stream_param);
-        void _timeout_check_task(int timeout);
         void _level2_dispatch_task();
 
         /* useful functions */
         string get_current_time();
-
-
-    private:
-        // void _image_stacker(int id, json parameters); /* realtime image data stacker thread callback */
-        // void _response(json paramters);
-
-
-    private:
-        // pthread_t _stacker_handle;
-        // unordered_map<int, pthread_t> _stacker_worker;  // image stream id, stacker thread
-        
-        // bool _thread_stop_signal { false };
-        // fs::path _mount_path;
-        fs::path _destination_path;
 
 
 }; /* class */

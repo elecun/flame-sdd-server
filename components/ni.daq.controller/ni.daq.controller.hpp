@@ -45,36 +45,13 @@ class ni_daq_controller : public flame::component::object {
         atomic<bool> _worker_stop {false};
 
     private:
+        /* thread functions */
         void _daq_control_task();
         void _daq_pulse_gen_task();
         void _daq_dio_read_task();
 
-        void _publish_hmd_signal(const char* portname, bool value);
-
-        
-
-        /* message instruction via mq */
-        
-
-    // private:
-    //     /* internal variables & user parameters */
-    //     string _device_name {""};
-    //     string _counter_channel {""};
-    //     string _di_channel {""};
-    //     double _counter_pulse_freq {30};
-    //     double _counter_pulse_duty {0.5};
-    //     long _counter_pulse_off_time_delay {0};
-
-        
-
-        /* for worker handle */
-        // vector<thread> _worker_container;
-
-        // /* for worker termination */
-        // atomic<bool> _worker_stop {false};
-
-
-        
+        /* hmd signal publisher */
+        void _publish_hmd_signal(const char* portname, bool value); 
 
 }; /* class */
 
