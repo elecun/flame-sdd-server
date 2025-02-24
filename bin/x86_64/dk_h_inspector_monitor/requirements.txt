@@ -1,5 +1,0 @@
-pyqt6
-pillow
-colorlog
-paho-mqtt
-pyqtgraph
