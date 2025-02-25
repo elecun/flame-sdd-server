@@ -198,41 +198,25 @@ void ni_daq_controller::_daq_dio_read_task(){
             try{
                 if(_task_handle_dio_reader!=0){
                     if(DAQmxReadDigitalU8(_task_handle_dio_reader, 1, 10.0, DAQmx_Val_GroupByChannel, &dio_value, 1, &read_samples, nullptr)==DAQmxSuccess){
-                        std::cout << std::hex << dio_value << endl;
 
-                        // if(dio_value==1 && prev_dio_value==0){ //rising edge
-                        //     _publish_hmd_signal("hmd_signal", true);                      
-                        // }
-                        // else if(dio_value=0 && prev_dio_value==1){ //falling edge
-                        //     _publish_hmd_signal("hmd_signal", false);
-                        // }
+                        if(prev_dio_value==0 && dio_value==1){ //rising edge
+                            _publish_hmd_signal("hmd_signal", true);                      
+                        }
+                        else if(prev_dio_value==1 && dio_value=0){ //falling edge
+                            _publish_hmd_signal("hmd_signal", false);
+                        }
     
-                        // /* value update */
-                        // prev_dio_value = dio_value;
+                        /* value update */
+                        prev_dio_value = dio_value;
                     }
                 }
             }
             catch(const zmq::error_t& e){
+                logger::error("[{}] Pipeline error : {}", get_name(), e.what());
                 break;
             }
 
-            // if(_task_handle_dio_reader!=0){
-            //     if(DAQmxReadDigitalU8(_task_handle_dio_reader, 1, 5.0, DAQmx_Val_GroupByChannel, &dio_value, 1, &read_samples, nullptr)==DAQmxSuccess){
-            //         if(dio_value==1 && prev_dio_value==0){ //rising edge
-            //             _publish_hmd_signal("hmd_signal", true);                      
-            //         }
-            //         else if(dio_value=0 && prev_dio_value==1){ //falling edge
-            //             _publish_hmd_signal("hmd_signal", false);
-            //         }
-
-            //         /* value update */
-            //         prev_dio_value = dio_value;
-            //     }
-            // }
-            // else {
-            //     logger::info("[{}] DIO Read Task is stopped", get_name());
-            //     break;
-            // }
+            this_thread::sleep_for(chrono::milliseconds(100));
         }
     }
     catch(const zmq::error_t& e){
