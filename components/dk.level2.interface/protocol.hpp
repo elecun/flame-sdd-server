@@ -35,7 +35,8 @@ struct _type_dk_lv2_mf_instruction {
     char cStandSize5[3];    /* 표준단면 치수(HB : r1, Angles : r1, Chanel : r1) */
     char cStandSize6[3];    /* 표준단면 치수(HB : r2, Angles : r2, Chanel : r2) */
     char cDSCutCoun[1];     /* DS Number of cutting */
-    char cSpare[298];       /* Reserved */
+    char cFMLength[6];      /* 이론 FM 길이 */
+    char cSpare[292];       /* Reserved */
 };
 #pragma pack(pop)
 typedef _type_dk_lv2_mf_instruction dk_lv2_mf_instruction;
