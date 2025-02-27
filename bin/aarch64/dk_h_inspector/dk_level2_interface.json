@@ -8,9 +8,9 @@
         "enable_level2_access":false,
         "alive_interval_ms":30000,
         "level2_access_ip":"127.0.0.1",
-        "level2_access_port":5401,
-        "sdd_host_ip":"127.0.0.1",
-        "sdd_host_port":5402
+        "level2_access_port":7571,
+        "sdd_host_ip":"*",
+        "sdd_host_port":7570
     },
 
     "dataport":{

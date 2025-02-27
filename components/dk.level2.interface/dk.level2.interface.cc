@@ -19,9 +19,10 @@ bool dk_level2_interface::on_init(){
     _lv2_access_port = get_profile()->parameters().value("level2_access_port", 9999);
     _sdd_host_ip = get_profile()->parameters().value("sdd_host_ip", "127.0.0.1"); //sdd server ip address
     _sdd_host_port = get_profile()->parameters().value("sdd_host_port", 9998);
-    _alive_interval = get_profile()->parameters().value("alive_interval", 1);
+    _alive_interval = get_profile()->parameters().value("alive_interval_ms", 30000);
 
-    logger::info("test");
+    logger::info("[{}] Level2 Access Address : {}:{}", get_name(), _lv2_access_ip, _lv2_access_port);
+    logger::info("[{}] SDD Access Address : {}:{}", get_name(), _sdd_host_ip, _sdd_host_port);
 
     /* client */
     try{
