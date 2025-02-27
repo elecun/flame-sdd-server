@@ -183,7 +183,7 @@ void synology_nas_file_stacker::_level2_dispatch_task(){
                     // level2 data processing
                     if(json_data.contains("lot_no")){
                         _renamed_target_dirname = json_data["lot_no"].get<string>();
-                        logger::info("[{}] Replace target dir name with LOT No. {}", get_name(), _renamed_target_dirname);
+                        logger::info("[{}] Set Dir name to {} later", get_name(), _renamed_target_dirname);
                     }
                 }
 

@@ -1,12 +1,15 @@
 import socket
+import struct
 
 HOST = '127.0.0.1'  # 모든 인터페이스에서 수신
-PORT = 5401       # 원하는 포트 번호
+PORT = 7571       # 원하는 포트 번호
 
 def start_server():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        linger_struct = struct.pack('ii', 1, 0)  # l_onoff=1, l_linger=0
+        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, linger_struct)
         server_socket.bind((HOST, PORT))
         server_socket.listen()
 

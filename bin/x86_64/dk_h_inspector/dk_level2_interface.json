@@ -5,13 +5,11 @@
     "parameters":{
         "show_raw_packet":true,
         "enable_sdd_host":true,
-        "enable_level2_access":false,
-        "alive_interval_ms":30000,
-        "level2_access_ip_dk":"128.1.51.1",
+        "enable_level2_access":true,
+        "alive_interval":30,
         "level2_access_ip":"127.0.0.1",
         "level2_access_port":7571,
-        "sdd_host_ip_dk":"128.1.51.67",
-        "sdd_host_ip":"*",
+        "sdd_host_ip":"127.0.0.1",
         "sdd_host_port":7570
     },
 
@@ -32,7 +30,7 @@
         },
         "sdd_dispatch":{
             "transport" : "tcp",
-            "host" : "*",
+            "host" : "127.0.0.1",
             "port" : 5605,
             "socket_type" : "sub",
             "queue_size" : 100
