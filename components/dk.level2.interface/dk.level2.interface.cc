@@ -21,6 +21,8 @@ bool dk_level2_interface::on_init(){
     _sdd_host_port = get_profile()->parameters().value("sdd_host_port", 9998);
     _alive_interval = get_profile()->parameters().value("alive_interval", 1);
 
+    logger::info("test");
+
     /* client */
     try{
         if(get_profile()->parameters().value("enable_level2_access", true))
