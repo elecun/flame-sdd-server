@@ -139,6 +139,7 @@ void synology_nas_file_stacker::_image_stacker_task(int stream_id, string root, 
                                     fs::create_directories(dest);
                                 }
                                 fs::rename(temp_save_path, dest/working_dirname);
+                                fs::remove(temp_save_path);
                                 logger::info("[{}] Rename target dir name with LOT No. {}", get_name(), _renamed_target_dirname);
                             }
                             else {

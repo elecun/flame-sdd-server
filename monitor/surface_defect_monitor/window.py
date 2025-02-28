@@ -45,9 +45,6 @@ from requester.light_control import LightControlRequester
 from requester.pulse_generator import PulseGeneratorRequester
 from subscriber.camera import CameraMonitorSubscriber
 
-# [note!] important!!!
-remap_id = {"1":"9", "2":"2", "3":"3", "4":"8", "5":"4", "6":"5", "7":"6", "8":"7", "9":"1", "10":"10" }
-
 class AppWindow(QMainWindow):
     def __init__(self, config:dict):
         """ initialization """
