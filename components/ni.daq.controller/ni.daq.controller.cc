@@ -202,7 +202,7 @@ void ni_daq_controller::_daq_dio_read_task(){
                         if(prev_dio_value==0 && dio_value==1){ //rising edge
                             _publish_hmd_signal("hmd_signal", true);                      
                         }
-                        else if(prev_dio_value==1 && dio_value=0){ //falling edge
+                        else if(prev_dio_value==1 && dio_value==0){ //falling edge
                             _publish_hmd_signal("hmd_signal", false);
                         }
     
