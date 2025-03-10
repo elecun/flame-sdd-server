@@ -4,8 +4,7 @@
 
     "parameters":{
         "n_devices" : 10,
-        "preset_path_org":"/home/dksteel/flame-sdd-server/bin/x86_64/dk_h_inspector_onsite/preset",
-        "preset_path":"/home/dev/dev/flame-sdd-server/bin/x86_64/preset",
+        "preset_path":"/home/dksteel/dev/flame-sdd-server/bin/x86_64/preset",
         "devices":[
             {"camera_id":1, "sn":"00D9AA93", "device_id":9},
             {"camera_id":2, "sn":"00D99B0A", "device_id":2},
