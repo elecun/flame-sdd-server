@@ -206,7 +206,7 @@ void dk_level2_interface::_do_server_work(json parameters){
                                 data_pack["mt_stand_width"] = dim.width;
                                 data_pack["mt_stand_t1"] = dim.t1;
                                 data_pack["mt_stand_t2"] = dim.t2;
-                                data_pack["mt_length"] = stol(remove_space(packet.cMtLength, sizeof(packet.cMtLength)));
+                                data_pack["fm_length"] = stol(remove_space(packet.cFMLength, sizeof(packet.cFMLength)));
 
                                 /* publish the level2 data via lv2_dispatch port */
                                 string topic = fmt::format("lv2_dispatch", get_name());
