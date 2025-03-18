@@ -98,8 +98,6 @@ class AppWindow(QMainWindow):
                 self.__frame_defect_grid_plot.addLegend()
                 
                 # register button event callback function
-                self.btn_trigger_start.clicked.connect(self.on_btn_trigger_start)
-                self.btn_trigger_stop.clicked.connect(self.on_btn_trigger_stop)
                 self.btn_focus_set_1.clicked.connect(partial(self.on_btn_focus_set, 1))
                 self.btn_focus_set_2.clicked.connect(partial(self.on_btn_focus_set, 2))
                 self.btn_focus_set_3.clicked.connect(partial(self.on_btn_focus_set, 3))
@@ -411,26 +409,6 @@ class AppWindow(QMainWindow):
 
     def on_update_temperature_status(self, msg:str): # update temperature control monitoring pipeline status
         self.label_temp_monitor_pipeline_message.setText(msg)
-
-    
-
-    def on_btn_trigger_start(self):
-        """ event callback : trigger start """
-        freq = self.findChild(QLineEdit, name="edit_trigger_frequency").text()
-        duty = self.findChild(QLineEdit, name="edit_trigger_duty").text()
-        
-
-        # if continuous_mode:
-        #     self.__pulse_generator_requester.start_generation(float(freq), float(duty))
-        # else:
-        #     self.__trigger.start_trigger_finite("Dev1/ctr0", float(freq), int(samples), float(duty))
-            
-        self.statusBar().showMessage(f"Trigger is now started")
-
-    def on_btn_trigger_stop(self):
-        """ event callback : trigger stop """
-        self.__pulse_generator_requester.stop_generation()
-        self.statusBar().showMessage(f"Trigger is now stopped")
         
     
     def on_btn_defect_visualization_test(self):
