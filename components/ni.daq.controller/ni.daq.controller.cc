@@ -250,7 +250,7 @@ void ni_daq_controller::_publish_hmd_signal(const char* portname, bool value){
     } 
 }
 
-void ni_daq_controller::_publish_entry_signal(const char* portname, bool value){
+void ni_daq_controller::_publish_line_signal(const char* portname, bool value){
     /* publish data */
     if(get_port(portname)->handle()!=nullptr){
         zmq::multipart_t msg_multipart;

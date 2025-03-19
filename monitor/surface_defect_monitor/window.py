@@ -41,6 +41,7 @@ from subscriber.camera_status import CameraStatusMonitorSubscriber
 from publisher.lens_control import LensControlPublisher
 from publisher.camera_control import CameraControlPublisher
 from publisher.hmd_signal_control import HMDSignalControlPublisher
+from publisher.line_signal_control import LineSignalControlPublisher
 from requester.light_control import LightControlRequester
 from requester.pulse_generator import PulseGeneratorRequester
 from subscriber.camera import CameraMonitorSubscriber
@@ -119,12 +120,13 @@ class AppWindow(QMainWindow):
                 self.btn_exposure_time_set_9.clicked.connect(partial(self.on_btn_exposure_time_set, 9))
                 self.btn_exposure_time_set_10.clicked.connect(partial(self.on_btn_exposure_time_set, 10))
                 self.btn_focus_read_all.clicked.connect(self.on_btn_focus_read_all)
-                self.btn_defect_visualization_test.clicked.connect(self.on_btn_defect_visualization_test)
                 self.btn_focus_initialize_all.clicked.connect(self.on_btn_focus_initialize_all)
                 self.btn_focus_preset_set_all.clicked.connect(self.on_btn_focus_preset_set_all)
                 self.btn_focus_preset_load.clicked.connect(self.on_btn_focus_preset_load)
-                self.btn_test_hmd_signal_on.clicked.connect(self.on_btn_hmd_signal_on)
-                self.btn_test_hmd_signal_off.clicked.connect(self.on_btn_hmd_signal_off)
+                self.btn_hmd_signal_on.clicked.connect(self.on_btn_hmd_signal_on)
+                self.btn_hmd_signal_off.clicked.connect(self.on_btn_hmd_signal_off)
+                self.btn_online.clicked.connect(self.on_btn_set_online)
+                self.btn_offline.clicked.connect(self.on_btn_set_offline)
 
                 # register dial event callback function
                 self.dial_light_control.valueChanged.connect(self.on_change_light_control)
@@ -180,6 +182,12 @@ class AppWindow(QMainWindow):
                     if "hmd_signal_control_source" in config:
                         self.__console.info("+ Create HMD Signal Control Publisher...")
                         self.__hmd_signal_control_publisher = HMDSignalControlPublisher(self.__pipeline_context, connection=config["hmd_signal_control_source"])
+
+                # create line(online, offline) control publisher
+                if "use_line_signal_control" in config and config["use_line_signal_control"]:
+                    if "line_signal_control_source" in config:
+                        self.__console.info("+ Create Line Signal Control Publisher...")
+                        self.__line_signal_control_publisher = LineSignalControlPublisher(self.__pipeline_context, connection=config["line_signal_control_source"])
 
                 # create camera control publisher
                 if "use_camera_control" in config and config["use_camera_control"]:
@@ -273,6 +281,16 @@ class AppWindow(QMainWindow):
         """ (test) hmd off signal """
         if self.__hmd_signal_control_publisher:
             self.__hmd_signal_control_publisher.set_signal_on(False)
+
+    def on_btn_set_online(self):
+        """ stay online"""
+        if self.__line_signal_control_publisher:
+            self.__line_signal_control_publisher.set_signal_on(True)
+
+    def on_btn_set_offline(self):
+        """ stay offline """
+        if self.__line_signal_control_publisher:
+            self.__line_signal_control_publisher.set_signal_on(False)
 
 
     def on_change_light_control(self, value):

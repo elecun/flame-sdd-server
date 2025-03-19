@@ -8,7 +8,7 @@
     <x>0</x>
     <y>0</y>
     <width>1280</width>
-    <height>1020</height>
+    <height>991</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -856,9 +856,9 @@ background-color: rgb(212, 212, 212);</string>
       <property name="geometry">
        <rect>
         <x>505</x>
-        <y>170</y>
-        <width>226</width>
-        <height>166</height>
+        <y>190</y>
+        <width>236</width>
+        <height>146</height>
        </rect>
       </property>
       <property name="font">
@@ -871,8 +871,100 @@ background-color: rgb(212, 212, 212);</string>
        <string notr="true"/>
       </property>
       <property name="title">
-       <string>카메라 트리거 수동 제어</string>
+       <string>Manual Control</string>
       </property>
+      <widget class="QPushButton" name="btn_hmd_signal_on">
+       <property name="geometry">
+        <rect>
+         <x>5</x>
+         <y>30</y>
+         <width>106</width>
+         <height>26</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">color: rgb(0,0,0);
+background-color: rgb(212, 212, 212);</string>
+       </property>
+       <property name="text">
+        <string>MD Signal ON</string>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="btn_hmd_signal_off">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
+         <y>30</y>
+         <width>106</width>
+         <height>26</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">color: rgb(0,0,0);
+background-color: rgb(212, 212, 212);</string>
+       </property>
+       <property name="text">
+        <string>MD Signal OFF</string>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="btn_online">
+       <property name="geometry">
+        <rect>
+         <x>5</x>
+         <y>65</y>
+         <width>106</width>
+         <height>26</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">color: rgb(0,0,0);
+background-color: rgb(212, 212, 212);</string>
+       </property>
+       <property name="text">
+        <string>Set Online</string>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="btn_offline">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
+         <y>65</y>
+         <width>106</width>
+         <height>26</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">color: rgb(0,0,0);
+background-color: rgb(212, 212, 212);</string>
+       </property>
+       <property name="text">
+        <string>Set Offline</string>
+       </property>
+      </widget>
      </widget>
      <widget class="QDial" name="dial_light_control">
       <property name="geometry">
@@ -2118,6 +2210,28 @@ color: rgb(0, 255, 0);</string>
        </property>
       </widget>
      </widget>
+     <widget class="QPushButton" name="btn_light_control_off">
+      <property name="geometry">
+       <rect>
+        <x>645</x>
+        <y>150</y>
+        <width>91</width>
+        <height>26</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>Arial</family>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">color: rgb(0,0,0);
+background-color: rgb(212, 212, 212);</string>
+      </property>
+      <property name="text">
+       <string>Light Off</string>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="tab_1">
      <attribute name="title">
@@ -2126,10 +2240,10 @@ color: rgb(0, 255, 0);</string>
      <widget class="QLabel" name="label_system_2">
       <property name="geometry">
        <rect>
-        <x>985</x>
+        <x>900</x>
         <y>5</y>
-        <width>256</width>
-        <height>241</height>
+        <width>341</width>
+        <height>331</height>
        </rect>
       </property>
       <property name="text">
@@ -2907,97 +3021,6 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="text">
         <string>Set</string>
-       </property>
-      </widget>
-     </widget>
-    </widget>
-    <widget class="QWidget" name="tab_3">
-     <attribute name="title">
-      <string>Test</string>
-     </attribute>
-     <widget class="QPushButton" name="btn_defect_visualization_test">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>15</y>
-        <width>211</width>
-        <height>41</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>Arial</family>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">color: rgb(0,0,0);
-background-color: rgb(212, 212, 212);</string>
-      </property>
-      <property name="text">
-       <string>Defect Visualization Test</string>
-      </property>
-     </widget>
-     <widget class="QGroupBox" name="groupBox_4">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>70</y>
-        <width>286</width>
-        <height>80</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <pointsize>12</pointsize>
-       </font>
-      </property>
-      <property name="title">
-       <string>HMD Signal Message</string>
-      </property>
-      <widget class="QPushButton" name="btn_test_hmd_signal_on">
-       <property name="geometry">
-        <rect>
-         <x>15</x>
-         <y>30</y>
-         <width>121</width>
-         <height>41</height>
-        </rect>
-       </property>
-       <property name="font">
-        <font>
-         <family>Arial</family>
-         <pointsize>13</pointsize>
-        </font>
-       </property>
-       <property name="styleSheet">
-        <string notr="true">color: rgb(0,0,0);
-background-color: rgb(212, 212, 212);</string>
-       </property>
-       <property name="text">
-        <string>HMD ON</string>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="btn_test_hmd_signal_off">
-       <property name="geometry">
-        <rect>
-         <x>150</x>
-         <y>30</y>
-         <width>121</width>
-         <height>41</height>
-        </rect>
-       </property>
-       <property name="font">
-        <font>
-         <family>Arial</family>
-         <pointsize>13</pointsize>
-        </font>
-       </property>
-       <property name="styleSheet">
-        <string notr="true">color: rgb(0,0,0);
-background-color: rgb(212, 212, 212);</string>
-       </property>
-       <property name="text">
-        <string>HMD OFF</string>
        </property>
       </widget>
      </widget>

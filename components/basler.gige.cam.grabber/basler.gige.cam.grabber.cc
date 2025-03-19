@@ -66,10 +66,10 @@ bool basler_gige_cam_grabber::on_init(){
             }
         }
 
-        if(parameters.contains("use_entry_signal")){
-            bool enable = parameters.value("use_entry_signal", false);
+        if(parameters.contains("use_line_signal")){
+            bool enable = parameters.value("use_line_signal", false);
             if(enable){
-                _entry_signal_worker = thread(&basler_gige_cam_grabber::_entry_signal_subscribe, this);
+                _line_signal_worker = thread(&basler_gige_cam_grabber::_line_signal_subscribe, this);
                 logger::info("[{}] Entry Signal subscriber is running...", get_name());
             }
         }
@@ -136,9 +136,9 @@ void basler_gige_cam_grabber::on_close(){
     }
 
     /* stio the entry signal subscriber worker */
-    if(_entry_signal_worker.joinable()){
-        _entry_signal_worker.join();
-        logger::info("[{}] Entry Signal subscriber is now stopped", get_name());
+    if(_line_signal_worker.joinable()){
+        _line_signal_worker.join();
+        logger::info("[{}] Line Signal subscriber is now stopped", get_name());
     }
 
     /* stop camera control workers */
@@ -358,7 +358,7 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                             string id_str = fmt::format("{}",camera_id);
     
                             /* push image data */
-                            if(_image_stream_enable.load() && _entry_signal_on.load()){
+                            if(_image_stream_enable.load() && _line_signal_on.load()){
                                 /* camera grab status update */
                                 _camera_grab_counter[camera_id].store(++camera_grab_counter);
     
@@ -497,12 +497,12 @@ void basler_gige_cam_grabber::_level2_dispatch_task(){
     }
 }
 
-void basler_gige_cam_grabber::_entry_signal_subscribe(){
+void basler_gige_cam_grabber::_line_signal_subscribe(){
     try{
         while(!_worker_stop.load()){
             try{
                 zmq::multipart_t msg_multipart;
-                bool success = msg_multipart.recv(*get_port("entry_signal"));
+                bool success = msg_multipart.recv(*get_port("line_signal"));
                 if(success){
                     string topic = msg_multipart.popstr();
                     string data = msg_multipart.popstr();
@@ -510,8 +510,8 @@ void basler_gige_cam_grabber::_entry_signal_subscribe(){
 
                     if(json_data.contains("signal_on")){
                         bool signal_on = json_data["signal_on"].get<bool>();
-                        _entry_signal_on.store(signal_on);
-                        logger::info("[{}] Entry Signal(Online) ON : {}", get_name(), signal_on);
+                        _line_signal_on.store(signal_on);
+                        logger::info("[{}] Line Signal(Online) ON : {}", get_name(), signal_on);
                     }
                 }
             }
