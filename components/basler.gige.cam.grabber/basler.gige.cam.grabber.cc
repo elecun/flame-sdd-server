@@ -66,6 +66,14 @@ bool basler_gige_cam_grabber::on_init(){
             }
         }
 
+        if(parameters.contains("use_entry_signal")){
+            bool enable = parameters.value("use_entry_signal", false);
+            if(enable){
+                _entry_signal_worker = thread(&basler_gige_cam_grabber::_entry_signal_subscribe, this);
+                logger::info("[{}] Entry Signal subscriber is running...", get_name());
+            }
+        }
+
     }
     catch(const GenericException& e){
         logger::error("[{}] Pylon Generic Exception : {}", get_name(), e.GetDescription());
@@ -121,9 +129,16 @@ void basler_gige_cam_grabber::on_close(){
         logger::info("[{}] Image Stream Control Worker is now stopped", get_name());
     }
 
+    /* stop the level2 interface worker */
     if(_level2_dispatch_worker.joinable()){
         _level2_dispatch_worker.join();
         logger::info("[{}] Level2 Interface Data dispatcher is now stopped", get_name());
+    }
+
+    /* stio the entry signal subscriber worker */
+    if(_entry_signal_worker.joinable()){
+        _entry_signal_worker.join();
+        logger::info("[{}] Entry Signal subscriber is now stopped", get_name());
     }
 
     /* stop camera control workers */
@@ -262,7 +277,7 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
         int heartbeat_timeout = parameters.value("heartbeat_timeout", 5000);
         
         
-        // camera exposure time set
+        // camera exposure time set (initial)
         for(auto& param:parameters["cameras"]){
             int id = param["id"].get<int>();
             if(id==camera_id){
@@ -343,7 +358,7 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                             string id_str = fmt::format("{}",camera_id);
     
                             /* push image data */
-                            if(_image_stream_enable.load()){
+                            if(_image_stream_enable.load() && _entry_signal_on.load()){
                                 /* camera grab status update */
                                 _camera_grab_counter[camera_id].store(++camera_grab_counter);
     
@@ -465,6 +480,40 @@ void basler_gige_cam_grabber::_level2_dispatch_task(){
                     }
                 }
 
+            }
+            catch(const zmq::error_t& e){
+                break;
+            }
+        }
+    }
+    catch(const zmq::error_t& e){
+        logger::error("[{}] Pipeline error : {}", get_name(), e.what());
+    }
+    catch(const std::runtime_error& e){
+        logger::error("[{}] Runtime error occurred!", get_name());
+    }
+    catch(const json::parse_error& e){
+        logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());
+    }
+}
+
+void basler_gige_cam_grabber::_entry_signal_subscribe(){
+    try{
+        while(!_worker_stop.load()){
+            try{
+                zmq::multipart_t msg_multipart;
+                bool success = msg_multipart.recv(*get_port("entry_signal"));
+                if(success){
+                    string topic = msg_multipart.popstr();
+                    string data = msg_multipart.popstr();
+                    auto json_data = json::parse(data);
+
+                    if(json_data.contains("signal_on")){
+                        bool signal_on = json_data["signal_on"].get<bool>();
+                        _entry_signal_on.store(signal_on);
+                        logger::info("[{}] Entry Signal(Online) ON : {}", get_name(), signal_on);
+                    }
+                }
             }
             catch(const zmq::error_t& e){
                 break;

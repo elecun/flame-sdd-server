@@ -249,3 +249,19 @@ void ni_daq_controller::_publish_hmd_signal(const char* portname, bool value){
         msg_multipart.send(*get_port(portname), ZMQ_DONTWAIT);
     } 
 }
+
+void ni_daq_controller::_publish_entry_signal(const char* portname, bool value){
+    /* publish data */
+    if(get_port(portname)->handle()!=nullptr){
+        zmq::multipart_t msg_multipart;
+        string topic = portname;
+
+        json data_pack;
+        data_pack["signal_on"] = value;
+        string data = data_pack.dump();
+        
+        msg_multipart.addstr(topic);
+        msg_multipart.addstr(data);
+        msg_multipart.send(*get_port(portname), ZMQ_DONTWAIT);
+    }
+}

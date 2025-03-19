@@ -52,6 +52,7 @@ class ni_daq_controller : public flame::component::object {
 
         /* hmd signal publisher */
         void _publish_hmd_signal(const char* portname, bool value); 
+        void _publish_entry_signal(const char* portname, bool value);
 
 }; /* class */
 
