@@ -4,6 +4,8 @@
 
     "parameters":{
         "realtime_monitoring":true,
+        "use_level2_interface":true,
+        "preset_path":"/home/dksteel/dev/flame-sdd-server/bin/x86_64/preset",
         "acquisition_mode":"Continuous",
         "trigger_selector":"FrameStart",
         "trigger_mode":"On",
@@ -228,6 +230,13 @@
             "transport" : "inproc",
             "socket_type" : "push",
             "queue_size" : 10000
+        },
+        "lv2_dispatch" : {
+            "transport" : "tcp",
+            "host":"127.0.0.1",
+            "port" : 5604,
+            "socket_type" : "sub",
+            "queue_size" : 100
         }
     }
 }

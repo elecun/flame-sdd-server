@@ -19,9 +19,17 @@ bool basler_gige_cam_grabber::on_init(){
 
     try{
 
+        /* get parameters from profile */
+        json parameters = get_profile()->parameters();
+
         /* read profile */
-        _prof_realtime_monitoring.store(get_profile()->parameters().value("realtime_monitoring", false));
- 
+        _prof_realtime_monitoring.store(parameters.value("realtime_monitoring", false));
+
+        /* read preset path */
+        if(get_profile()->parameters().contains("preset_path")){
+            _preset_path = get_profile()->parameters()["preset_path"].get<string>();
+            logger::info("[{}] Preset path : {}", get_name(), _preset_path);
+        }
 
         /* pylon initialize */
         PylonInitialize();
@@ -48,6 +56,15 @@ bool basler_gige_cam_grabber::on_init(){
 
         /* image stream control worker */
         _image_stream_control_worker = thread(&basler_gige_cam_grabber::_image_stream_control_task, this);
+
+        /* level2 interface worker */
+        if(parameters.contains("use_level2_interface")){
+            bool enable = parameters.value("use_level2_interface", false);
+            if(enable){
+                _level2_dispatch_worker = thread(&basler_gige_cam_grabber::_level2_dispatch_task, this);
+                logger::info("[{}] Level2 Data interface is running...", get_name());
+            }
+        }
 
     }
     catch(const GenericException& e){
@@ -102,6 +119,11 @@ void basler_gige_cam_grabber::on_close(){
     if(_image_stream_control_worker.joinable()){
         _image_stream_control_worker.join();
         logger::info("[{}] Image Stream Control Worker is now stopped", get_name());
+    }
+
+    if(_level2_dispatch_worker.joinable()){
+        _level2_dispatch_worker.join();
+        logger::info("[{}] Level2 Interface Data dispatcher is now stopped", get_name());
     }
 
     /* stop camera control workers */
@@ -281,6 +303,19 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
             try{
                 if(!camera->IsGrabbing())
                     break;
+
+                //change camera exposure time value by level2 info.
+                if(_camera_exposure_time.contains(camera_id)){
+                    int extime = _camera_exposure_time[camera_id].load();
+                    if(extime!=0){
+                        CFloatParameter param(camera->GetNodeMap(), "ExposureTime");
+                        if(param.IsWritable()) {
+                            param.SetValue((double)extime);
+                            logger::info("[{}] Camera #{} Exposure Time set : {}", get_name(), camera_id, extime);
+                            _camera_exposure_time[camera_id].store(0);
+                        }
+                    }
+                }
                 
                 bool success = camera->RetrieveResult(5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException); //trigger mode makes it blocked
                 if(!success){
@@ -379,5 +414,70 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
     }
     catch(const GenericException& e){
         logger::error("[{}] {}", get_name(), e.GetDescription());
+    }
+}
+
+
+void basler_gige_cam_grabber::_level2_dispatch_task(){
+    try{
+        while(!_worker_stop.load()){
+            try{
+                zmq::multipart_t msg_multipart;
+                bool success = msg_multipart.recv(*get_port("lv2_dispatch"));
+                if(success){
+                    string topic = msg_multipart.popstr();
+                    string data = msg_multipart.popstr();
+                    auto json_data = json::parse(data);
+
+                    // level2 data processing
+                    if(json_data.contains("mt_stand_height") && json_data.contains("mt_stand_width") && json_data.contains("mt_stand_t1") && json_data.contains("mt_stand_t2")){
+
+                        /* 1. for move focus function processing */
+                        int height = json_data["mt_stand_height"].get<int>();
+                        int width = json_data["mt_stand_width"].get<int>();
+                        double t1 = json_data["mt_stand_t1"].get<double>();
+                        double t2 = json_data["mt_stand_t2"].get<double>();
+
+                        /* find file */
+                        string preset_file = fmt::format("{}/{}_{}_{}_{}.preset", _preset_path, height, width, t1, t2);
+                        if(!std::filesystem::exists(preset_file)){
+                            logger::error("[{}] Preset file not found : {}", get_name(), preset_file);
+                        }
+                        else{
+                            logger::info("[{}] Applying preset file : {}", get_name(), preset_file);
+                            try{
+                                std::ifstream file(preset_file);
+                                json et_preset;
+                                file >> et_preset;
+                                
+                                if(et_preset.contains("camera_exposure_time")){
+                                    for(auto& [camera_id, et_value]:et_preset["camera_exposure_time"].items()){
+                                        int id = stoi(camera_id);
+                                        _camera_exposure_time[id].store(et_value.get<int>());
+                                        logger::info("[{}] ready to change camera exposure time", get_name(), id);
+                                    }
+                                }
+                            }
+                            catch(const json::exception& e){
+                                logger::error("[{}] Preset file parse error : {}", get_name(), e.what());
+                            }
+                        }
+                    }
+                }
+
+            }
+            catch(const zmq::error_t& e){
+                break;
+            }
+        }
+    }
+    catch(const zmq::error_t& e){
+        logger::error("[{}] Pipeline error : {}", get_name(), e.what());
+    }
+    catch(const std::runtime_error& e){
+        logger::error("[{}] Runtime error occurred!", get_name());
+    }
+    catch(const json::parse_error& e){
+        logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());
     }
 }
