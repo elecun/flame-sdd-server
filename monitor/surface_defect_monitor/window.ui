@@ -919,7 +919,7 @@ background-color: rgb(212, 212, 212);</string>
         <string>MD Signal OFF</string>
        </property>
       </widget>
-      <widget class="QPushButton" name="btn_online">
+      <widget class="QPushButton" name="btn_set_online">
        <property name="geometry">
         <rect>
          <x>5</x>
@@ -939,10 +939,10 @@ background-color: rgb(212, 212, 212);</string>
 background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="text">
-        <string>Set Online</string>
+        <string>Set On-Line</string>
        </property>
       </widget>
-      <widget class="QPushButton" name="btn_offline">
+      <widget class="QPushButton" name="btn_set_offline">
        <property name="geometry">
         <rect>
          <x>120</x>
@@ -962,7 +962,7 @@ background-color: rgb(212, 212, 212);</string>
 background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="text">
-        <string>Set Offline</string>
+        <string>Set Off-Line</string>
        </property>
       </widget>
      </widget>
