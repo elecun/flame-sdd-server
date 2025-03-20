@@ -66,13 +66,15 @@ void autonics_temp_controller::on_loop(){
         json data_pack;
 
         for(int slave_addr : _slave_addrs){
+            if(_modbus_ctx==nullptr)
+                break;
+
             modbus_set_slave(_modbus_ctx, slave_addr);
 
             uint16_t reg[2];
             int rc = modbus_read_input_registers(_modbus_ctx, READ_PRESENT_VALUE, 2, reg); // read PV
             if(rc==-1){
-                logger::error("[{}] Modbus RTU read failed (Address : {})", get_name(), slave_addr);
-                logger::error("[{}] {}", get_name(), modbus_strerror(errno));
+                logger::error("[{}] Modbus RTU read failed (Address : {}), {}", get_name(), slave_addr, modbus_strerror(errno));
                 continue;
             }
             else {
@@ -84,16 +86,17 @@ void autonics_temp_controller::on_loop(){
         }
 
         /* publish all packed data */
-        string topic = fmt::format("{}/temp_stream", get_name());
-        string data = data_pack.dump();
+        if(!data_pack.empty()){
+            string topic = fmt::format("{}/temp_stream", get_name());
+            string data = data_pack.dump();
 
-        zmq::multipart_t msg_multipart;
-        msg_multipart.addstr(topic);
-        msg_multipart.addstr(data);
+            zmq::multipart_t msg_multipart;
+            msg_multipart.addstr(topic);
+            msg_multipart.addstr(data);
 
-        /* send data */
-        msg_multipart.send(*get_port("temp_stream"), ZMQ_DONTWAIT);
-
+            /* send data */
+            msg_multipart.send(*get_port("temp_stream"), ZMQ_DONTWAIT);
+        }
     }
     catch(std::runtime_error& e){
         logger::error("[{}] {}", get_name(), e.what());
