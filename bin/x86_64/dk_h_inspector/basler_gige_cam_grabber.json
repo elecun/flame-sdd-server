@@ -245,6 +245,13 @@
             "port":5402,
             "socket_type" : "sub",
             "queue_size" : 1000
+        },
+        "online_signal_control" : {
+            "transport":"tcp",
+            "host":"127.0.0.1",
+            "port":5412,
+            "socket_type" : "sub",
+            "queue_size" : 1000
         }
     }
 }
