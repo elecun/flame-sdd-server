@@ -367,6 +367,11 @@ class AppWindow(QMainWindow):
             self.__hmd_signal_control_publisher.close()
             self.__console.info("Close HMD Signal Control Publisher")
 
+        # close line signal control publisher
+        if self.__line_signal_control_publisher:
+            self.__line_signal_control_publisher.close()
+            self.__console.info("Close Line Signal Control Publisher")
+
         # close pulse generator requester
         if self.__pulse_generator_requester:
             self.__pulse_generator_requester.close()

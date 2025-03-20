@@ -18,12 +18,16 @@ bool ni_daq_controller::on_init(){
     /* read profile */
     _daq_device_name = get_profile()->parameters().value("device_name", "Dev1");
     _daq_counter_channel = get_profile()->parameters().value("counter_channel", "ctr0:1");
-    _daq_di_channel = get_profile()->parameters().value("di_channel", "PFI0");
+    _daq_md_signal_channel = get_profile()->parameters().value("md_signal_channel", "PFI0");
+    _daq_offline_signal_channel = get_profile()->parameters().value("offline_signal_channel", "PFI1");
+    _daq_online_signal_channel = get_profile()->parameters().value("online_signal_channel", "PFI2");
     _daq_pulse_freq = get_profile()->parameters().value("counter_pulse_freq", 30.0);
     _daq_pulse_duty = get_profile()->parameters().value("counter_pulse_duty", 0.5);
 
     string counter_dev_channel = fmt::format("{}/{}", _daq_device_name, _daq_counter_channel);
-    string di_dev_channel = fmt::format("{}/{}", _daq_device_name, _daq_di_channel);
+    string di_dev_channel = fmt::format("{}/{},{}/{},{}/{}", _daq_device_name, _daq_md_signal_channel,
+                                                             _daq_device_name, _daq_offline_signal_channel, 
+                                                             _daq_device_name, _daq_online_signal_channel);
 
     /* start workers */
     bool auto_start = get_profile()->parameters().value("auto_start", false);
@@ -54,12 +58,12 @@ bool ni_daq_controller::on_init(){
         }
 
         /* create hmd signal reader task */
-        if(DAQmxCreateTask("hmd_signal_reader", &_task_handle_dio_reader)!=DAQmxSuccess){
+        if(DAQmxCreateTask("line_signal_reader", &_task_handle_dio_reader)!=DAQmxSuccess){
             logger::error("[{}] Failed to create DAQ task : Pulse Generation", get_name());
             return false;
         }
 
-        if(DAQmxCreateDIChan(_task_handle_dio_reader, di_dev_channel.c_str(), "", DAQmx_Val_ChanForAllLines)!=DAQmxSuccess){
+        if(DAQmxCreateDIChan(_task_handle_dio_reader, di_dev_channel.c_str(), "", DAQmx_Val_ChanPerLine)!=DAQmxSuccess){
             logger::error("[{}] Failed to DIO read channel", get_name());
             DAQmxClearTask(_task_handle_dio_reader);
             return false;
@@ -189,25 +193,36 @@ void ni_daq_controller::_daq_dio_read_task(){
 
     /* start task */
     DAQmxStartTask(_task_handle_dio_reader);
-    unsigned char dio_value;
+    unsigned char dio_values[3] = {0,};
     int read_samples;
-    unsigned char prev_dio_value = 0;
+    unsigned char prev_dio_values[3] = {0, };
 
     try {
         while(!_worker_stop.load()){
             try{
                 if(_task_handle_dio_reader!=0){
-                    if(DAQmxReadDigitalU8(_task_handle_dio_reader, 1, 10.0, DAQmx_Val_GroupByChannel, &dio_value, 1, &read_samples, nullptr)==DAQmxSuccess){
 
-                        if(prev_dio_value==0 && dio_value==1){ //rising edge
-                            _publish_hmd_signal("hmd_signal", true);                      
+                    if(DAQmxReadDigitalLines(_task_handle_dio_reader, 1, 10.0, DAQmx_Val_GroupByChannel, dio_values, sizeof(dio_values), &read_samples, nullptr, nullptr)==DAQmxSuccess){
+                        
+                        // md signal
+                        if(prev_dio_values[0]==0 && dio_values[0]==1){ //rising edge
+                            _publish_hmd_signal("hmd_signal", true);
                         }
-                        else if(prev_dio_value==1 && dio_value==0){ //falling edge
+                        else if(prev_dio_values[0]==1 && dio_values[0]==0){ //falling edge
                             _publish_hmd_signal("hmd_signal", false);
                         }
-    
-                        /* value update */
-                        prev_dio_value = dio_value;
+
+                        // online signal
+                        if(prev_dio_values[2]==0 && dio_values[2]==1){ //rising edge
+                            _publish_online_signal("online_signal", true);
+                        }
+                        else if(prev_dio_values[0]==1 && dio_values[0]==0){ //falling edge
+                            _publish_online_signal("online_signal", false);
+                        }
+
+
+                        /* value updates */
+                        memcpy(prev_dio_values, dio_values, sizeof(dio_values));
                     }
                 }
             }
@@ -250,7 +265,7 @@ void ni_daq_controller::_publish_hmd_signal(const char* portname, bool value){
     } 
 }
 
-void ni_daq_controller::_publish_line_signal(const char* portname, bool value){
+void ni_daq_controller::_publish_online_signal(const char* portname, bool value){
     /* publish data */
     if(get_port(portname)->handle()!=nullptr){
         zmq::multipart_t msg_multipart;

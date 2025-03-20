@@ -50,15 +50,15 @@ class LineSignalControlPublisher(QObject):
     def set_signal_on(self, signal_on:bool):
         """ set signal on """
         try:
-            topic = "line_signal"
+            topic = "online_signal"
             message = {"signal_on":signal_on}
             jmsg = json.dumps(message)
 
             self.__socket.send_multipart([topic.encode(), jmsg.encode()])
-            self.__console.info(f"Publish Line Signal Control : {signal_on}")
+            self.__console.info(f"Publish on-Line Signal Control : {signal_on}")
 
         except zmq.ZMQError as e:
-            self.__console.error(f"<Line Signal Control> {e}")
+            self.__console.error(f"<on-Line Signal Control> {e}")
 
     
     def close(self):

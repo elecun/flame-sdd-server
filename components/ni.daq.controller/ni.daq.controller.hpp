@@ -35,7 +35,9 @@ class ni_daq_controller : public flame::component::object {
         /* daq parameters */
         string _daq_device_name {""};
         string _daq_counter_channel {""};
-        string _daq_di_channel {""};
+        string _daq_md_signal_channel {""};
+        string _daq_offline_signal_channel {""};
+        string _daq_online_signal_channel {""};
         double _daq_pulse_freq {30.0};
         double _daq_pulse_duty {0.5};
 
@@ -52,7 +54,7 @@ class ni_daq_controller : public flame::component::object {
 
         /* hmd signal publisher */
         void _publish_hmd_signal(const char* portname, bool value); 
-        void _publish_line_signal(const char* portname, bool value);
+        void _publish_online_signal(const char* portname, bool value);
 
 }; /* class */
 

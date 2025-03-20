@@ -32,7 +32,7 @@ def monitor_multiple_inputs():
     with nidaqmx.Task() as trigger_task:
         # 유효한 채널 명시 방식으로 수정
         trigger_task.di_channels.add_di_chan(
-            f"{DEVICE_NAME}/port1/line0,{DEVICE_NAME}/port1/line2,{DEVICE_NAME}/port1/line3",
+            f"Dev1/port1/line0,Dev1/port1/line2,Dev1/port1/line3",
             line_grouping=LineGrouping.CHAN_PER_LINE
         )
 
