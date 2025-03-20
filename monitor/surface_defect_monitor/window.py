@@ -45,6 +45,8 @@ from publisher.line_signal_control import LineSignalControlPublisher
 from requester.light_control import LightControlRequester
 from requester.pulse_generator import PulseGeneratorRequester
 from subscriber.camera import CameraMonitorSubscriber
+from subscriber.line_signal_control import LineSignalControlSubscriber
+from subscriber.dk_level2 import DKLevel2DataSubscriber
 
 class AppWindow(QMainWindow):
     def __init__(self, config:dict):
@@ -167,6 +169,14 @@ class AppWindow(QMainWindow):
                         self.__camera_status_monitor_subscriber = CameraStatusMonitorSubscriber(self.__pipeline_context, connection=config["camera_status_monitor_source"], topic=config["camera_status_monitor_topic"])
                         self.__camera_status_monitor_subscriber.status_update_signal.connect(self.on_update_camera_status)
                         self.__camera_status_monitor_subscriber.start() # run in thread
+
+                # dk level2 data monitoring subscriber
+                if "use_dk_level2_interface" in config and config["use_dk_level2_interface"]:
+                    if "dk_level2_interface_source" in config and "dk_level2_interface_topic" in config:
+                        self.__console.info("+ Create DK Level2 Data Subscriber...")
+                        self.__dk_level2_data_subscriber = DKLevel2DataSubscriber(self.__pipeline_context, connection=config["dk_level2_interface_source"], topic=config["dk_level2_interface_topic"])
+                        self.__dk_level2_data_subscriber.level2_data_update_signal.connect(self.on_update_dk_level2_data)
+                        self.__dk_level2_data_subscriber.start()
 
                 # create lens control publisher
                 if "use_lens_control" in config and config["use_lens_control"]:
@@ -381,6 +391,11 @@ class AppWindow(QMainWindow):
         if self.__temp_monitor_subscriber:
             self.__temp_monitor_subscriber.close()
             self.__console.info("Close Temperature Subscriber")
+
+        if self.__dk_level2_data_subscriber:
+            self.__dk_level2_data_subscriber.close()
+            self.__console.info("Close DK Level2 Data Subscriber")
+    
     
         # close camera status monitor subscriber
         if self.__camera_status_monitor_subscriber:
@@ -429,6 +444,16 @@ class AppWindow(QMainWindow):
 
         except json.JSONDecodeError as e:
             self.__console.error(f"Camera Status Update Error : {e.waht()}")
+
+    def on_update_dk_level2_data(self, data:dict):
+        """ update dk level2 data """
+        try:
+            data = json.loads(data)
+            if "lot_no" in data:
+                self.label_lotno.setText(data["lot_no"])
+        except json.JSONDecodeError as e:
+            self.__console.error(f"Camera Status Update Error : {e.waht()}")
+        
 
     def on_update_temperature_status(self, msg:str): # update temperature control monitoring pipeline status
         self.label_temp_monitor_pipeline_message.setText(msg)
