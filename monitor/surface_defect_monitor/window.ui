@@ -893,7 +893,7 @@ background-color: rgb(212, 212, 212);</string>
 background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="text">
-        <string>MD Signal ON</string>
+        <string>MD ON</string>
        </property>
       </widget>
       <widget class="QPushButton" name="btn_hmd_signal_off">
@@ -916,7 +916,7 @@ background-color: rgb(212, 212, 212);</string>
 background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="text">
-        <string>MD Signal OFF</string>
+        <string>MD OFF</string>
        </property>
       </widget>
       <widget class="QPushButton" name="btn_set_online">
