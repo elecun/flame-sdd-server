@@ -871,7 +871,7 @@ background-color: rgb(212, 212, 212);</string>
        <string notr="true"/>
       </property>
       <property name="title">
-       <string>Manual Control</string>
+       <string>Signal Manual Control</string>
       </property>
       <widget class="QPushButton" name="btn_hmd_signal_on">
        <property name="geometry">
@@ -1096,7 +1096,7 @@ color: rgb(0,0,0);</string>
       <widget class="QLabel" name="label_level2_status">
        <property name="geometry">
         <rect>
-         <x>50</x>
+         <x>40</x>
          <y>30</y>
          <width>31</width>
          <height>26</height>
@@ -1122,7 +1122,7 @@ color: rgb(0,0,0);</string>
       <widget class="QLabel" name="label_camera_status">
        <property name="geometry">
         <rect>
-         <x>95</x>
+         <x>75</x>
          <y>30</y>
          <width>31</width>
          <height>26</height>
@@ -1148,7 +1148,7 @@ color: rgb(0,0,0);</string>
       <widget class="QLabel" name="label_lens_status">
        <property name="geometry">
         <rect>
-         <x>140</x>
+         <x>110</x>
          <y>30</y>
          <width>31</width>
          <height>26</height>
@@ -1174,7 +1174,7 @@ color: rgb(0,0,0);</string>
       <widget class="QLabel" name="label_nas_status">
        <property name="geometry">
         <rect>
-         <x>185</x>
+         <x>145</x>
          <y>30</y>
          <width>31</width>
          <height>26</height>
@@ -1200,7 +1200,7 @@ color: rgb(0,0,0);</string>
       <widget class="QLabel" name="label_light_controller_status">
        <property name="geometry">
         <rect>
-         <x>230</x>
+         <x>180</x>
          <y>30</y>
          <width>31</width>
          <height>26</height>
@@ -1226,7 +1226,7 @@ color: rgb(0,0,0);</string>
       <widget class="QLabel" name="label_hmd_signal_status">
        <property name="geometry">
         <rect>
-         <x>275</x>
+         <x>215</x>
          <y>30</y>
          <width>31</width>
          <height>26</height>
@@ -1244,6 +1244,32 @@ color: rgb(0,0,0);</string>
        </property>
        <property name="text">
         <string>HMD</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_hmd_signal_status_2">
+       <property name="geometry">
+        <rect>
+         <x>250</x>
+         <y>30</y>
+         <width>31</width>
+         <height>26</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background-color: rgb(200,200,200);
+color: rgb(0,0,0);</string>
+       </property>
+       <property name="text">
+        <string>OL</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -2183,7 +2209,7 @@ color: rgb(0, 255, 255);</string>
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
       </widget>
-      <widget class="QLabel" name="label_production_value">
+      <widget class="QLabel" name="label_lotno">
        <property name="geometry">
         <rect>
          <x>65</x>
