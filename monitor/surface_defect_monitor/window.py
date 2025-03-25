@@ -294,20 +294,15 @@ class AppWindow(QMainWindow):
 
     def on_check_online_signal(self, state):
         """ online signal control """
-        if self.on_check_online_signal.isChecked():
-            print("checked")
-
-
-    def on_btn_set_online(self):
-        """ stay online"""
-        if self.__line_signal_control_publisher:
-            self.__line_signal_control_publisher.set_online_signal_on(True)
-
-    def on_btn_set_offline(self):
-        """ stay offline """
-        if self.__line_signal_control_publisher:
-            self.__line_signal_control_publisher.set_online_signal_on(False)
-
+        online_checked = self.check_online_signal.isChecked()
+        offline_checked = self.check_offline_signal.isChecked()
+        self.__line_signal_control_publisher.set_line_signal(online_checked, offline_checked)
+            
+    def on_check_offline_signal(self, state):
+        """ offline signal control """
+        online_checked = self.check_online_signal.isChecked()
+        offline_checked = self.check_offline_signal.isChecked()
+        self.__line_signal_control_publisher.set_line_signal(online_checked, offline_checked)
 
     def on_change_light_control(self, value):
         """ control value update """
