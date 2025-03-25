@@ -27,7 +27,7 @@ from functools import partial
 class LineSignalControlSubscriber(QThread):
     """ Publisher for Line Status(On/Offline) Signal Control """
 
-    online_signal = pyqtSignal(bool)
+    line_signal = pyqtSignal(bool)
 
     def __init__(self, context:zmq.Context, connection:str, topic:str):
         super().__init__()
@@ -67,7 +67,7 @@ class LineSignalControlSubscriber(QThread):
                     topic, data = self.__socket.recv_multipart()
                     if topic.decode() == self.__topic:
                         data = json.loads(data.decode('utf8').replace("'", '"'))
-                        self.online_signal.emit(data)
+                        self.line_signal.emit(data)
             
             except json.JSONDecodeError as e:
                 self.__console.critical(f"<Online Signal Monitor>[DecodeError] {e}")

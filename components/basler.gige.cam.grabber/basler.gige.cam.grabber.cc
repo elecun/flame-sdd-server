@@ -66,10 +66,10 @@ bool basler_gige_cam_grabber::on_init(){
             }
         }
 
-        if(parameters.contains("use_online_signal")){
-            bool enable = parameters.value("use_online_signal", false);
+        if(parameters.contains("use_line_signal")){
+            bool enable = parameters.value("use_line_signal", false);
             if(enable){
-                _online_signal_worker = thread(&basler_gige_cam_grabber::_online_signal_subscribe, this);
+                _line_signal_worker = thread(&basler_gige_cam_grabber::_line_signal_subscribe, this);
                 logger::info("[{}] Entry Signal subscriber is running...", get_name());
             }
         }
@@ -136,8 +136,8 @@ void basler_gige_cam_grabber::on_close(){
     }
 
     /* stio the entry signal subscriber worker */
-    if(_online_signal_worker.joinable()){
-        _online_signal_worker.join();
+    if(_line_signal_worker.joinable()){
+        _line_signal_worker.join();
         logger::info("[{}] Line Signal subscriber is now stopped", get_name());
     }
 
@@ -497,19 +497,19 @@ void basler_gige_cam_grabber::_level2_dispatch_task(){
     }
 }
 
-void basler_gige_cam_grabber::_online_signal_subscribe(){
+void basler_gige_cam_grabber::_line_signal_subscribe(){
     try{
         while(!_worker_stop.load()){
             try{
                 zmq::multipart_t msg_multipart;
-                bool success = msg_multipart.recv(*get_port("online_signal"));
+                bool success = msg_multipart.recv(*get_port("line_signal"));
                 if(success){
                     string topic = msg_multipart.popstr();
                     string data = msg_multipart.popstr();
                     auto json_data = json::parse(data);
 
-                    if(json_data.contains("signal_on")){
-                        bool signal_on = json_data["signal_on"].get<bool>();
+                    if(json_data.contains("online_signal_on")){
+                        bool signal_on = json_data["online_signal_on"].get<bool>();
                         _online_signal_on.store(signal_on);
                         logger::info("[{}] Line Signal(Online) ON : {}", get_name(), signal_on);
                     }

@@ -212,14 +212,10 @@ void ni_daq_controller::_daq_dio_read_task(){
                             _publish_hmd_signal("hmd_signal", false);
                         }
 
-                        // online signal
-                        if(prev_dio_values[2]==0 && dio_values[2]==1){ //rising edge
-                            _publish_online_signal("online_signal", true);
+                        // line signal changed
+                        if(prev_dio_values[1]!=dio_values[1] || prev_dio_values[2]!=dio_values[2]){
+                            _publish_line_signal("line_signal", dio_values[2], dio_values[1]);
                         }
-                        else if(prev_dio_values[0]==1 && dio_values[0]==0){ //falling edge
-                            _publish_online_signal("online_signal", false);
-                        }
-
 
                         /* value updates */
                         memcpy(prev_dio_values, dio_values, sizeof(dio_values));
@@ -273,6 +269,23 @@ void ni_daq_controller::_publish_online_signal(const char* portname, bool value)
 
         json data_pack;
         data_pack["signal_on"] = value;
+        string data = data_pack.dump();
+        
+        msg_multipart.addstr(topic);
+        msg_multipart.addstr(data);
+        msg_multipart.send(*get_port(portname), ZMQ_DONTWAIT);
+    }
+}
+
+void ni_daq_controller::_publish_line_signal(const char* portname, bool online_value, bool offline_value){
+    /* publish data */
+    if(get_port(portname)->handle()!=nullptr){
+        zmq::multipart_t msg_multipart;
+        string topic = portname;
+
+        json data_pack;
+        data_pack["online_signal_on"] = online_value;
+        data_pack["offline_signal_on"] = offline_value;
         string data = data_pack.dump();
         
         msg_multipart.addstr(topic);

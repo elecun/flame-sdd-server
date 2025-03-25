@@ -47,11 +47,23 @@ class LineSignalControlPublisher(QObject):
         """ get connection info """
         return self.__connection
     
+    def set_line_signal(self, online_signal:bool, offline_signal:bool):
+        """ set line signal"""
+        try:
+            topic = "line_signal"
+            message = {"online_signal_on":online_signal, "offline_signal_on":offline_signal}
+            jmsg = json.dumps(message)
+
+            self.__socket.send_multipart([topic.encode(), jmsg.encode()])
+            self.__console.info(f"Publish Line Signal Control : {message}")
+        except zmq.ZMQError as e:
+            self.__console.error(f"<Line Signal Control> {e}")
+    
     def set_online_signal_on(self, signal_on:bool):
         """ set online signal on """
         try:
-            topic = "online_signal"
-            message = {"signal_on":signal_on}
+            topic = "line_signal"
+            message = {"online_signal_on":signal_on}
             jmsg = json.dumps(message)
 
             self.__socket.send_multipart([topic.encode(), jmsg.encode()])
@@ -63,8 +75,8 @@ class LineSignalControlPublisher(QObject):
     def set_offline_signal_on(self, signal_on:bool):
         """ set offline signal on """
         try:
-            topic = "offline_signal"
-            message = {"signal_on":signal_on}
+            topic = "line_signal"
+            message = {"offline_signal_on":signal_on}
             jmsg = json.dumps(message)
 
             self.__socket.send_multipart([topic.encode(), jmsg.encode()])
