@@ -1385,9 +1385,9 @@ color: rgb(0, 255, 255);</string>
       <widget class="QLabel" name="label_lens_20">
        <property name="geometry">
         <rect>
-         <x>270</x>
+         <x>265</x>
          <y>70</y>
-         <width>91</width>
+         <width>96</width>
          <height>31</height>
         </rect>
        </property>
@@ -1428,9 +1428,9 @@ color: rgb(0, 255, 255);</string>
       <widget class="QLabel" name="label_lens_15">
        <property name="geometry">
         <rect>
-         <x>270</x>
+         <x>265</x>
          <y>105</y>
-         <width>91</width>
+         <width>96</width>
          <height>31</height>
         </rect>
        </property>
@@ -1450,10 +1450,10 @@ color: rgb(0, 255, 255);</string>
       <widget class="QLabel" name="label_lens_16">
        <property name="geometry">
         <rect>
-         <x>270</x>
-         <y>180</y>
-         <width>91</width>
-         <height>21</height>
+         <x>265</x>
+         <y>175</y>
+         <width>96</width>
+         <height>31</height>
         </rect>
        </property>
        <property name="font">
@@ -1559,9 +1559,9 @@ background-color: rgb(212, 212, 212);</string>
       <widget class="QLabel" name="label_lens_14">
        <property name="geometry">
         <rect>
-         <x>270</x>
+         <x>265</x>
          <y>140</y>
-         <width>91</width>
+         <width>96</width>
          <height>31</height>
         </rect>
        </property>
@@ -1732,9 +1732,9 @@ background-color: rgb(212, 212, 212);</string>
       <widget class="QLabel" name="label_lens_19">
        <property name="geometry">
         <rect>
-         <x>270</x>
+         <x>265</x>
          <y>35</y>
-         <width>91</width>
+         <width>96</width>
          <height>31</height>
         </rect>
        </property>
