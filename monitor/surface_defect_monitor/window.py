@@ -41,11 +41,11 @@ from subscriber.camera_status import CameraStatusMonitorSubscriber
 from publisher.lens_control import LensControlPublisher
 from publisher.camera_control import CameraControlPublisher
 from publisher.hmd_signal_control import HMDSignalControlPublisher
-from publisher.line_signal_control import LineSignalControlPublisher
+from publisher.line_signal import LineSignalPublisher
+from subscriber.line_signal import LineSignalSubscriber
 from requester.light_control import LightControlRequester
 from requester.pulse_generator import PulseGeneratorRequester
 from subscriber.camera import CameraMonitorSubscriber
-from subscriber.line_signal_control import LineSignalControlSubscriber
 from subscriber.dk_level2 import DKLevel2DataSubscriber
 
 class AppWindow(QMainWindow):
@@ -65,8 +65,9 @@ class AppWindow(QMainWindow):
         self.__camera_status_monitor_subscriber = None
         self.__lens_control_publisher = None
         self.__hmd_signal_control_publisher = None
+        self.__line_signal_control_publisher = None
+        self.__line_signal_monitor_subscriber = None
         self.__light_control_requester = None
-        self.__pulse_generator_requester = None
         self.__camera_image_subscriber_map = {}
         self.__camera_control_publisher_map = {}
 
@@ -142,6 +143,7 @@ class AppWindow(QMainWindow):
                 self.set_status_inactive("label_nas_status")
                 self.set_status_inactive("label_light_controller_status")
                 self.set_status_inactive("label_hmd_signal_status")
+                self.set_status_inactive("label_line_signal_status")
 
                 # find focus preset files in preset directory
                 preset_path = pathlib.Path(config["app_path"])/pathlib.Path(config["preset_path"])
@@ -197,8 +199,16 @@ class AppWindow(QMainWindow):
                 if "use_line_signal_control" in config and config["use_line_signal_control"]:
                     if "line_signal_control_source" in config:
                         self.__console.info("+ Create Line Signal Control Publisher...")
-                        self.__line_signal_control_publisher = LineSignalControlPublisher(self.__pipeline_context, connection=config["line_signal_control_source"])
-
+                        self.__line_signal_control_publisher = LineSignalPublisher(self.__pipeline_context, connection=config["line_signal_control_source"])
+                
+                # create line signal monitoring subscriber
+                if "use_line_signal_monitor" in config and config["use_line_signal_monitor"]:
+                    if "line_signal_monitor_source" in config and "line_signal_monitor_topic" in config:
+                        self.__console.info("+ Create Line Signal Monitoring Subscriber...")
+                        self.__line_signal_monitor_subscriber = LineSignalSubscriber(self.__pipeline_context, connection=config["line_signal_monitor_source"], topic=config["line_signal_monitor_topic"])
+                        self.__line_signal_monitor_subscriber.line_signal.connect(self.on_update_line_signal)
+                        self.__line_signal_monitor_subscriber.start()
+                        
                 # create camera control publisher
                 if "use_camera_control" in config and config["use_camera_control"]:
                     for idx, id in enumerate(config["camera_ids"]):
@@ -228,14 +238,6 @@ class AppWindow(QMainWindow):
                                                                                      topic=f"{config['image_stream_monitor_topic_prefix']}{id}")
                     self.__camera_image_subscriber_map[id].frame_update_signal.connect(self.on_update_camera_image)
                     self.__camera_image_subscriber_map[id].start()
-
-                # create trigger control requester
-                if "use_trigger_control" in config and config["use_trigger_control"]:
-                    if "trigger_control_source":
-                        self.__console.info("+ Create Trigger Control Requester")
-                        self.__pulse_generator_requester = PulseGeneratorRequester(self.__pipeline_context, connection=config["trigger_control_source"])
-                else:
-                    self.__console.warning("Trigger Control is not enabled")
 
         except Exception as e:
             self.__console.error(f"{e}")
@@ -383,10 +385,10 @@ class AppWindow(QMainWindow):
             self.__line_signal_control_publisher.close()
             self.__console.info("Close Line Signal Control Publisher")
 
-        # close pulse generator requester
-        if self.__pulse_generator_requester:
-            self.__pulse_generator_requester.close()
-            self.__console.info("Close Pulse Generator Requester")
+        # close line signal monitoring subscriber
+        if self.__line_signal_monitor_subscriber:
+            self.__line_signal_monitor_subscriber.close()
+            self.__console.info("Close Line Signal Monitor Subscriber")
 
         # close temperature monitor subscriber
         if self.__temp_monitor_subscriber:
@@ -396,7 +398,6 @@ class AppWindow(QMainWindow):
         if self.__dk_level2_data_subscriber:
             self.__dk_level2_data_subscriber.close()
             self.__console.info("Close DK Level2 Data Subscriber")
-    
     
         # close camera status monitor subscriber
         if self.__camera_status_monitor_subscriber:
@@ -471,6 +472,16 @@ class AppWindow(QMainWindow):
         except json.JSONDecodeError as e:
             self.__console.error(f"Camera Status Update Error : {e.waht()}")
         
+    def on_update_line_signal(self, data:dict):
+        """ update library signal status """
+        try:
+            if "online_signal_on" in data:
+                if data["online_signal_on"]:
+                    self.set_status_active("label_line_signal_status")
+                else:
+                    self.set_status_inactive("label_line_signal_status")
+        except json.JSONDecodeError as e:
+            self.__console.error(f"Line Signal Update Error : {e.what()}")
 
     def on_update_temperature_status(self, msg:str): # update temperature control monitoring pipeline status
         self.label_temp_monitor_pipeline_message.setText(msg)

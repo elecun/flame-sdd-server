@@ -24,10 +24,10 @@ from typing import Any, Dict
 from functools import partial
 
 
-class LineSignalControlSubscriber(QThread):
+class LineSignalSubscriber(QThread):
     """ Publisher for Line Status(On/Offline) Signal Control """
 
-    line_signal = pyqtSignal(bool)
+    line_signal = pyqtSignal(dict)
 
     def __init__(self, context:zmq.Context, connection:str, topic:str):
         super().__init__()
@@ -48,7 +48,7 @@ class LineSignalControlSubscriber(QThread):
         self.__poller = zmq.Poller()
         self.__poller.register(self.__socket, zmq.POLLIN) # POLLIN, POLLOUT, POLLERR
 
-        self.__console.info("* Start On-Line signal Signal Subscriber")
+        self.__console.info("* Start Line Signal Subscriber")
         self.start()
     
     def get_connection_info(self) -> str:
@@ -67,16 +67,16 @@ class LineSignalControlSubscriber(QThread):
                     topic, data = self.__socket.recv_multipart()
                     if topic.decode() == self.__topic:
                         data = json.loads(data.decode('utf8').replace("'", '"'))
-                        self.line_signal.emit(data)
+                        self.line_signal.emit(data) # dict type
             
             except json.JSONDecodeError as e:
-                self.__console.critical(f"<Online Signal Monitor>[DecodeError] {e}")
+                self.__console.critical(f"<Line Signal Monitor>[DecodeError] {e}")
                 continue
             except zmq.error.ZMQError as e:
-                self.__console.critical(f"<Online Signal Monitor>[ZMQError] {e}")
+                self.__console.critical(f"<Line Signal Monitor>[ZMQError] {e}")
                 break
             except Exception as e:
-                self.__console.critical(f"<Online Signal Monitor>[Exception] {e}")
+                self.__console.critical(f"<Line Signal Monitor>[Exception] {e}")
                 break
     
     def close(self):
@@ -90,4 +90,4 @@ class LineSignalControlSubscriber(QThread):
             self.__poller.unregister(self.__socket)
             self.__socket.close()
         except zmq.ZMQError as e:
-            self.__console.error(f"<Online Signal Monitor> {e}")
+            self.__console.error(f"<Line Signal Monitor> {e}")

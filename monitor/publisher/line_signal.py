@@ -24,7 +24,7 @@ from typing import Any, Dict
 from functools import partial
 
 
-class LineSignalControlPublisher(QObject):
+class LineSignalPublisher(QObject):
     """ Publisher for Line Status(On/Offline) Signal Control """
 
     def __init__(self, context:zmq.Context, connection:str):
