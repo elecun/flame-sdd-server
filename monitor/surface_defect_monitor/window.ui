@@ -2133,7 +2133,7 @@ background-color: rgb(212, 212, 212);</string>
         <x>715</x>
         <y>235</y>
         <width>526</width>
-        <height>71</height>
+        <height>101</height>
        </rect>
       </property>
       <property name="font">
@@ -2194,50 +2194,30 @@ background-color: rgb(212, 212, 212);</string>
         <string>MD OFF</string>
        </property>
       </widget>
-      <widget class="QPushButton" name="btn_set_online">
+      <widget class="QCheckBox" name="check_online_signal">
        <property name="geometry">
         <rect>
-         <x>285</x>
+         <x>290</x>
          <y>30</y>
-         <width>106</width>
-         <height>26</height>
+         <width>211</width>
+         <height>20</height>
         </rect>
        </property>
-       <property name="font">
-        <font>
-         <family>Arial</family>
-         <pointsize>13</pointsize>
-        </font>
-       </property>
-       <property name="styleSheet">
-        <string notr="true">color: rgb(0,0,0);
-background-color: rgb(212, 212, 212);</string>
-       </property>
        <property name="text">
-        <string>Set On-Line</string>
+        <string>온라인 상태신호 발생 유지</string>
        </property>
       </widget>
-      <widget class="QPushButton" name="btn_set_offline">
+      <widget class="QCheckBox" name="check_offline_signal">
        <property name="geometry">
         <rect>
-         <x>400</x>
-         <y>30</y>
-         <width>106</width>
-         <height>26</height>
+         <x>290</x>
+         <y>60</y>
+         <width>211</width>
+         <height>20</height>
         </rect>
        </property>
-       <property name="font">
-        <font>
-         <family>Arial</family>
-         <pointsize>13</pointsize>
-        </font>
-       </property>
-       <property name="styleSheet">
-        <string notr="true">color: rgb(0,0,0);
-background-color: rgb(212, 212, 212);</string>
-       </property>
        <property name="text">
-        <string>Set Off-Line</string>
+        <string>오프라인 상태신호 발생 유지</string>
        </property>
       </widget>
      </widget>

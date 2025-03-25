@@ -127,8 +127,8 @@ class AppWindow(QMainWindow):
                 self.btn_focus_preset_load.clicked.connect(self.on_btn_focus_preset_load)
                 self.btn_hmd_signal_on.clicked.connect(self.on_btn_hmd_signal_on)
                 self.btn_hmd_signal_off.clicked.connect(self.on_btn_hmd_signal_off)
-                self.btn_set_online.clicked.connect(self.on_btn_set_online)
-                self.btn_set_offline.clicked.connect(self.on_btn_set_offline)
+                self.check_online_signal.stateChanged.connect(self.on_check_online_signal)
+                self.check_offline_signal.stateChanged.connect(self.on_check_offline_signal)
 
                 # register dial event callback function
                 self.dial_light_control.valueChanged.connect(self.on_change_light_control)
@@ -291,6 +291,12 @@ class AppWindow(QMainWindow):
         """ (test) hmd off signal """
         if self.__hmd_signal_control_publisher:
             self.__hmd_signal_control_publisher.set_signal_on(False)
+
+    def on_check_online_signal(self, state):
+        """ online signal control """
+        if self.on_check_online_signal.isChecked():
+            print("checked")
+
 
     def on_btn_set_online(self):
         """ stay online"""
