@@ -202,6 +202,7 @@ void dk_level2_interface::_do_server_work(json parameters){
                                 data_pack["date"] = remove_space(packet.cDate, sizeof(packet.cDate));
                                 data_pack["lot_no"] = remove_space(packet.cLotNo, sizeof(packet.cLotNo));
                                 dk_h_standard_dim dim = extract_stand_dim(packet.cMtStand, sizeof(packet.cMtStand));
+                                data_pack["mt_stand"] = remove_space(packet.cMtStand, sizeof(packet.cMtStand));
                                 data_pack["mt_stand_height"] = dim.height;
                                 data_pack["mt_stand_width"] = dim.width;
                                 data_pack["mt_stand_t1"] = dim.t1;

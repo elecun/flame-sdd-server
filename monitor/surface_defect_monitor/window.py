@@ -449,8 +449,24 @@ class AppWindow(QMainWindow):
         """ update dk level2 data """
         try:
             data = json.loads(data)
+            # display lot no
             if "lot_no" in data:
                 self.label_lotno.setText(data["lot_no"])
+            else:
+                self.label_lotno.setText("-")
+
+            # display mt stand
+            if "mt_stand" in data:
+                self.label_mt_stand.setText(data["mt_stand"])
+            else:
+                self.label_mt_stand.setText("-")
+
+            # display fm length
+            if "fm_length" in data:
+                self.label_fm_length.setText(str(data["fm_length"]))
+            else:
+                self.label_fm_length.setText("-")
+
         except json.JSONDecodeError as e:
             self.__console.error(f"Camera Status Update Error : {e.waht()}")
         
