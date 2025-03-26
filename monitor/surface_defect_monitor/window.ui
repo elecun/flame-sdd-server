@@ -1465,7 +1465,7 @@ color: rgb(0, 255, 255);</string>
         <x>715</x>
         <y>5</y>
         <width>526</width>
-        <height>226</height>
+        <height>221</height>
        </rect>
       </property>
       <property name="font">
@@ -2131,9 +2131,9 @@ background-color: rgb(212, 212, 212);</string>
       <property name="geometry">
        <rect>
         <x>715</x>
-        <y>235</y>
+        <y>230</y>
         <width>526</width>
-        <height>101</height>
+        <height>106</height>
        </rect>
       </property>
       <property name="font">
@@ -2146,59 +2146,13 @@ background-color: rgb(212, 212, 212);</string>
        <string notr="true"/>
       </property>
       <property name="title">
-       <string>제어 신호 발생</string>
+       <string>제어 신호 발생 (Software Signal)</string>
       </property>
-      <widget class="QPushButton" name="btn_hmd_signal_on">
-       <property name="geometry">
-        <rect>
-         <x>25</x>
-         <y>30</y>
-         <width>106</width>
-         <height>26</height>
-        </rect>
-       </property>
-       <property name="font">
-        <font>
-         <family>Arial</family>
-         <pointsize>13</pointsize>
-        </font>
-       </property>
-       <property name="styleSheet">
-        <string notr="true">color: rgb(0,0,0);
-background-color: rgb(212, 212, 212);</string>
-       </property>
-       <property name="text">
-        <string>MD ON</string>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="btn_hmd_signal_off">
-       <property name="geometry">
-        <rect>
-         <x>140</x>
-         <y>30</y>
-         <width>106</width>
-         <height>26</height>
-        </rect>
-       </property>
-       <property name="font">
-        <font>
-         <family>Arial</family>
-         <pointsize>13</pointsize>
-        </font>
-       </property>
-       <property name="styleSheet">
-        <string notr="true">color: rgb(0,0,0);
-background-color: rgb(212, 212, 212);</string>
-       </property>
-       <property name="text">
-        <string>MD OFF</string>
-       </property>
-      </widget>
       <widget class="QCheckBox" name="check_online_signal">
        <property name="geometry">
         <rect>
-         <x>290</x>
-         <y>30</y>
+         <x>15</x>
+         <y>55</y>
          <width>211</width>
          <height>20</height>
         </rect>
@@ -2210,14 +2164,27 @@ background-color: rgb(212, 212, 212);</string>
       <widget class="QCheckBox" name="check_offline_signal">
        <property name="geometry">
         <rect>
-         <x>290</x>
-         <y>60</y>
+         <x>15</x>
+         <y>80</y>
          <width>211</width>
          <height>20</height>
         </rect>
        </property>
        <property name="text">
         <string>오프라인 상태신호 발생 유지</string>
+       </property>
+      </widget>
+      <widget class="QCheckBox" name="check_hmd_signal">
+       <property name="geometry">
+        <rect>
+         <x>15</x>
+         <y>30</y>
+         <width>211</width>
+         <height>20</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>MD 신호 발생 유지</string>
        </property>
       </widget>
      </widget>

@@ -22,17 +22,10 @@
             "queue_size" : 1000,
             "timeout_ms":1000
         },
-        "hmd_signal" : {
+        "line_signal" : {
             "transport":"tcp",
             "host":"127.0.0.1",
             "port":5401,
-            "socket_type" : "pub",
-            "queue_size" : 1000
-        },
-        "online_signal" : {
-            "transport":"tcp",
-            "host":"127.0.0.1",
-            "port":5402,
             "socket_type" : "pub",
             "queue_size" : 1000
         }

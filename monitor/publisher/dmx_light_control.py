@@ -1,5 +1,5 @@
 """
-Light Control Requester
+DMX Light Control Publisher
 @author Byunghun Hwang <bh.hwang@iae.re.kr>
 """
 
@@ -31,22 +31,63 @@ for name in dir(zmq):
         EVENT_MAP[value] = name
 
 
-class LightControlRequester(QObject):
+class DMXLightControlPublisher(QThread):
+    """ Publisher for DMX Light Control """
 
-    def __init__(self, context:zmq.Context, connection:str):
+    dmx_alive_signal = pyqtSignal(dict)
+
+    def __init__(self, context:zmq.Context, connection:str, dmx_ip:str, topic:str):
         super().__init__()
 
-        self.__console = ConsoleLogger.get_logger()
-        self.__console.info(f"+ Light Controller connection : {connection}")
+        self.__console = ConsoleLogger.get_logger()   # console logger
+        self.__console.info(f"+ DMX Light Control Connection : {connection}")
 
-        self.__connection = connection
+        self.__connection = connection # connection info.
+        self.__topic = topic
+        self.__dmx_ip = dmx_ip
+
+        self.__console.info("* Start DMX Light Control Publisher")
+
+    def run(self):
+        """ Run the subscriber thread """
+        while not self.isInterruptionRequested():
+            try:
+                self.__status_monitor()
+                time.sleep(3)
+            
+            except json.JSONDecodeError as e:
+                self.__console.critical(f"<DMX Light Control>[DecodeError] {e}")
+                continue
+            except zmq.error.ZMQError as e:
+                self.__console.critical(f"<DMX Light Control>[ZMQError] {e}")
+                break
+            except Exception as e:
+                self.__console.critical(f"<DMX Light Control>[Exception] {e}")
+                break
 
     def close(self):
-        return
+        """ close """
+
+        self.requestInterruption()
+        self.quit()
+        self.wait()
+
+        # try:
+        #     self.__socket.close()
+        # except Exception as e:
+        #     self.__console.error(f"{e}")
+        # except zmq.ZMQError as e:
+        #     self.__console.error(f"Context termination error : {e}")
+
+    
+
+    def __status_monitor(self):
+        message = {"alive":self.__get_alive(self.__dmx_ip)}
+        self.dmx_alive_signal.emit(message)
 
     def get_connection_info(self) -> str:
         return self.__connection
-    
+
     def set_control(self, ip:str, port:int, device_ids:list, brightness:int):
         """ turn on the light """
         dmx_data = bytearray(512)
@@ -57,7 +98,7 @@ class LightControlRequester(QObject):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.sendto(packet, (ip, port))
         sock.close()
-        self.__console.info(f"Light Control : {brightness}")
+        self.__console.info(f"<DMX Light Monitor> {brightness}")
         
 
     def __create_artnet_dmx_packet(self, sequence, physical, universe, data):
@@ -78,9 +119,9 @@ class LightControlRequester(QObject):
         except zmq.error.ZMQError as e:
             self.__console.error(f"{e}")
         except Exception as e:
-            self.__console.error(f"General exception")
+            self.__console.error(f"<DMX Light Control> General exception")
 
-    def get_alive(self, host) -> bool:
+    def __get_alive(self, host) -> bool:
         """ get alive """
         try:
             result = subprocess.run(
@@ -91,6 +132,5 @@ class LightControlRequester(QObject):
             )
             return result.returncode == 0 #success
         except Exception as e:
-            print(f"<Light Control Requester> Error: {e}")
+            print(f"<DMX Light Control> Error: {e}")
             return False
-    

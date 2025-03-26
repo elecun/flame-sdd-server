@@ -40,11 +40,9 @@ from subscriber.temperature import TemperatureMonitorSubscriber
 from subscriber.camera_status import CameraStatusMonitorSubscriber
 from publisher.lens_control import LensControlPublisher
 from publisher.camera_control import CameraControlPublisher
-from publisher.hmd_signal_control import HMDSignalControlPublisher
 from publisher.line_signal import LineSignalPublisher
 from subscriber.line_signal import LineSignalSubscriber
-from requester.light_control import LightControlRequester
-from requester.pulse_generator import PulseGeneratorRequester
+from publisher.dmx_light_control import DMXLightControlPublisher
 from subscriber.camera import CameraMonitorSubscriber
 from subscriber.dk_level2 import DKLevel2DataSubscriber
 
@@ -67,7 +65,8 @@ class AppWindow(QMainWindow):
         self.__hmd_signal_control_publisher = None
         self.__line_signal_control_publisher = None
         self.__line_signal_monitor_subscriber = None
-        self.__light_control_requester = None
+        self.__light_control_publisher = None
+        self.__dk_level2_data_subscriber = None
         self.__camera_image_subscriber_map = {}
         self.__camera_control_publisher_map = {}
 
@@ -126,10 +125,9 @@ class AppWindow(QMainWindow):
                 self.btn_focus_initialize_all.clicked.connect(self.on_btn_focus_initialize_all)
                 self.btn_focus_preset_set_all.clicked.connect(self.on_btn_focus_preset_set_all)
                 self.btn_focus_preset_load.clicked.connect(self.on_btn_focus_preset_load)
-                self.btn_hmd_signal_on.clicked.connect(self.on_btn_hmd_signal_on)
-                self.btn_hmd_signal_off.clicked.connect(self.on_btn_hmd_signal_off)
                 self.check_online_signal.stateChanged.connect(self.on_check_online_signal)
                 self.check_offline_signal.stateChanged.connect(self.on_check_offline_signal)
+                self.check_hmd_signal.clicked.connect(self.on_check_hmd_signal)
 
                 # register dial event callback function
                 self.dial_light_control.valueChanged.connect(self.on_change_light_control)
@@ -157,10 +155,13 @@ class AppWindow(QMainWindow):
                 # create temperature monitoring subscriber
                 if "use_temperature_monitor" in config and config["use_temperature_monitor"]:
                     if "temp_stream_source" in config and "temp_stream_topic" in config:
-                        self.__console.info("+ Create Temperature Monitoring Subscriber...")
-                        self.__temp_monitor_subscriber = TemperatureMonitorSubscriber(self.__pipeline_context, connection=config["temp_stream_source"], topic=config["temp_stream_topic"])
-                        self.__temp_monitor_subscriber.temperature_update_signal.connect(self.on_update_temperature)
-                        self.__temp_monitor_subscriber.start() # run in thread
+                        try:
+                            self.__console.info("+ Create Temperature Monitoring Subscriber...")
+                            self.__temp_monitor_subscriber = TemperatureMonitorSubscriber(self.__pipeline_context, connection=config["temp_stream_source"], topic=config["temp_stream_topic"])
+                            self.__temp_monitor_subscriber.temperature_update_signal.connect(self.on_update_temperature)
+                            self.__temp_monitor_subscriber.start() # run in thread
+                        except Exception as e:
+                            self.__console.warning(f"Temperature Monitor has problem : {e}")
                 else:
                     self.__console.warning("Temperature Monitor is not enabled")
 
@@ -179,27 +180,27 @@ class AppWindow(QMainWindow):
                         self.__dk_level2_data_subscriber = DKLevel2DataSubscriber(self.__pipeline_context, connection=config["dk_level2_interface_source"], topic=config["dk_level2_interface_topic"])
                         self.__dk_level2_data_subscriber.level2_data_update_signal.connect(self.on_update_dk_level2_data)
                         self.__dk_level2_data_subscriber.start()
+                else:
+                    self.__console.warning("DK Level2 Data Interface is not enabled")
 
                 # create lens control publisher
                 if "use_lens_control" in config and config["use_lens_control"]:
                     if "lens_control_source" in config:
-                        self.__console.info("+ Create Lens Control Publisher...")
-                        self.__lens_control_publisher = LensControlPublisher(self.__pipeline_context, connection=config["lens_control_source"])
-                        #self.__lens_control_publisher.focus_read_update_signal.connect(self.on_update_focus)
+                        try:
+                            self.__console.info("+ Create Lens Control Publisher...")
+                            self.__lens_control_publisher = LensControlPublisher(self.__pipeline_context, connection=config["lens_control_source"])
+                        except Exception as e:
+                            self.__console.warning(f"Lens Control Publisher has problem : {e}")
                 else:
                     self.__console.warning("Lens Control is not enabled.")
-
-                # create hmd signal control publisher (test use only)
-                if "use_hmd_signal_control" in config and config["use_hmd_signal_control"]:
-                    if "hmd_signal_control_source" in config:
-                        self.__console.info("+ Create HMD Signal Control Publisher...")
-                        self.__hmd_signal_control_publisher = HMDSignalControlPublisher(self.__pipeline_context, connection=config["hmd_signal_control_source"])
 
                 # create line(online, offline) control publisher
                 if "use_line_signal_control" in config and config["use_line_signal_control"]:
                     if "line_signal_control_source" in config:
                         self.__console.info("+ Create Line Signal Control Publisher...")
                         self.__line_signal_control_publisher = LineSignalPublisher(self.__pipeline_context, connection=config["line_signal_control_source"])
+                else:
+                    self.__console.warning("Line Signal Control is not enabled.")
                 
                 # create line signal monitoring subscriber
                 if "use_line_signal_monitor" in config and config["use_line_signal_monitor"]:
@@ -208,6 +209,8 @@ class AppWindow(QMainWindow):
                         self.__line_signal_monitor_subscriber = LineSignalSubscriber(self.__pipeline_context, connection=config["line_signal_monitor_source"], topic=config["line_signal_monitor_topic"])
                         self.__line_signal_monitor_subscriber.line_signal.connect(self.on_update_line_signal)
                         self.__line_signal_monitor_subscriber.start()
+                else:
+                    self.__console.warning("Line Signal Monitor is not enabled")
                         
                 # create camera control publisher
                 if "use_camera_control" in config and config["use_camera_control"]:
@@ -221,8 +224,13 @@ class AppWindow(QMainWindow):
                 # create light control requester
                 if "use_light_control" in config and config["use_light_control"]:
                     if "light_control_source" in config:
-                        self.__console.info("+ Create Light Control Requester")
-                        self.__light_control_requester = LightControlRequester(self.__pipeline_context, connection=config["light_control_source"])
+                        try:
+                            self.__console.info("+ Create DMX Light Control Publisher")
+                            self.__light_control_publisher = DMXLightControlPublisher(self.__pipeline_context, connection=config["light_control_source"], dmx_ip=config["dmx_ip"], topic=config["dmx_light_controller_status_topic"])
+                            self.__light_control_publisher.dmx_alive_signal.connect(self.on_update_dmx_light_status)
+                            self.__light_control_publisher.start()
+                        except Exception as e:
+                            self.__console.warning(f"DMX Light Control Publisher has problem : {e}")
                 else:
                     self.__console.warning("Light Control is not enabled")
 
@@ -283,28 +291,28 @@ class AppWindow(QMainWindow):
         """ set focus preset for all lens """
         for lens_id in self.__config["camera_ids"]:
             self.on_btn_focus_set(lens_id)
-
-    def on_btn_hmd_signal_on(self):
-        """ (test) hmd on signal """
-        if self.__hmd_signal_control_publisher:
-            self.__hmd_signal_control_publisher.set_signal_on(True)
-
-    def on_btn_hmd_signal_off(self):
-        """ (test) hmd off signal """
-        if self.__hmd_signal_control_publisher:
-            self.__hmd_signal_control_publisher.set_signal_on(False)
+    
+    def __check_line_signal(self):
+        """ check & set line signal """
+        online_checked = self.check_online_signal.isChecked()
+        offline_checked = self.check_offline_signal.isChecked()
+        hmd_checked = self.check_hmd_signal.isChecked()
+        if self.__line_signal_control_publisher:
+            self.__line_signal_control_publisher.set_line_signal(online_checked, offline_checked,hmd_checked)
+        else:
+            self.__console.error("Line Signal Control Publisher is None")
 
     def on_check_online_signal(self, state):
         """ online signal control """
-        online_checked = self.check_online_signal.isChecked()
-        offline_checked = self.check_offline_signal.isChecked()
-        self.__line_signal_control_publisher.set_line_signal(online_checked, offline_checked)
+        self.__check_line_signal()
             
     def on_check_offline_signal(self, state):
         """ offline signal control """
-        online_checked = self.check_online_signal.isChecked()
-        offline_checked = self.check_offline_signal.isChecked()
-        self.__line_signal_control_publisher.set_line_signal(online_checked, offline_checked)
+        self.__check_line_signal
+
+    def on_check_hmd_signal(self, state):
+        """ hmd signal control """
+        self.__check_line_signal()
 
     def on_change_light_control(self, value):
         """ control value update """
@@ -366,9 +374,9 @@ class AppWindow(QMainWindow):
         """ terminate main window """      
 
         # close light control requester
-        if self.__light_control_requester:
-            self.__light_control_requester.close()
-            self.__console.info("Close Light Control Requester")
+        if self.__light_control_publisher:
+            self.__light_control_publisher.close()
+            self.__console.info("Close Light Control Publisher")
 
         # close lens control publisher
         if self.__lens_control_publisher:
@@ -395,6 +403,7 @@ class AppWindow(QMainWindow):
             self.__temp_monitor_subscriber.close()
             self.__console.info("Close Temperature Subscriber")
 
+        # close level2 data subscriber
         if self.__dk_level2_data_subscriber:
             self.__dk_level2_data_subscriber.close()
             self.__console.info("Close DK Level2 Data Subscriber")
@@ -480,8 +489,25 @@ class AppWindow(QMainWindow):
                     self.set_status_active("label_line_signal_status")
                 else:
                     self.set_status_inactive("label_line_signal_status")
+
+            if "hmd_signal_on" in data:
+                if data["hmd_signal_on"]:
+                    self.set_status_active("label_hmd_signal_status")
+                else:
+                    self.set_status_inactive("label_hmd_signal_status")
         except json.JSONDecodeError as e:
             self.__console.error(f"Line Signal Update Error : {e.what()}")
+
+    def on_update_dmx_light_status(self, data:str):
+        """ update dmx light status """
+        try:
+            if "alive" in data:
+                if data["alive"]:
+                    self.set_status_active("label_light_controller_status")
+                else:
+                    self.set_status_inactive("label_light_controller_status")
+        except json.JSONDecodeError as e:
+            self.__console.error(f"DMX Light Status Update Error : {e.what()}")
 
     def on_update_temperature_status(self, msg:str): # update temperature control monitoring pipeline status
         self.label_temp_monitor_pipeline_message.setText(msg)
@@ -512,7 +538,7 @@ class AppWindow(QMainWindow):
         if "use_light_control" in self.__config and self.__config["use_light_control"]:
             if "dmx_ip" in self.__config and "dmx_port" in self.__config:
                 value = int(self.label_light_control_value.text())
-                self.__light_control_requester.set_control(self.__config["dmx_ip"], self.__config["dmx_port"], self.__config["light_ids"], value)
+                self.__light_control_publisher.set_control(self.__config["dmx_ip"], self.__config["dmx_port"], self.__config["light_ids"], value)
             else:
                 QMessageBox.critical(self, "Error", f"DMX IP and Port is not defined")
         else:
@@ -523,19 +549,19 @@ class AppWindow(QMainWindow):
         """ change background color to green for active status """
         label_object = self.findChild(QLabel, name=label_name)
         if label_object:
-            label_object.setStyleSheet("background-color: green")
+            label_object.setStyleSheet("background-color: #00FF00; color: black")
 
     def set_status_inactive(self, label_name:str):
         """ change background color to red for inactive status """
         label_object = self.findChild(QLabel, name=label_name)
         if label_object:
-            label_object.setStyleSheet("background-color: red")
+            label_object.setStyleSheet("background-color: #FF0000; color: white")
 
     def set_status_warning(self, label_name:str):
         """ change background color to yellow for warning status """
         label_object = self.findChild(QLabel, name=label_name)
         if label_object:
-            label_object.setStyleSheet("background-color: yellow")
+            label_object.setStyleSheet("background-color: yellow; color: black")
 
     def update_total_image_count(self, count:int):
         """ update total image count """

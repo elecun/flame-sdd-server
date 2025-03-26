@@ -31,7 +31,7 @@ class LineSignalPublisher(QObject):
         super().__init__()
 
         self.__console = ConsoleLogger.get_logger()   # console logger
-        self.__console.info(f"+ Line Status Signal connection : {connection}")
+        self.__console.info(f"+ Line Status Signal Connection : {connection}")
 
         self.__connection = connection # connection info.
 
@@ -41,50 +41,23 @@ class LineSignalPublisher(QObject):
         self.__socket.setsockopt(zmq.LINGER, 0)
         self.__socket.bind(connection)
 
-        self.__console.info("* Start Line Status Signal Control Publisher (Test Only)")
+        self.__console.info("* Start Line Status Signal Control Publisher")
     
     def get_connection_info(self) -> str:
         """ get connection info """
         return self.__connection
     
-    def set_line_signal(self, online_signal:bool, offline_signal:bool):
+    def set_line_signal(self, online_signal:bool, offline_signal:bool, hmd_signal:bool):
         """ set line signal"""
         try:
-            topic = "line_signal"
-            message = {"online_signal_on":online_signal, "offline_signal_on":offline_signal}
+            topic = "ni_daq_controller/line_signal"
+            message = {"online_signal_on":online_signal, "offline_signal_on":offline_signal, "hmd_signal_on":hmd_signal}
             jmsg = json.dumps(message)
 
             self.__socket.send_multipart([topic.encode(), jmsg.encode()])
             self.__console.info(f"Publish Line Signal Control : {message}")
         except zmq.ZMQError as e:
             self.__console.error(f"<Line Signal Control> {e}")
-    
-    def set_online_signal_on(self, signal_on:bool):
-        """ set online signal on """
-        try:
-            topic = "line_signal"
-            message = {"online_signal_on":signal_on}
-            jmsg = json.dumps(message)
-
-            self.__socket.send_multipart([topic.encode(), jmsg.encode()])
-            self.__console.info(f"Publish on-Line Signal Control : {signal_on}")
-
-        except zmq.ZMQError as e:
-            self.__console.error(f"<on-Line Signal Control> {e}")
-
-    def set_offline_signal_on(self, signal_on:bool):
-        """ set offline signal on """
-        try:
-            topic = "line_signal"
-            message = {"offline_signal_on":signal_on}
-            jmsg = json.dumps(message)
-
-            self.__socket.send_multipart([topic.encode(), jmsg.encode()])
-            self.__console.info(f"Publish off-Line Signal Control : {signal_on}")
-
-        except zmq.ZMQError as e:
-            self.__console.error(f"<on-Line Signal Control> {e}")
-
     
     def close(self):
         """ close the socket """

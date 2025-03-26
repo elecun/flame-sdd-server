@@ -51,7 +51,7 @@ class HMDSignalControlPublisher(QObject):
         """ set signal on """
         try:
             topic = "hmd_signal"
-            message = {"signal_on":signal_on}
+            message = {"hmd_signal_on":signal_on}
             jmsg = json.dumps(message)
 
             self.__socket.send_multipart([topic.encode(), jmsg.encode()])
