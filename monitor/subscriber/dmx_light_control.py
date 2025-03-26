@@ -90,7 +90,7 @@ class DMXLightControlSubscriber(QThread):
                                 if data["hmd_signal_on"] and data["online_signal_on"]:
                                     self.set_control(self.__dmx_ip, self.__dmx_port, self.__light_ids, self.__brightness)
                                 else:
-                                    self.set_control(self.__dmx_ip, self.__dmx_port, self.__light_ids, 0)
+                                    self.set_off(self.__dmx_ip, self.__dmx_port, self.__light_ids)
                 else:
                     self.dmx_alive_signal.emit({"alive":False})
             
@@ -126,6 +126,16 @@ class DMXLightControlSubscriber(QThread):
 
     def get_connection_info(self) -> str:
         return self.__connection
+    
+    def set_off(self, ip:str, port:int, device_ids:list):
+        """ turn on the light """
+        dmx_data = bytearray(512)
+        for id in device_ids:
+            dmx_data[id] = 0# .to_bytes(1, byteorder="big")
+        packet = self.__create_artnet_dmx_packet(sequence=0, physical=0, universe=0, data=dmx_data)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.sendto(packet, (ip, port))
+        sock.close()
 
     def set_control(self, ip:str, port:int, device_ids:list, brightness:int):
         """ turn on the light """
