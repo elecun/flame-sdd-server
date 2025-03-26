@@ -53,7 +53,7 @@ class ni_daq_controller : public flame::component::object {
         void _daq_dio_read_task();
 
         /* line signal publisher */
-        void _publish_line_signal(const char* portname, bool online_value, bool offline_value);
+        void _publish_line_signal(const char* portname, unsigned char* value);
 
 }; /* class */
 
