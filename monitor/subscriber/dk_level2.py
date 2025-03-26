@@ -51,7 +51,7 @@ class DKLevel2DataSubscriber(QThread):
         self.__poller.register(self.__socket, zmq.POLLIN) # POLLIN, POLLOUT, POLLERR
 
         self.__console.info("* Start Level2 Data Subscriber")
-        self.start()
+        # self.start()
 
     def get_connection_info(self) -> str: # return connection address
         return self.__connection

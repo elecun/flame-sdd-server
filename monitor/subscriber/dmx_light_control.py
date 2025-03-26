@@ -1,5 +1,5 @@
 """
-DMX Light Control Publisher
+DMX Light Control Subscriber
 @author Byunghun Hwang <bh.hwang@iae.re.kr>
 """
 
@@ -31,12 +31,12 @@ for name in dir(zmq):
         EVENT_MAP[value] = name
 
 
-class DMXLightControlPublisher(QThread):
-    """ Publisher for DMX Light Control """
+class DMXLightControlSubscriber(QThread):
+    """ Subscriber for DMX Light Control """
 
     dmx_alive_signal = pyqtSignal(dict)
 
-    def __init__(self, context:zmq.Context, connection:str, dmx_ip:str, topic:str):
+    def __init__(self, context:zmq.Context, connection:str, dmx_ip:str, dmx_port:int, light_ids:list, topic:str):
         super().__init__()
 
         self.__console = ConsoleLogger.get_logger()   # console logger
@@ -45,15 +45,54 @@ class DMXLightControlPublisher(QThread):
         self.__connection = connection # connection info.
         self.__topic = topic
         self.__dmx_ip = dmx_ip
+        self.__dmx_port = dmx_port
+        self.__brightness = 0
+        self.__light_ids = light_ids
 
-        self.__console.info("* Start DMX Light Control Publisher")
+        # initialize zmq
+        self.__socket = context.socket(zmq.SUB)
+        self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 1000)
+        self.__socket.setsockopt(zmq.RCVTIMEO, 500)
+        self.__socket.setsockopt(zmq.LINGER,0)
+        self.__socket.connect(connection)
+        self.__socket.subscribe(topic)
+
+        self.__poller = zmq.Poller()
+        self.__poller.register(self.__socket, zmq.POLLIN | zmq.POLLERR) # POLLIN, POLLOUT, POLLERR
+
+        self.__console.info("* Start DMX Light Control Subscriber")
+
+    def get_connection_info(self) -> str: # return connection address
+        return self.__connection
+    
+    def get_topic(self) -> str: # return subscriber topic
+        return self.__topic
 
     def run(self):
         """ Run the subscriber thread """
         while not self.isInterruptionRequested():
             try:
-                self.__status_monitor()
-                time.sleep(3)
+                events = dict(self.__poller.poll(1000)) # wait 1sec
+                if self.__socket in events:
+                    if events[self.__socket] == zmq.POLLERR:
+                        self.__console.error(f"<DMX Light Control> Error: {self.__socket.getsockopt(zmq.LAST_ENDPOINT)}")
+                        self.dmx_alive_signal.emit({"alive":False})
+
+                    # ready to process
+                    elif events[self.__socket] == zmq.POLLIN:
+                        self.dmx_alive_signal.emit({"alive":True})
+                        topic, data = self.__socket.recv_multipart()
+                        if topic.decode() == self.__topic:
+                            data = json.loads(data.decode('utf8').replace("'", '"'))
+
+                            # control by line signal
+                            if "hmd_signal_on" in data and "online_signal_on" in data:
+                                if data["hmd_signal_on"] and data["online_signal_on"]:
+                                    self.set_control(self.__dmx_ip, self.__dmx_port, self.__light_ids, self.__brightness)
+                                else:
+                                    self.set_control(self.__dmx_ip, self.__dmx_port, self.__light_ids, 0)
+                else:
+                    self.dmx_alive_signal.emit({"alive":False})
             
             except json.JSONDecodeError as e:
                 self.__console.critical(f"<DMX Light Control>[DecodeError] {e}")
@@ -72,12 +111,12 @@ class DMXLightControlPublisher(QThread):
         self.quit()
         self.wait()
 
-        # try:
-        #     self.__socket.close()
-        # except Exception as e:
-        #     self.__console.error(f"{e}")
-        # except zmq.ZMQError as e:
-        #     self.__console.error(f"Context termination error : {e}")
+        try:
+            self.__socket.setsockopt(zmq.LINGER, 0)
+            self.__poller.unregister(self.__socket)
+            self.__socket.close()
+        except zmq.ZMQError as e:
+            self.__console.error(f"<Temperature Monitor> {e}")
 
     
 
@@ -90,10 +129,11 @@ class DMXLightControlPublisher(QThread):
 
     def set_control(self, ip:str, port:int, device_ids:list, brightness:int):
         """ turn on the light """
+        self.__brightness = brightness # save brightness
+
         dmx_data = bytearray(512)
         for id in device_ids:
             dmx_data[id] = brightness# .to_bytes(1, byteorder="big")
-            print(f"Set DMX ID #{id} : {brightness}")
         packet = self.__create_artnet_dmx_packet(sequence=0, physical=0, universe=0, data=dmx_data)
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.sendto(packet, (ip, port))
@@ -111,15 +151,6 @@ class DMXLightControlPublisher(QThread):
         length = len(data).to_bytes(2, byteorder='big')
         
         return header + opcode + protocol_version + sequence + physical + universe + length + data
-
-    async def _async_set_control_on_request(self):
-        """ turn on async """
-        try:
-            pass
-        except zmq.error.ZMQError as e:
-            self.__console.error(f"{e}")
-        except Exception as e:
-            self.__console.error(f"<DMX Light Control> General exception")
 
     def __get_alive(self, host) -> bool:
         """ get alive """

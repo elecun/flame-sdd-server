@@ -42,7 +42,7 @@ from publisher.lens_control import LensControlPublisher
 from publisher.camera_control import CameraControlPublisher
 from publisher.line_signal import LineSignalPublisher
 from subscriber.line_signal import LineSignalSubscriber
-from publisher.dmx_light_control import DMXLightControlPublisher
+from subscriber.dmx_light_control import DMXLightControlSubscriber
 from subscriber.camera import CameraMonitorSubscriber
 from subscriber.dk_level2 import DKLevel2DataSubscriber
 
@@ -65,7 +65,7 @@ class AppWindow(QMainWindow):
         self.__hmd_signal_control_publisher = None
         self.__line_signal_control_publisher = None
         self.__line_signal_monitor_subscriber = None
-        self.__light_control_publisher = None
+        self.__light_control_subscriber = None
         self.__dk_level2_data_subscriber = None
         self.__camera_image_subscriber_map = {}
         self.__camera_control_publisher_map = {}
@@ -221,16 +221,19 @@ class AppWindow(QMainWindow):
                 else:
                     self.__console.warning("Camera Control is not enabled.")
 
-                # create light control requester
+                # create light control requester (!!! control by line signal)
                 if "use_light_control" in config and config["use_light_control"]:
-                    if "light_control_source" in config:
+                    if "line_signal_monitor_source" in config:
                         try:
-                            self.__console.info("+ Create DMX Light Control Publisher")
-                            self.__light_control_publisher = DMXLightControlPublisher(self.__pipeline_context, connection=config["light_control_source"], dmx_ip=config["dmx_ip"], topic=config["dmx_light_controller_status_topic"])
-                            self.__light_control_publisher.dmx_alive_signal.connect(self.on_update_dmx_light_status)
-                            self.__light_control_publisher.start()
+                            self.__console.info("+ Create DMX Light Control Subscriber")
+                            self.__light_control_subscriber = DMXLightControlSubscriber(self.__pipeline_context, connection=config["line_signal_monitor_source"], 
+                                                                                        dmx_ip=config["dmx_ip"], dmx_port=config["dmx_port"], 
+                                                                                        light_ids=config["light_ids"], topic=config["line_signal_monitor_topic"])
+                            self.__light_control_subscriber.dmx_alive_signal.connect(self.on_update_dmx_light_status)
+                            self.__light_control_subscriber.start()
+                            self.__console.info("+ Create DMX Light Control Subscriber....")
                         except Exception as e:
-                            self.__console.warning(f"DMX Light Control Publisher has problem : {e}")
+                            self.__console.warning(f"DMX Light Control Subscriber has problem : {e}")
                 else:
                     self.__console.warning("Light Control is not enabled")
 
@@ -374,9 +377,9 @@ class AppWindow(QMainWindow):
         """ terminate main window """      
 
         # close light control requester
-        if self.__light_control_publisher:
-            self.__light_control_publisher.close()
-            self.__console.info("Close Light Control Publisher")
+        if self.__light_control_subscriber:
+            self.__light_control_subscriber.close()
+            self.__console.info("Close Light Control Subscriber")
 
         # close lens control publisher
         if self.__lens_control_publisher:
@@ -546,7 +549,7 @@ class AppWindow(QMainWindow):
         if "use_light_control" in self.__config and self.__config["use_light_control"]:
             if "dmx_ip" in self.__config and "dmx_port" in self.__config:
                 value = int(self.label_light_control_value.text())
-                self.__light_control_publisher.set_control(self.__config["dmx_ip"], self.__config["dmx_port"], self.__config["light_ids"], value)
+                self.__light_control_subscriber.set_control(self.__config["dmx_ip"], self.__config["dmx_port"], self.__config["light_ids"], value)
             else:
                 QMessageBox.critical(self, "Error", f"DMX IP and Port is not defined")
         else:

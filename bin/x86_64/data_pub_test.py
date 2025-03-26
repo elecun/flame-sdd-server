@@ -5,16 +5,16 @@ import json
 
 context = zmq.Context()
 socket = context.socket(zmq.PUB)
-socket.bind("tcp://*:5104")
+socket.bind("tcp://*:5401")
 # socket.setsockopt_string(zmq.PUBLISH, "focus_control")
 
 time.sleep(3)
 
-topic = "focus_control"  # 구독 주제
+topic = "ni_daq_controller/line_signal"  # 구독 주제
 msg = {
-    "function":"move_focus",
-    "id":1,
-    "value":1000
+    "hmd_signal_on":True,
+    "online_signal_on":True,
+    "offline_signal_on":False
 }
 j_string = json.dumps(msg)
 
