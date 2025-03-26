@@ -5,9 +5,9 @@ import json
 
 context = zmq.Context()
 socket = context.socket(zmq.PUB)
-socket.bind("tcp://*:5604")
+socket.bind("tcp://127.0.0.1:5604")
 
-time.sleep(3)
+time.sleep(5)
 
 topic = "dk_level2_interface/lv2_dispatch"  # 구독 주제
 msg = {

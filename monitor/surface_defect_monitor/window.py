@@ -154,10 +154,10 @@ class AppWindow(QMainWindow):
 
                 # create temperature monitoring subscriber
                 if "use_temperature_monitor" in config and config["use_temperature_monitor"]:
-                    if "temp_stream_source" in config and "temp_stream_topic" in config:
+                    if "temp_stream_source" in config and "temp_stream_sub_topic" in config:
                         try:
                             self.__console.info("+ Create Temperature Monitoring Subscriber...")
-                            self.__temp_monitor_subscriber = TemperatureMonitorSubscriber(self.__pipeline_context, connection=config["temp_stream_source"], topic=config["temp_stream_topic"])
+                            self.__temp_monitor_subscriber = TemperatureMonitorSubscriber(self.__pipeline_context, connection=config["temp_stream_source"], topic=config["temp_stream_sub_topic"])
                             self.__temp_monitor_subscriber.temperature_update_signal.connect(self.on_update_temperature)
                             self.__temp_monitor_subscriber.start() # run in thread
                         except Exception as e:
@@ -175,9 +175,9 @@ class AppWindow(QMainWindow):
 
                 # dk level2 data monitoring subscriber
                 if "use_dk_level2_interface" in config and config["use_dk_level2_interface"]:
-                    if "dk_level2_interface_source" in config and "dk_level2_interface_topic" in config:
+                    if "dk_level2_interface_source" in config and "dk_level2_interface_sub_topic" in config:
                         self.__console.info("+ Create DK Level2 Data Subscriber...")
-                        self.__dk_level2_data_subscriber = DKLevel2DataSubscriber(self.__pipeline_context, connection=config["dk_level2_interface_source"], topic=config["dk_level2_interface_topic"])
+                        self.__dk_level2_data_subscriber = DKLevel2DataSubscriber(self.__pipeline_context, connection=config["dk_level2_interface_source"], topic=config["dk_level2_interface_sub_topic"])
                         self.__dk_level2_data_subscriber.level2_data_update_signal.connect(self.on_update_dk_level2_data)
                         self.__dk_level2_data_subscriber.start()
                 else:

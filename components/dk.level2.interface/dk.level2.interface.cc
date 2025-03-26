@@ -210,7 +210,7 @@ void dk_level2_interface::_do_server_work(json parameters){
                                 data_pack["fm_length"] = stol(remove_space(packet.cFMLength, sizeof(packet.cFMLength)));
 
                                 /* publish the level2 data via lv2_dispatch port */
-                                string topic = fmt::format("lv2_dispatch", get_name());
+                                string topic = fmt::format("{}/lv2_dispatch", get_name());
                                 string data = data_pack.dump();
                                 zmq::multipart_t msg_multipart;
                                 msg_multipart.addstr(topic);

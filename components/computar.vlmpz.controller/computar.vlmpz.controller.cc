@@ -122,8 +122,6 @@ void computar_vlmpz_controller::_level2_dispatch_subscribe(json parameters){
                     string data = msg_multipart.popstr();
                     auto json_data = json::parse(data);
 
-                    logger::info("recv from {}", topic);
-
                     if(json_data.contains("mt_stand_height") && json_data.contains("mt_stand_width") && json_data.contains("mt_stand_t1") && json_data.contains("mt_stand_t2")){
 
                         /* 1. for move focus function processing */
