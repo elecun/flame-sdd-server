@@ -453,7 +453,7 @@ void basler_gige_cam_grabber::_level2_dispatch_task(){
                         double t2 = json_data["mt_stand_t2"].get<double>();
 
                         /* find file */
-                        string preset_file = fmt::format("{}/{}_{}_{}_{}.preset", _preset_path, height, width, t1, t2);
+                        string preset_file = fmt::format("{}/{}_{}_{}_{}.preset", _preset_path, height, width, int(t1), int(t2));
                         if(!std::filesystem::exists(preset_file)){
                             logger::error("[{}] Preset file not found : {}", get_name(), preset_file);
                         }

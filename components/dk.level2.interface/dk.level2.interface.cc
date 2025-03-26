@@ -464,10 +464,10 @@ dk_h_standard_dim dk_level2_interface::extract_stand_dim(const char* in, int siz
 
     if(tokens.size()==4){
         try{
-            result.height = stoi(tokens[0]);
-            result.width = stoi(tokens[1]);
-            result.t1 = stod(tokens[2]);
-            result.t2 = stod(tokens[3]);
+            result.width = stoi(tokens[0]); // H
+            result.height = stoi(tokens[1]); // B
+            result.t1 = stod(tokens[2]); //t1
+            result.t2 = stod(tokens[3]); //t2
         }
         catch(const std::exception& e){
             logger::error("[{}] extraction error : {}", get_name(), e.what());

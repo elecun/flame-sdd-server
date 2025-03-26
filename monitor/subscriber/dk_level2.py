@@ -51,7 +51,6 @@ class DKLevel2DataSubscriber(QThread):
         self.__poller.register(self.__socket, zmq.POLLIN) # POLLIN, POLLOUT, POLLERR
 
         self.__console.info("* Start Level2 Data Subscriber")
-        # self.start()
 
     def get_connection_info(self) -> str: # return connection address
         return self.__connection
@@ -63,12 +62,16 @@ class DKLevel2DataSubscriber(QThread):
         """ Run the subscriber thread """
         while not self.isInterruptionRequested():
             try:
-                events = dict(self.__poller.poll(500)) # wait 1 sec
+                events = dict(self.__poller.poll(1000)) # wait 1 sec
                 if self.__socket in events:
-                    topic, data = self.__socket.recv_multipart()
-                    if topic.decode() == self.__topic:
-                        data = json.loads(data.decode('utf8').replace("'", '"'))
-                        self.level2_data_update_signal.emit(data)
+                    if events[self.__socket] == zmq.POLLERR:
+                        self.__console.error(f"<Level2 Data Monitor> Error: {self.__socket.getsockopt(zmq.LAST_ENDPOINT)}")
+
+                    elif events[self.__socket] == zmq.POLLIN:
+                        topic, data = self.__socket.recv_multipart()
+                        if topic.decode() == self.__topic:
+                            data = json.loads(data.decode('utf8').replace("'", '"'))
+                            self.level2_data_update_signal.emit(data)
             
             except json.JSONDecodeError as e:
                 self.__console.critical(f"<Level2 Data Monitor>[DecodeError] {e}")

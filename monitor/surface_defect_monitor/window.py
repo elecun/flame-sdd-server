@@ -470,18 +470,35 @@ class AppWindow(QMainWindow):
     def on_update_dk_level2_data(self, data:dict):
         """ update dk level2 data """
         try:
-            data = json.loads(data)
             # display lot no
             if "lot_no" in data:
                 self.label_lotno.setText(data["lot_no"])
             else:
                 self.label_lotno.setText("-")
 
-            # display mt stand
-            if "mt_stand" in data:
-                self.label_mt_stand.setText(data["mt_stand"])
+            # display mt stand height
+            if "mt_stand_height" in data:
+                self.label_mt_stand_height.setText(str(data["mt_stand_height"]))
             else:
-                self.label_mt_stand.setText("-")
+                self.label_mt_stand_height.setText("-")
+
+            # display mt stand width
+            if "mt_stand_width" in data:
+                self.label_mt_stand_width.setText(str(data["mt_stand_width"]))
+            else:
+                self.label_mt_stand_width.setText("-")
+
+            # display mt stand t1
+            if "mt_stand_t1" in data:
+                self.label_mt_stand_t1.setText(str(data["mt_stand_t1"]))
+            else:
+                self.label_mt_stand_t1.setText("-")
+
+            # display mt stand t2
+            if "mt_stand_t1" in data:
+                self.label_mt_stand_t2.setText(str(data["mt_stand_t2"]))
+            else:
+                self.label_mt_stand_t2.setText("-")
 
             # display fm length
             if "fm_length" in data:
