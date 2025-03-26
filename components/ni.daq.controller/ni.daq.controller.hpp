@@ -52,9 +52,7 @@ class ni_daq_controller : public flame::component::object {
         void _daq_pulse_gen_task();
         void _daq_dio_read_task();
 
-        /* hmd signal publisher */
-        void _publish_hmd_signal(const char* portname, bool value); 
-        void _publish_online_signal(const char* portname, bool value);
+        /* line signal publisher */
         void _publish_line_signal(const char* portname, bool online_value, bool offline_value);
 
 }; /* class */
