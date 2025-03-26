@@ -66,14 +66,6 @@ bool basler_gige_cam_grabber::on_init(){
             }
         }
 
-        if(parameters.contains("use_line_signal")){
-            bool enable = parameters.value("use_line_signal", false);
-            if(enable){
-                _line_signal_worker = thread(&basler_gige_cam_grabber::_line_signal_subscribe, this);
-                logger::info("[{}] Entry Signal subscriber is running...", get_name());
-            }
-        }
-
     }
     catch(const GenericException& e){
         logger::error("[{}] Pylon Generic Exception : {}", get_name(), e.GetDescription());
@@ -235,17 +227,24 @@ void basler_gige_cam_grabber::_image_stream_control_task(){
             try{
                 /* wait for hmd_signal subscription */
                 zmq::multipart_t msg_multipart;
-                bool success = msg_multipart.recv(*get_port("hmd_signal"));
+                bool success = msg_multipart.recv(*get_port("line_signal"));
 
                 if(success){
                     string topic = msg_multipart.popstr();
                     string data = msg_multipart.popstr();
                     auto json_data = json::parse(data);
 
-                    if(json_data.contains("signal_on")){
-                        bool signal_on = json_data["signal_on"].get<bool>();
-                        _image_stream_enable.store(signal_on);
-                        logger::info("[{}] HMD Signal : {}", get_name(), signal_on);
+                    if(json_data.contains("hmd_signal_on") && json_data.contains("online_signal_on")){
+                        bool hmd_signal_on = json_data["hmd_signal_on"].get<bool>();
+                        bool online_signal_on = json_data["online_signal_on"].get<bool>();
+                        if(hmd_signal_on && online_signal_on){
+                            _image_stream_enable.store(true);
+                            logger::info("[{}] Now Image streaming is enabled...", get_name());
+                        }
+                    }
+                    else{
+                        _image_stream_enable.store(false);
+                        logger::info("[{}] Image streaming is disabled...", get_name());
                     }
                 }
             }
@@ -358,7 +357,7 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                             string id_str = fmt::format("{}",camera_id);
     
                             /* push image data */
-                            if(_image_stream_enable.load() && _online_signal_on.load()){
+                            if(_image_stream_enable.load()){
                                 /* camera grab status update */
                                 _camera_grab_counter[camera_id].store(++camera_grab_counter);
     
@@ -480,40 +479,6 @@ void basler_gige_cam_grabber::_level2_dispatch_task(){
                     }
                 }
 
-            }
-            catch(const zmq::error_t& e){
-                break;
-            }
-        }
-    }
-    catch(const zmq::error_t& e){
-        logger::error("[{}] Pipeline error : {}", get_name(), e.what());
-    }
-    catch(const std::runtime_error& e){
-        logger::error("[{}] Runtime error occurred!", get_name());
-    }
-    catch(const json::parse_error& e){
-        logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());
-    }
-}
-
-void basler_gige_cam_grabber::_line_signal_subscribe(){
-    try{
-        while(!_worker_stop.load()){
-            try{
-                zmq::multipart_t msg_multipart;
-                bool success = msg_multipart.recv(*get_port("line_signal"));
-                if(success){
-                    string topic = msg_multipart.popstr();
-                    string data = msg_multipart.popstr();
-                    auto json_data = json::parse(data);
-
-                    if(json_data.contains("online_signal_on")){
-                        bool signal_on = json_data["online_signal_on"].get<bool>();
-                        _online_signal_on.store(signal_on);
-                        logger::info("[{}] Line Signal(Online) ON : {}", get_name(), signal_on);
-                    }
-                }
             }
             catch(const zmq::error_t& e){
                 break;
