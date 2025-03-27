@@ -932,8 +932,8 @@ color: rgb(0, 255, 0);</string>
      <widget class="QPushButton" name="btn_light_control_off">
       <property name="geometry">
        <rect>
-        <x>1150</x>
-        <y>185</y>
+        <x>1155</x>
+        <y>220</y>
         <width>91</width>
         <height>26</height>
        </rect>
@@ -1001,9 +1001,9 @@ background-color: rgb(212, 212, 212);</string>
       <property name="geometry">
        <rect>
         <x>1040</x>
-        <y>65</y>
+        <y>75</y>
         <width>76</width>
-        <height>16</height>
+        <height>21</height>
        </rect>
       </property>
       <property name="font">
@@ -3508,7 +3508,7 @@ border: 1px solid white;</string>
      <x>0</x>
      <y>0</y>
      <width>1280</width>
-     <height>24</height>
+     <height>43</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuControl">
