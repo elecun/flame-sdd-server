@@ -435,21 +435,21 @@ class AppWindow(QMainWindow):
         """ update temperature value in GUI """
         try:
             if "1" in values:   
-                self.label_temperature_value_1.setText(str(int(values["1"])*0.1))
+                self.label_temperature_value_1.setText(str(values["1"]))
             if "2" in values:
-                self.label_temperature_value_2.setText(str(int(values["2"])*0.1))
+                self.label_temperature_value_2.setText(str(values["2"]))
             if "3" in values:
-                self.label_temperature_value_3.setText(str(int(values["3"])*0.1))
+                self.label_temperature_value_3.setText(str(values["3"]))
             if "4" in values:
-                self.label_temperature_value_4.setText(str(int(values["4"])*0.1))
+                self.label_temperature_value_4.setText(str(values["4"]))
             if "5" in values:
-                self.label_temperature_value_5.setText(str(int(values["5"])*0.1))
+                self.label_temperature_value_5.setText(str(values["5"]))
             if "6" in values:
-                self.label_temperature_value_6.setText(str(int(values["6"])*0.1))
+                self.label_temperature_value_6.setText(str(values["6"]))
             if "7" in values:
-                self.label_temperature_value_7.setText(str(int(values["7"])*0.1))
+                self.label_temperature_value_7.setText(str(values["7"]))
             if "8" in values:
-                self.label_temperature_value_8.setText(str(int(values["8"])*0.1))
+                self.label_temperature_value_8.setText(str(values["8"]))
         except Exception as e:
             pass
 

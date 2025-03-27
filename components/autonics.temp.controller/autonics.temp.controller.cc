@@ -79,7 +79,7 @@ void autonics_temp_controller::on_loop(){
             }
             else {
                 float temperature = (float)reg[0] + (float)reg[1] / 10.0;
-                data_pack[fmt::format("{}", slave_addr)] = temperature;
+                data_pack[fmt::format("{}", slave_addr)] = static_cast<float>((int)(temperature)/10);
                 //logger::info("[{}] Slave({}) Temperature : {} ({},{})", get_name(), slave_addr, temperature, (int)reg[0], (int)reg[1]);
             }
             usleep(70000); // 70ms
@@ -89,6 +89,8 @@ void autonics_temp_controller::on_loop(){
         if(!data_pack.empty()){
             string topic = fmt::format("{}/temp_stream", get_name());
             string data = data_pack.dump();
+
+            logger::info("[{}] {}", get_name(), data);
 
             zmq::multipart_t msg_multipart;
             msg_multipart.addstr(topic);
