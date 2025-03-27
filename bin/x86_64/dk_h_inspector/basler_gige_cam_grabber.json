@@ -34,7 +34,7 @@
             "socket_type" : "pub",
             "queue_size" : 1000
         },
-        "line_signal":{
+        "ni_daq_controller/line_signal":{
             "transport":"tcp",
             "host":"127.0.0.1",
             "port":5401,

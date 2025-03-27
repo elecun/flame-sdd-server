@@ -227,12 +227,14 @@ void basler_gige_cam_grabber::_image_stream_control_task(){
             try{
                 /* wait for hmd_signal subscription */
                 zmq::multipart_t msg_multipart;
-                bool success = msg_multipart.recv(*get_port("line_signal"));
+                bool success = msg_multipart.recv(*get_port("ni_daq_controller/line_signal"));
 
                 if(success){
                     string topic = msg_multipart.popstr();
                     string data = msg_multipart.popstr();
                     auto json_data = json::parse(data);
+
+                    logger::info("[{}] Line signal : {}", get_name(), data);
 
                     if(json_data.contains("hmd_signal_on") && json_data.contains("online_signal_on")){
                         bool hmd_signal_on = json_data["hmd_signal_on"].get<bool>();
