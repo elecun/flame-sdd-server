@@ -128,6 +128,7 @@ class AppWindow(QMainWindow):
                 self.check_online_signal.stateChanged.connect(self.on_check_online_signal)
                 self.check_offline_signal.stateChanged.connect(self.on_check_offline_signal)
                 self.check_hmd_signal.clicked.connect(self.on_check_hmd_signal)
+                self.btn_light_control_off.clicked.connect(self.on_btn_light_control_off)
 
                 # register dial event callback function
                 self.dial_light_control.valueChanged.connect(self.on_change_light_control)
@@ -320,7 +321,13 @@ class AppWindow(QMainWindow):
     def on_change_light_control(self, value):
         """ control value update """
         self.label_light_control_value.setText(str(value))
-        
+    
+    def on_btn_light_control_off(self):
+        """ light off """
+        self.__light_control_subscriber.set_off(self.__config["dmx_ip"], self.__config["dmx_port"], self.__config["light_ids"])
+        self.label_light_control_value.setText("0")
+        self.dial_light_control.setValue(0)
+
 
     def on_btn_focus_set(self, id:int):
         """ focus move control """

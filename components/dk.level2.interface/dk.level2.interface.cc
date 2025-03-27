@@ -5,6 +5,7 @@
 #include <chrono>
 #include <filesystem>
 #include <sstream>
+#include <bitset>
 
 using namespace flame;
 
@@ -207,7 +208,9 @@ void dk_level2_interface::_do_server_work(json parameters){
                                 data_pack["mt_stand_width"] = dim.width;
                                 data_pack["mt_stand_t1"] = dim.t1;
                                 data_pack["mt_stand_t2"] = dim.t2;
-                                data_pack["fm_length"] = std::strtol(packet.cFMLength, nullptr, 10);
+                                //data_pack["fm_length"] = std::strtol(packet.cFMLength, nullptr, 10);
+                                //data_pack["fm_length"] = std::bitset<sizeof(packet.cFMLength)>(packet.cFMLength).to_ulong();
+                                logger::info("{}", str_packet.substr(220,6));
 
                                 /* publish the level2 data via lv2_dispatch port */
                                 string topic = fmt::format("{}/lv2_dispatch", get_name());
@@ -246,11 +249,14 @@ void dk_level2_interface::_do_server_work(json parameters){
 
             }
             else{
-
+                
             }
         }
         catch(const zmq::error_t& e){
             break;
+        }
+        catch(const std::exception& e){
+            logger::error("[{}] extraction error : {}", get_name(), e.what());
         }
 
         this_thread::sleep_for(chrono::milliseconds(100));
