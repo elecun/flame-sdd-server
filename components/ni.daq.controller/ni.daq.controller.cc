@@ -243,7 +243,7 @@ void ni_daq_controller::_publish_line_signal(const char* portname, unsigned char
     /* publish data */
     if(get_port(portname)->handle()!=nullptr){
         zmq::multipart_t msg_multipart;
-        string topic = portname;
+        string topic = fmt::format("{}/{}",get_name(), portname);
 
         json data_pack;
         data_pack["online_signal_on"] = static_cast<bool>(value[2]); //online
