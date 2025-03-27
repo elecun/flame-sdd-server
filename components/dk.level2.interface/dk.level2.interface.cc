@@ -209,6 +209,7 @@ void dk_level2_interface::_do_server_work(json parameters){
                                 data_pack["mt_stand_width"] = dim.width;
                                 data_pack["mt_stand_t1"] = dim.t1;
                                 data_pack["mt_stand_t2"] = dim.t2;
+                                //data_pack["fm_length"] = 0;
                                 logger::info("{}", str_packet.substr(220,6));
 
                                 /* publish the level2 data via lv2_dispatch port */
