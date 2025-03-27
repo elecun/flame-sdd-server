@@ -202,14 +202,13 @@ void dk_level2_interface::_do_server_work(json parameters){
                                 json data_pack;
                                 data_pack["date"] = remove_space(packet.cDate, sizeof(packet.cDate));
                                 data_pack["lot_no"] = remove_space(packet.cLotNo, sizeof(packet.cLotNo));
+                                data_pack["mt_no"] = remove_space(packet.cMtNo, sizeof(packet.cMtNo));
                                 dk_h_standard_dim dim = extract_stand_dim(packet.cMtStand, sizeof(packet.cMtStand));
                                 data_pack["mt_stand"] = remove_space(packet.cMtStand, sizeof(packet.cMtStand));
                                 data_pack["mt_stand_height"] = dim.height;
                                 data_pack["mt_stand_width"] = dim.width;
                                 data_pack["mt_stand_t1"] = dim.t1;
                                 data_pack["mt_stand_t2"] = dim.t2;
-                                //data_pack["fm_length"] = std::strtol(packet.cFMLength, nullptr, 10);
-                                //data_pack["fm_length"] = std::bitset<sizeof(packet.cFMLength)>(packet.cFMLength).to_ulong();
                                 logger::info("{}", str_packet.substr(220,6));
 
                                 /* publish the level2 data via lv2_dispatch port */
