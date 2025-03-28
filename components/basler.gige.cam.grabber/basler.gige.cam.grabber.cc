@@ -243,10 +243,10 @@ void basler_gige_cam_grabber::_image_stream_control_task(){
                             _image_stream_enable.store(true);
                             logger::info("[{}] Now Image streaming is enabled...", get_name());
                         }
-                    }
-                    else{
-                        _image_stream_enable.store(false);
-                        logger::info("[{}] Image streaming is disabled...", get_name());
+                        else {
+                            _image_stream_enable.store(false);
+                            logger::info("[{}] Image streaming is disabled...", get_name());
+                        }
                     }
                 }
             }
