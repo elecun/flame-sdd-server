@@ -39,16 +39,16 @@ class LightController:
         return header + opcode + protocol_version + sequence + physical + universe + length + data
 
 if __name__ == "__main__":
-    #id = 21
+    # id = 23
     controller = LightController()
     # controller.light_on(id, "192.168.0.60", 6454)
     # time.sleep(5)
     # controller.light_off(id, "192.168.0.60", 6454)
-    ids = [1,3,5,7,9,11,13,15,17,19]
+    ids = [1,3,5,7,9,11,13,15,17,19, 21, 23]
     for id in ids:
         print(f"{id} on")
-        controller.light_on(11, "192.168.0.60", 6454)
-        time.sleep(2)
+        controller.light_on(id, "192.168.0.60", 6454)
+        time.sleep(3)
         print(f"{id} off")
         controller.light_off(id, "192.168.0.60", 6454)
-        time.sleep(2)
+        time.sleep(3)
