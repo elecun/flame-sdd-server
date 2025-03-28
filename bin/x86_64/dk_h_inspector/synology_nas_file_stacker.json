@@ -3,7 +3,7 @@
     "verbose" : 1,
 
     "parameters":{
-        "mount_path" : "/home/dk-sdd/nas_storage",
+        "mount_path" : "/home/dk-sdd/local_storage",
         "use_level2_interface":true,
         "image_streams" : [
             {"id":1, "dirname":"camera_1"},
