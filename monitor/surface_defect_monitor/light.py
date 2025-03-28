@@ -8,7 +8,7 @@ class LightController:
     def __init__(self):
         pass
 
-    def light_on(id, self, dest_ip:str, dest_port:int):
+    def light_on(self, id, dest_ip:str, dest_port:int):
         dmx_data = bytearray(512)
         dmx_data[id] = 0x55  # 첫 채널 값을 255로 설정 (조명 켜짐)
 
@@ -18,7 +18,7 @@ class LightController:
         sock.close()
         print("on")
 
-    def light_off(id, self, dest_ip:str, dest_port:int):
+    def light_off(self, id, dest_ip:str, dest_port:int):
         dmx_data = bytearray(512)
         dmx_data[id] = 0x00  # 첫 채널 값을 255로 설정 (조명 켜짐)
 
@@ -39,12 +39,16 @@ class LightController:
         return header + opcode + protocol_version + sequence + physical + universe + length + data
 
 if __name__ == "__main__":
-    ids = [1,3,5,7,9,11,13,15,17,19]
+    #id = 21
     controller = LightController()
+    # controller.light_on(id, "192.168.0.60", 6454)
+    # time.sleep(5)
+    # controller.light_off(id, "192.168.0.60", 6454)
+    ids = [1,3,5,7,9,11,13,15,17,19]
     for id in ids:
         print(f"{id} on")
-        controller.light_on(id, "192.168.0.60", 6454)
-        time.sleep(1)
+        controller.light_on(11, "192.168.0.60", 6454)
+        time.sleep(2)
         print(f"{id} off")
         controller.light_off(id, "192.168.0.60", 6454)
-        time.sleep(1)
+        time.sleep(2)

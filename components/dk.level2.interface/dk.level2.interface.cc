@@ -205,12 +205,11 @@ void dk_level2_interface::_do_server_work(json parameters){
                                 data_pack["mt_no"] = remove_space(packet.cMtNo, sizeof(packet.cMtNo));
                                 dk_h_standard_dim dim = extract_stand_dim(packet.cMtStand, sizeof(packet.cMtStand));
                                 data_pack["mt_stand"] = remove_space(packet.cMtStand, sizeof(packet.cMtStand));
-                                data_pack["mt_stand_height"] = dim.height;
-                                data_pack["mt_stand_width"] = dim.width;
-                                data_pack["mt_stand_t1"] = dim.t1;
-                                data_pack["mt_stand_t2"] = dim.t2;
-                                //data_pack["fm_length"] = 0;
-                                logger::info("{}", str_packet.substr(220,6));
+                                data_pack["mt_stand_height"] = stoi(packet.cStandSize2); //B
+                                data_pack["mt_stand_width"] = stoi(packet.cStandSize1); // H
+                                data_pack["mt_stand_t1"] = stoi(packet.cStandSize3); //t1
+                                data_pack["mt_stand_t2"] = stoi(packet.cStandSize4); //t2
+                                data_pack["fm_length"] = stoi(packet.cFMLength); //fm length
 
                                 /* publish the level2 data via lv2_dispatch port */
                                 string topic = fmt::format("{}/lv2_dispatch", get_name());
