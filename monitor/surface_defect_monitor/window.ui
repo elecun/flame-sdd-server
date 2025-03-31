@@ -244,7 +244,7 @@ color: rgb(0,0,0);</string>
         <set>Qt::AlignCenter</set>
        </property>
       </widget>
-      <widget class="QLabel" name="label_hmd_signal_status">
+      <widget class="QLabel" name="label_hmd_signal_1_status">
        <property name="geometry">
         <rect>
          <x>215</x>
@@ -264,13 +264,39 @@ color: rgb(0,0,0);</string>
 color: rgb(0,0,0);</string>
        </property>
        <property name="text">
-        <string>HMD</string>
+        <string>MD1</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
        </property>
       </widget>
       <widget class="QLabel" name="label_line_signal_status">
+       <property name="geometry">
+        <rect>
+         <x>285</x>
+         <y>30</y>
+         <width>31</width>
+         <height>26</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background-color: rgb(200,200,200);
+color: rgb(0,0,0);</string>
+       </property>
+       <property name="text">
+        <string>LS</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_hmd_signal_2_status">
        <property name="geometry">
         <rect>
          <x>250</x>
@@ -290,7 +316,7 @@ color: rgb(0,0,0);</string>
 color: rgb(0,0,0);</string>
        </property>
        <property name="text">
-        <string>LS</string>
+        <string>MD2</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -3508,7 +3534,7 @@ border: 1px solid white;</string>
      <x>0</x>
      <y>0</y>
      <width>1280</width>
-     <height>43</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuControl">
