@@ -18,14 +18,16 @@ bool ni_daq_controller::on_init(){
     /* read profile */
     _daq_device_name = get_profile()->parameters().value("device_name", "Dev1");
     _daq_counter_channel = get_profile()->parameters().value("counter_channel", "ctr0:1");
-    _daq_md_signal_channel = get_profile()->parameters().value("md_signal_channel", "PFI0");
-    _daq_offline_signal_channel = get_profile()->parameters().value("offline_signal_channel", "PFI1");
-    _daq_online_signal_channel = get_profile()->parameters().value("online_signal_channel", "PFI2");
+    _daq_md_signal_channel_1 = get_profile()->parameters().value("md_signal_channel_1", "port1/line0");
+    _daq_md_signal_channel_2 = get_profile()->parameters().value("md_signal_channel_2", "port1/line1");
+    _daq_offline_signal_channel = get_profile()->parameters().value("offline_signal_channel", "port1/line2");
+    _daq_online_signal_channel = get_profile()->parameters().value("online_signal_channel", "port1/line3");
     _daq_pulse_freq = get_profile()->parameters().value("counter_pulse_freq", 30.0);
     _daq_pulse_duty = get_profile()->parameters().value("counter_pulse_duty", 0.5);
 
     string counter_dev_channel = fmt::format("{}/{}", _daq_device_name, _daq_counter_channel);
-    string di_dev_channel = fmt::format("{}/{},{}/{},{}/{}", _daq_device_name, _daq_md_signal_channel,
+    string di_dev_channel = fmt::format("{}/{},{}/{},{}/{},{}/{}", _daq_device_name, _daq_md_signal_channel_1,
+                                                             _daq_device_name, _daq_md_signal_channel_2,
                                                              _daq_device_name, _daq_offline_signal_channel, 
                                                              _daq_device_name, _daq_online_signal_channel);
 
@@ -193,9 +195,9 @@ void ni_daq_controller::_daq_dio_read_task(){
 
     /* start task */
     DAQmxStartTask(_task_handle_dio_reader);
-    unsigned char dio_values[3] = {0,};
+    unsigned char dio_values[4] = {0,};
     int read_samples;
-    unsigned char prev_dio_values[3] = {0, };
+    unsigned char prev_dio_values[4] = {0, };
 
     try {
         while(!_worker_stop.load()){
@@ -207,7 +209,7 @@ void ni_daq_controller::_daq_dio_read_task(){
                         // line signal changed
                         if(!std::equal(dio_values, dio_values + sizeof(dio_values), prev_dio_values)){
                             _publish_line_signal("line_signal", dio_values);
-                            logger::info("[{}] MD({}), Online({}), Offline({})", get_name(), dio_values[0], dio_values[2], dio_values[1]);
+                            logger::info("[{}] MD_1({}), MD_2({}), Online({}), Offline({})", get_name(), dio_values[0], dio_values[1], dio_values[3], dio_values[2]);
                         }
 
                         /* value updates */
@@ -246,9 +248,10 @@ void ni_daq_controller::_publish_line_signal(const char* portname, unsigned char
         string topic = fmt::format("{}/{}",get_name(), portname);
 
         json data_pack;
-        data_pack["online_signal_on"] = static_cast<bool>(value[2]); //online
-        data_pack["offline_signal_on"] = static_cast<bool>(value[1]); // offline
-        data_pack["hmd_signal_on"] = static_cast<bool>(value[0]); //md signal
+        data_pack["online_signal_on"] = static_cast<bool>(value[3]); //online
+        data_pack["offline_signal_on"] = static_cast<bool>(value[2]); // offline
+        data_pack["hmd_signal_1_on"] = static_cast<bool>(value[1]); //md signal
+        data_pack["hmd_signal_2_on"] = static_cast<bool>(value[0]); //md signal
         string data = data_pack.dump();
         
         msg_multipart.addstr(topic);

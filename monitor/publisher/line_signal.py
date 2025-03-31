@@ -51,7 +51,7 @@ class LineSignalPublisher(QObject):
         """ set line signal"""
         try:
             topic = "ni_daq_controller/line_signal"
-            message = {"online_signal_on":online_signal, "offline_signal_on":offline_signal, "hmd_signal_on":hmd_signal}
+            message = {"online_signal_on":online_signal, "offline_signal_on":offline_signal, "hmd_signal_1_on":hmd_signal}
             jmsg = json.dumps(message)
 
             self.__socket.send_multipart([topic.encode(), jmsg.encode()])

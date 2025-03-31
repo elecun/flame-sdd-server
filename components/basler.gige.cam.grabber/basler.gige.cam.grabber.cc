@@ -236,14 +236,15 @@ void basler_gige_cam_grabber::_image_stream_control_task(){
 
                     logger::info("[{}] Line signal : {}", get_name(), data);
 
-                    if(json_data.contains("hmd_signal_on") && json_data.contains("online_signal_on")){
-                        bool hmd_signal_on = json_data["hmd_signal_on"].get<bool>();
-                        bool online_signal_on = json_data["online_signal_on"].get<bool>();
-                        if(hmd_signal_on && online_signal_on){
+                    if(json_data.contains("hmd_signal_1_on") && json_data.contains("online_signal_on")){
+                        bool hmd_signal_1_on = json_data["hmd_signal_1_on"].get<bool>();
+                        bool hmd_signal_2_on = json_data["hmd_signal_2_on"].get<bool>();
+                        bool online_signal_on = json_data["hmd_signal_1_on"].get<bool>();
+                        if(hmd_signal_1_on && online_signal_on){
                             _image_stream_enable.store(true);
                             logger::info("[{}] Now Image streaming is enabled...", get_name());
                         }
-                        else {
+                        else if(!hmd_signal_1_on && !hmd_signal_2_on && online_signal_on) {
                             _image_stream_enable.store(false);
                             logger::info("[{}] Image streaming is disabled...", get_name());
                         }

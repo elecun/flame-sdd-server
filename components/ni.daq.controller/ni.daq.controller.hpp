@@ -35,7 +35,8 @@ class ni_daq_controller : public flame::component::object {
         /* daq parameters */
         string _daq_device_name {""};
         string _daq_counter_channel {""};
-        string _daq_md_signal_channel {""};
+        string _daq_md_signal_channel_1 {""};
+        string _daq_md_signal_channel_2 {""};
         string _daq_offline_signal_channel {""};
         string _daq_online_signal_channel {""};
         double _daq_pulse_freq {30.0};

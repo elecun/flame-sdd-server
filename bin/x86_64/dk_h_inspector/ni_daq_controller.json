@@ -5,7 +5,8 @@
     "parameters":{
         "device_name":"Dev1",
         "counter_channel":"ctr0:1",
-        "md_signal_channel":"port1/line0",
+        "md_signal_channel_1":"port1/line0",
+        "md_signal_channel_2":"port1/line1",
         "offline_signal_channel":"port1/line2",
         "online_signal_channel":"port1/line3",
         "counter_pulse_freq":30.0,

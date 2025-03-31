@@ -141,7 +141,8 @@ class AppWindow(QMainWindow):
                 self.set_status_inactive("label_lens_status")
                 self.set_status_inactive("label_nas_status")
                 self.set_status_inactive("label_light_controller_status")
-                self.set_status_inactive("label_hmd_signal_status")
+                self.set_status_inactive("label_hmd_signal_1_status")
+                self.set_status_inactive("label_hmd_signal_2_status")
                 self.set_status_inactive("label_line_signal_status")
 
                 # find focus preset files in preset directory
@@ -519,17 +520,27 @@ class AppWindow(QMainWindow):
     def on_update_line_signal(self, data:dict):
         """ update library signal status """
         try:
+            # online signal
             if "online_signal_on" in data:
                 if data["online_signal_on"]:
                     self.set_status_active("label_line_signal_status")
                 else:
                     self.set_status_inactive("label_line_signal_status")
 
-            if "hmd_signal_on" in data:
-                if data["hmd_signal_on"]:
-                    self.set_status_active("label_hmd_signal_status")
+            # HMD signal 1
+            if "hmd_signal_1_on" in data:
+                if data["hmd_signal_1_on"]:
+                    self.set_status_active("label_hmd_signal_1_status")
                 else:
-                    self.set_status_inactive("label_hmd_signal_status")
+                    self.set_status_inactive("label_hmd_signal_1_status")
+
+            # HMD signal 2
+            if "hmd_signal_2_on" in data:
+                if data["hmd_signal_2_on"]:
+                    self.set_status_active("label_hmd_signal_2_status")
+                else:
+                    self.set_status_inactive("label_hmd_signal_2_status")
+
         except json.JSONDecodeError as e:
             self.__console.error(f"Line Signal Update Error : {e.what()}")
 

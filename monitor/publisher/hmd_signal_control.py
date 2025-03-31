@@ -47,15 +47,15 @@ class HMDSignalControlPublisher(QObject):
         """ get connection info """
         return self.__connection
     
-    def set_signal_on(self, signal_on:bool):
+    def set_signal_on(self, signal_1_on:bool, signal_2_on:bool):
         """ set signal on """
         try:
             topic = "hmd_signal"
-            message = {"hmd_signal_on":signal_on}
+            message = {"hmd_signal_1_on":signal_1_on, "hmd_signal_2_on":signal_2_on}
             jmsg = json.dumps(message)
 
             self.__socket.send_multipart([topic.encode(), jmsg.encode()])
-            self.__console.info(f"Publish HMD Signal Control : {signal_on}")
+            self.__console.info(f"Publish HMD Signal Control : {signal_1_on},{signal_2_on}")
 
         except zmq.ZMQError as e:
             self.__console.error(f"<HMD Signal Control> {e}")
