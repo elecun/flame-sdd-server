@@ -171,6 +171,9 @@ void dk_level2_interface::_do_server_work(json parameters){
                                 memcpy(&packet, data, sizeof(packet));
                                 string str_packet(data, length);
                                 logger::info("[{}] {}", get_name(), str_packet);
+
+                                /* level2 connection status update for monitoring */
+                                publish_status(true);
                             }
                             else {
                                 logger::info("[{}] Wrong packet(TC code:1099) length", get_name());
@@ -234,6 +237,7 @@ void dk_level2_interface::_do_server_work(json parameters){
                     
                     client->on_socket_closed = [this, client](int error_code) {
                         logger::info("[{}] Disconnected client : {}:{}", get_name(), client->get_remote_address(), client->get_remote_port());
+                        publish_status(false);
                     };
                 };
 
@@ -485,6 +489,19 @@ dk_h_standard_dim dk_level2_interface::extract_stand_dim(const char* in, int siz
 
     return result;
 
+}
+
+/* publish status */
+void dk_level2_interface::publish_status(bool lv2_connect){
+
+    json data_pack;
+    string topic = fmt::format("{}/status", get_name());
+    data_pack["level2_connect"] = lv2_connect;
+    string data = data_pack.dump();
+    zmq::multipart_t msg_multipart;
+    msg_multipart.addstr(topic);
+    msg_multipart.addstr(data);
+    msg_multipart.send(*get_port("status"), ZMQ_DONTWAIT);
 }
 
 std::vector<std::string> split(const std::string& str, const std::string& delimiters){

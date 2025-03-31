@@ -45,6 +45,7 @@ from subscriber.line_signal import LineSignalSubscriber
 from subscriber.dmx_light_control import DMXLightControlSubscriber
 from subscriber.camera import CameraMonitorSubscriber
 from subscriber.dk_level2 import DKLevel2DataSubscriber
+from subscriber.dk_level2_status import DKLevel2StatusSubscriber
 
 class AppWindow(QMainWindow):
     def __init__(self, config:dict):
@@ -67,6 +68,7 @@ class AppWindow(QMainWindow):
         self.__line_signal_monitor_subscriber = None
         self.__light_control_subscriber = None
         self.__dk_level2_data_subscriber = None
+        self.__dk_level2_status_subscriber = None
         self.__camera_image_subscriber_map = {}
         self.__camera_control_publisher_map = {}
 
@@ -183,6 +185,11 @@ class AppWindow(QMainWindow):
                         self.__dk_level2_data_subscriber = DKLevel2DataSubscriber(self.__pipeline_context, connection=config["dk_level2_interface_source"], topic=config["dk_level2_interface_sub_topic"])
                         self.__dk_level2_data_subscriber.level2_data_update_signal.connect(self.on_update_dk_level2_data)
                         self.__dk_level2_data_subscriber.start()
+
+                        self.__console.info("+ Create DK Level2 Status Subscriber...")
+                        self.__dk_level2_status_subscriber = DKLevel2StatusSubscriber(self.__pipeline_context, connection=config["dk_level2_status_source"], topic=config["dk_level2_status_sub_topic"])
+                        self.__dk_level2_status_subscriber.level2_status_update_signal.connect(self.on_update_dk_level2_status)
+                        self.__dk_level2_status_subscriber.start()
                 else:
                     self.__console.warning("DK Level2 Data Interface is not enabled")
 
@@ -419,6 +426,11 @@ class AppWindow(QMainWindow):
         if self.__dk_level2_data_subscriber:
             self.__dk_level2_data_subscriber.close()
             self.__console.info("Close DK Level2 Data Subscriber")
+
+        # close level2 status subscriber
+        if self.__dk_level2_status_subscriber:
+            self.__dk_level2_status_subscriber.close()
+            self.__console.info("Close DK Level2 Status Subscriber")
     
         # close camera status monitor subscriber
         if self.__camera_status_monitor_subscriber:
@@ -476,6 +488,17 @@ class AppWindow(QMainWindow):
         except json.JSONDecodeError as e:
             self.__console.error(f"Camera Status Update Error : {e.waht()}")
 
+    def on_update_dk_level2_status(self, data:dict):
+        try:
+            if "level2_connect" in data:
+                if data["level2_connect"]:
+                    self.set_status_active("label_level2_status")
+                else:
+                    self.set_status_inactive("label_level2_status")
+        except json.JSONDecodeError as e:
+            self.__console.error(f"DK Level2 Status Update Error : {e.waht()}")
+
+
     def on_update_dk_level2_data(self, data:dict):
         """ update dk level2 data """
         try:
@@ -504,7 +527,7 @@ class AppWindow(QMainWindow):
                 self.label_mt_stand_t1.setText("-")
 
             # display mt stand t2
-            if "mt_stand_t1" in data:
+            if "mt_stand_t2" in data:
                 self.label_mt_stand_t2.setText(str(data["mt_stand_t2"]))
             else:
                 self.label_mt_stand_t2.setText("-")
@@ -516,7 +539,7 @@ class AppWindow(QMainWindow):
                 self.label_fm_length.setText("-")
 
         except json.JSONDecodeError as e:
-            self.__console.error(f"Camera Status Update Error : {e.waht()}")
+            self.__console.error(f"DK Level2 Data Update Error : {e.waht()}")
         
     def on_update_line_signal(self, data:dict):
         """ update library signal status """

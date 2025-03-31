@@ -64,6 +64,9 @@ class dk_level2_interface : public flame::component::object {
         dk_sdd_alarm generate_packet_alarm(string alarm_code, bool show = false);
         dk_sdd_job_result generate_packet_job_result(string lot_no, string mt_no, string mt_type_cd, string mt_stand, vector<dk_sdd_defect> defect_list, bool show = false);
 
+        /* status udpate */
+        void publish_status(bool lv2_connect);
+
     private:
         string _lv2_access_ip {"127.0.0.1"};
         int _lv2_access_port;

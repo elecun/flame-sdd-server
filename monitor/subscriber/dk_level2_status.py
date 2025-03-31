@@ -1,5 +1,5 @@
 """
-DK Level2 Subscriber
+DK Level2 Status Subscriber
 @author Byunghun Hwang <bh.hwang@iae.re.kr>
 """
 
@@ -26,14 +26,14 @@ for name in dir(zmq):
         EVENT_MAP[value] = name
 # event_description, event_value = zmq.utils.monitor.parse_monitor_message(event)
 
-class DKLevel2DataSubscriber(QThread):
-    level2_data_update_signal = pyqtSignal(dict) # signal for level2 data update
+class DKLevel2StatusSubscriber(QThread):
+    level2_status_update_signal = pyqtSignal(dict) # signal for level2 status update
 
     def __init__(self, context:zmq.Context, connection:str, topic:str):
         super().__init__()
 
         self.__console = ConsoleLogger.get_logger()   # console logger
-        self.__console.info(f"Level2 Monitor Connection : {connection} (topic:{topic})")
+        self.__console.info(f"Level2 Status Monitor Connection : {connection} (topic:{topic})")
 
         # store parameters
         self.__connection = connection
@@ -50,7 +50,7 @@ class DKLevel2DataSubscriber(QThread):
         self.__poller = zmq.Poller()
         self.__poller.register(self.__socket, zmq.POLLIN) # POLLIN, POLLOUT, POLLERR
 
-        self.__console.info("* Start Level2 Data Subscriber")
+        self.__console.info("* Start Level2 Status Subscriber")
 
     def get_connection_info(self) -> str: # return connection address
         return self.__connection
@@ -65,22 +65,22 @@ class DKLevel2DataSubscriber(QThread):
                 events = dict(self.__poller.poll(1000)) # wait 1 sec
                 if self.__socket in events:
                     if events[self.__socket] == zmq.POLLERR:
-                        self.__console.error(f"<Level2 Data Monitor> Error: {self.__socket.getsockopt(zmq.LAST_ENDPOINT)}")
+                        self.__console.error(f"<Level2 Status Monitor> Error: {self.__socket.getsockopt(zmq.LAST_ENDPOINT)}")
 
                     elif events[self.__socket] == zmq.POLLIN:
                         topic, data = self.__socket.recv_multipart()
                         if topic.decode() == self.__topic:
                             data = json.loads(data.decode('utf8').replace("'", '"'))
-                            self.level2_data_update_signal.emit(data)
+                            self.level2_status_update_signal.emit(data)
             
             except json.JSONDecodeError as e:
-                self.__console.critical(f"<Level2 Data Monitor>[DecodeError] {e}")
+                self.__console.critical(f"<Level2 Status Monitor>[DecodeError] {e}")
                 continue
             except zmq.error.ZMQError as e:
-                self.__console.critical(f"<Level2 Data Monitor>[ZMQError] {e}")
+                self.__console.critical(f"<Level2 Status Monitor>[ZMQError] {e}")
                 break
             except Exception as e:
-                self.__console.critical(f"<Level2 Data Monitor>[Exception] {e}")
+                self.__console.critical(f"<Level2 Status Monitor>[Exception] {e}")
                 break
 
     def close(self):
@@ -94,4 +94,4 @@ class DKLevel2DataSubscriber(QThread):
             self.__poller.unregister(self.__socket)
             self.__socket.close()
         except zmq.ZMQError as e:
-            self.__console.error(f"<Level2 Data Monitor> {e}")
+            self.__console.error(f"<Level2 Status Monitor> {e}")
