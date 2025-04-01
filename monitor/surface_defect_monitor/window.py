@@ -510,25 +510,25 @@ class AppWindow(QMainWindow):
 
             # display mt stand height
             if "mt_stand_height" in data:
-                self.label_mt_stand_height.setText(str(data["mt_stand_height"]))
+                self.label_mt_stand_height.setText(str(int(data["mt_stand_height"]/10)))
             else:
                 self.label_mt_stand_height.setText("-")
 
             # display mt stand width
             if "mt_stand_width" in data:
-                self.label_mt_stand_width.setText(str(data["mt_stand_width"]))
+                self.label_mt_stand_width.setText(str(int(data["mt_stand_width"]/10)))
             else:
                 self.label_mt_stand_width.setText("-")
 
             # display mt stand t1
             if "mt_stand_t1" in data:
-                self.label_mt_stand_t1.setText(str(data["mt_stand_t1"]))
+                self.label_mt_stand_t1.setText(str(int(data["mt_stand_t1"]/10)))
             else:
                 self.label_mt_stand_t1.setText("-")
 
             # display mt stand t2
             if "mt_stand_t2" in data:
-                self.label_mt_stand_t2.setText(str(data["mt_stand_t2"]))
+                self.label_mt_stand_t2.setText(str(int(data["mt_stand_t2"]/10)))
             else:
                 self.label_mt_stand_t2.setText("-")
 
