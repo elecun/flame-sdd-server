@@ -234,17 +234,18 @@ void basler_gige_cam_grabber::_image_stream_control_task(){
                     string data = msg_multipart.popstr();
                     auto json_data = json::parse(data);
 
-                    logger::info("[{}] Line signal : {}", get_name(), data);
+                    logger::info("{}", data);
 
-                    if(json_data.contains("hmd_signal_1_on") && json_data.contains("online_signal_on")){
+                    if(json_data.contains("hmd_signal_1_on") && json_data.contains("hmd_signal_2_on") && json_data.contains("online_signal_on")){
                         bool hmd_signal_1_on = json_data["hmd_signal_1_on"].get<bool>();
                         bool hmd_signal_2_on = json_data["hmd_signal_2_on"].get<bool>();
-                        bool online_signal_on = json_data["hmd_signal_1_on"].get<bool>();
+                        bool online_signal_on = json_data["online_signal_on"].get<bool>();
+
                         if(hmd_signal_1_on && online_signal_on){
-                            _image_stream_enable.store(true);
                             logger::info("[{}] Now Image streaming is enabled...", get_name());
+                            _image_stream_enable.store(true);
                         }
-                        else if(!hmd_signal_1_on && !hmd_signal_2_on && online_signal_on) {
+                        else if(!hmd_signal_2_on && online_signal_on){
                             _image_stream_enable.store(false);
                             logger::info("[{}] Image streaming is disabled...", get_name());
                         }
@@ -452,11 +453,11 @@ void basler_gige_cam_grabber::_level2_dispatch_task(){
                         /* 1. for move focus function processing */
                         int height = json_data["mt_stand_height"].get<int>();
                         int width = json_data["mt_stand_width"].get<int>();
-                        double t1 = json_data["mt_stand_t1"].get<double>();
-                        double t2 = json_data["mt_stand_t2"].get<double>();
+                        int t1 = json_data["mt_stand_t1"].get<int>();
+                        int t2 = json_data["mt_stand_t2"].get<int>();
 
                         /* find file */
-                        string preset_file = fmt::format("{}/{}_{}_{}_{}.preset", _preset_path, width, height, int(t1), int(t2));
+                        string preset_file = fmt::format("{}/{}_{}_{}_{}.preset", _preset_path, width, height, t1, t2);
                         if(!std::filesystem::exists(preset_file)){
                             logger::error("[{}] Preset file not found : {}", get_name(), preset_file);
                         }

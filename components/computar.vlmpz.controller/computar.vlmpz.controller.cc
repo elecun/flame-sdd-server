@@ -127,8 +127,8 @@ void computar_vlmpz_controller::_level2_dispatch_subscribe(json parameters){
                         /* 1. for move focus function processing */
                         int height = json_data["mt_stand_height"].get<int>();
                         int width = json_data["mt_stand_width"].get<int>();
-                        double t1 = json_data["mt_stand_t1"].get<double>();
-                        double t2 = json_data["mt_stand_t2"].get<double>();
+                        int t1 = json_data["mt_stand_t1"].get<int>();
+                        int t2 = json_data["mt_stand_t2"].get<int>();
 
                         /* find file */
                         string preset_file = fmt::format("{}/{}_{}_{}_{}.preset", _preset_path, height, width, t1, t2);

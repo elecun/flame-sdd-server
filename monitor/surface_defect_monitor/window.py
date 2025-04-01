@@ -151,9 +151,9 @@ class AppWindow(QMainWindow):
                 #preset_path = pathlib.Path(config["app_path"])/pathlib.Path(config["preset_path"])
                 self.__config["preset_path"] = pathlib.Path(config["preset_path"]).as_posix()
                 #self.__config["preset_path"] = preset_path.as_posix()
-                self.__console.info(f"+ Preset Path : {config["preset_path"]}")
-                if os.path.exists(pathlib.Path(config["app_path"])):
-                    preset_files = [f for f in os.listdir(config["preset_path"])]
+                #self.__console.info(f"+ Preset Path : {config["preset_path"]}")
+                if os.path.exists(pathlib.Path(self.__config["preset_path"])):
+                    preset_files = [f for f in os.listdir(self.__config["preset_path"])]
                     for preset in preset_files:
                         self.combobox_focus_preset.addItem(preset)
 

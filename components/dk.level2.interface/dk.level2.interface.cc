@@ -208,11 +208,18 @@ void dk_level2_interface::_do_server_work(json parameters){
                                 data_pack["mt_no"] = remove_space(packet.cMtNo, sizeof(packet.cMtNo));
                                 dk_h_standard_dim dim = extract_stand_dim(packet.cMtStand, sizeof(packet.cMtStand));
                                 data_pack["mt_stand"] = remove_space(packet.cMtStand, sizeof(packet.cMtStand));
-                                data_pack["mt_stand_height"] = stoi(packet.cStandSize2); //B
-                                data_pack["mt_stand_width"] = stoi(packet.cStandSize1); // H
-                                data_pack["mt_stand_t1"] = stoi(packet.cStandSize3); //t1
-                                data_pack["mt_stand_t2"] = stoi(packet.cStandSize4); //t2
-                                data_pack["fm_length"] = stoi(packet.cFMLength); //fm length
+                                data_pack["mt_stand_height"] = stoi(remove_space(packet.cStandSize2, sizeof(packet.cStandSize2))); //B
+                                data_pack["mt_stand_width"] = stoi(remove_space(packet.cStandSize1, sizeof(packet.cStandSize1))); // H
+                                data_pack["mt_stand_t1"] = stoi(remove_space(packet.cStandSize3, sizeof(packet.cStandSize3))); //t1
+                                data_pack["mt_stand_t2"] = stoi(remove_space(packet.cStandSize4, sizeof(packet.cStandSize4))); //t2
+                                data_pack["fm_length"] = stol(remove_space(packet.cFMLength, sizeof(packet.cFMLength))); //fm length
+
+                                logger::info("Level2 Info : {}x{}x{}/{}, ({})", 
+                                                                    data_pack["mt_stand_height"].get<int>(),
+                                                                    data_pack["mt_stand_width"].get<int>(),
+                                                                    data_pack["mt_stand_t1"].get<int>(),
+                                                                    data_pack["mt_stand_t2"].get<int>(),
+                                                                    data_pack["fm_length"].get<long>());
 
                                 /* publish the level2 data via lv2_dispatch port */
                                 string topic = fmt::format("{}/lv2_dispatch", get_name());

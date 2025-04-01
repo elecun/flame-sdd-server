@@ -86,11 +86,11 @@ class DMXLightControlSubscriber(QThread):
                             data = json.loads(data.decode('utf8').replace("'", '"'))
 
                             # control by line signal
-                            if "hmd_signal_1_on" in data and "online_signal_on" in data:
+                            if "hmd_signal_1_on" in data and "hmd_signal_2_on" in data and "online_signal_on" in data:
                                 if data["hmd_signal_1_on"] and data["online_signal_on"]: # in
                                     self.set_control(self.__dmx_ip, self.__dmx_port, self.__light_ids, self.__brightness)
 
-                                elif not data["hmd_signal_2_on"] and not data["hmd_signal_1_on"] and data["online_signal_on"]: # out
+                                elif not data["hmd_signal_2_on"] and data["online_signal_on"]: # out
                                     self.set_off(self.__dmx_ip, self.__dmx_port, self.__light_ids)
                 else:
                     self.dmx_alive_signal.emit({"alive":False})

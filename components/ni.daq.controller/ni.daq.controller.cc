@@ -209,7 +209,7 @@ void ni_daq_controller::_daq_dio_read_task(){
                         // line signal changed
                         if(!std::equal(dio_values, dio_values + sizeof(dio_values), prev_dio_values)){
                             _publish_line_signal("line_signal", dio_values);
-                            logger::info("[{}] MD_1({}), MD_2({}), Online({}), Offline({})", get_name(), dio_values[0], dio_values[1], dio_values[3], dio_values[2]);
+                            logger::info("[{}] MD_1({}), MD_2({}), Online({}), Offline({})", get_name(), dio_values[1], dio_values[0], dio_values[3], dio_values[2]);
                         }
 
                         /* value updates */
