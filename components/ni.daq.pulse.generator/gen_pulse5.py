@@ -9,6 +9,7 @@ PULSE_FREQUENCY = 20
 
 DIGITAL_INPUT_LINES = {
     "P1.0 (11번핀)": "port1/line0",
+    "P1.1 (11번핀)": "port1/line1",
     "P1.2 (43번핀)": "port1/line2",
     "P1.3 (42번핀)": "port1/line3",
 }
@@ -32,16 +33,17 @@ def monitor_multiple_inputs():
     with nidaqmx.Task() as trigger_task:
         # 유효한 채널 명시 방식으로 수정
         trigger_task.di_channels.add_di_chan(
-            f"Dev1/port1/line0,Dev1/port1/line2,Dev1/port1/line3",
+            f"Dev1/port1/line0,Dev1/port1/line1,Dev1/port1/line2,Dev1/port1/line3",
             line_grouping=LineGrouping.CHAN_PER_LINE
         )
 
         while True:
             states = trigger_task.read()  # 리스트 반환
             signal_status = {
-                "MD": "HIGH" if states[0] else "LOW",
-                "SDD_OffLine": "HIGH" if states[1] else "LOW",
-                "SDD_OnLine": "HIGH" if states[2] else "LOW",
+                "MD_1": "HIGH" if states[0] else "LOW",
+                "MD_2": "HIGH" if states[1] else "LOW",
+                "SDD_OffLine": "HIGH" if states[2] else "LOW",
+                "SDD_OnLine": "HIGH" if states[3] else "LOW",
             }
             print(" 접점 신호 상태:", signal_status)
             time.sleep(0.01)
