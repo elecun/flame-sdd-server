@@ -6,6 +6,7 @@
 #include <sstream>
 #include <ctime>
 #include <opencv2/opencv.hpp>
+#include <fstream>
 
 using namespace flame;
 
@@ -165,6 +166,21 @@ void synology_nas_file_stacker::_level2_dispatch_task(string mount_path){
                                 fs::create_directories(dest);
                                 _job_path = fs::path(mount_path) / target_dirname; // update target job path
                                 logger::info("[{}] Created NAS destination dirrectory : {}", get_name(), dest.string());
+
+                                /* save level2 log file */
+                                ofstream lv2_file(fmt::format("{}/lv2.txt", dest.string()));
+                                if(lv2_file.is_open()){
+                                    lv2_file << "date : " << json_data["date"].get<string>() << endl;
+                                    lv2_file << "lot_no : " << json_data["lot_no"].get<string>() << endl;
+                                    lv2_file << "mt_no : " << json_data["mt_no"].get<string>() << endl;
+                                    lv2_file << "mt_stand : " << json_data["mt_stand"].get<string>() << endl;
+                                    lv2_file << "mt_stand_height : " << json_data["mt_stand_height"].get<int>() << endl;
+                                    lv2_file << "mt_stand_width : " << json_data["mt_stand_width"].get<int>() << endl;
+                                    lv2_file << "mt_stand_t1 : " << json_data["mt_stand_t1"].get<int>() << endl;
+                                    lv2_file << "mt_stand_t2 : " << json_data["mt_stand_t2"].get<int>() << endl;
+                                    lv2_file << "fm_length : " << json_data["fm_length"].get<long>() << endl;
+                                    lv2_file.close();
+                                }
 
                                 /* stream counter reset */
                                 for(auto it=_stream_counter.begin(); it!=_stream_counter.end(); ++it){
