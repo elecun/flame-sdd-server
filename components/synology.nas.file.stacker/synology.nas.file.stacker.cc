@@ -17,11 +17,13 @@ bool synology_nas_file_stacker::on_init(){
 
     /* get parameters from profile */
     json parameters = get_profile()->parameters();
+    
 
     /* get mount path from profile */
     string mount_path {""};
     if(parameters.contains("mount_path")){
-        mount_path = parameters.value("mount_path", "");
+        mount_path = parameters["mount_path"].get<string>();
+        _job_path = fs::path(mount_path) / "tmp"; //default path
         logger::info("[{}] Mounted NAS Storage Root Path : {}", get_name(), mount_path);
     }
     else {
@@ -37,6 +39,9 @@ bool synology_nas_file_stacker::on_init(){
             _timeout_flag.emplace(stream_id, false);
             _stacker_worker[stream_id] = thread(&synology_nas_file_stacker::_image_stacker_task, this, stream_id, mount_path, stream);
             logger::info("[{}] Stream #{} stacker is running...", get_name(), stream_id);
+            
+            /* set stream counter */
+            _stream_counter[stream_id] = 0;
         }
     }
 
@@ -44,7 +49,7 @@ bool synology_nas_file_stacker::on_init(){
     if(parameters.contains("use_level2_interface")){
         bool enable = parameters.value("use_level2_interface", false);
         if(enable){
-            _level2_dispatch_worker = thread(&synology_nas_file_stacker::_level2_dispatch_task, this);
+            _level2_dispatch_worker = thread(&synology_nas_file_stacker::_level2_dispatch_task, this, mount_path);
             logger::info("[{}] Level2 Data interface is running...", get_name());
         }
     }
@@ -83,14 +88,10 @@ void synology_nas_file_stacker::on_message(){
 }
 
 
-void synology_nas_file_stacker::_image_stacker_task(int stream_id, string root, json stream_param)
+void synology_nas_file_stacker::_image_stacker_task(int stream_id, string mount_path, json stream_param)
 {
     try{
         string portname = fmt::format("image_stream_{}", stream_id);
-        fs::path root_path = fs::path(root);
-        fs::path temp_save_path = root_path / "tmp";// / get_current_time() / stream_param["dirname"].get<string>();
-        unsigned long stream_counter = 0;
-
         string working_dirname = stream_param.value("dirname", fmt::format("tmp_{}", stream_id));
 
         while(!_worker_stop.load()){
@@ -100,21 +101,12 @@ void synology_nas_file_stacker::_image_stacker_task(int stream_id, string root, 
                 zmq::multipart_t msg_multipart;
                 bool success = msg_multipart.recv(*get_port(portname));
 
+                /* received success */
                 if(success){
-                    
-                    /* renew save path */
-                    if(_timeout_flag[stream_id].load()){
-                        string working_tmp_job_path = get_current_time();
-                        temp_save_path = root_path / working_tmp_job_path / working_dirname;
-                        if(!fs::exists(temp_save_path)){
-                            fs::create_directories(temp_save_path);
-                            logger::info("[{}] Stream #{} data saves into {}", get_name(), stream_id, temp_save_path.string());
-                        }
-                        /* timeout flag set false */
-                        _timeout_flag[stream_id].store(false);
-
-                        /* counter reset */
-                        stream_counter = 0;
+                    fs::path camera_working_dir = _job_path / working_dirname;
+                    if(!fs::exists(camera_working_dir)){
+                        fs::create_directories(camera_working_dir);
+                        logger::info("[{}] Stream #{} data saves into {}", get_name(), stream_id, camera_working_dir.string());
                     }
 
                     /* pop 2 data chunk from message */
@@ -124,32 +116,8 @@ void synology_nas_file_stacker::_image_stacker_task(int stream_id, string root, 
 
                     /* decode image & save */
                     cv::Mat decoded = cv::imdecode(image, cv::IMREAD_UNCHANGED);                        
-                    string filename = fmt::format("{}_{}.jpg", camera_id, ++stream_counter);
-                    cv::imwrite(fmt::format("{}/{}",temp_save_path.string(), filename), decoded);
-                }
-                else {
-                    /* set timeout flag true (timeout value set to profile )*/
-                    if(!_timeout_flag[stream_id].load()){
-                        _timeout_flag[stream_id].store(true);
-
-                        try{
-                            if(!_renamed_target_dirname.empty()){
-                                fs::path dest = root_path / _renamed_target_dirname;
-                                if(!fs::exists(dest)){
-                                    fs::create_directories(dest);
-                                }
-                                fs::rename(temp_save_path, dest/working_dirname);
-                                fs::remove(temp_save_path);
-                                logger::info("[{}] Rename target dir name with LOT No. {}", get_name(), _renamed_target_dirname);
-                            }
-                            else {
-                                logger::warn("[{}] No target directory name to replace the temporary dir.", get_name());
-                            }
-                        }
-                        catch(const fs::filesystem_error& e){
-                            logger::error("[{}] File rename error : {}", get_name(), e.what());
-                        }
-                    }
+                    string filename = fmt::format("{}_{}.jpg", camera_id, ++_stream_counter[stream_id]);
+                    cv::imwrite(fmt::format("{}/{}",camera_working_dir.string(), filename), decoded);
                 }
                 
             }
@@ -170,8 +138,10 @@ void synology_nas_file_stacker::_image_stacker_task(int stream_id, string root, 
     }
 }
 
-void synology_nas_file_stacker::_level2_dispatch_task(){
+void synology_nas_file_stacker::_level2_dispatch_task(string mount_path){
     try{
+        string target_dirname {""};
+
         while(!_worker_stop.load()){
             try{
                 zmq::multipart_t msg_multipart;
@@ -182,12 +152,35 @@ void synology_nas_file_stacker::_level2_dispatch_task(){
                     auto json_data = json::parse(data);
 
                     // level2 data processing
-                    if(json_data.contains("mt_no")){
-                        _renamed_target_dirname = json_data["mt_no"].get<string>();
-                        logger::info("[{}] Set Dir name to {} later", get_name(), _renamed_target_dirname);
+                    if(json_data.contains("date") && json_data.contains("mt_stand_height") and json_data.contains("mt_stand_width")){
+                        target_dirname = fmt::format("{}_{}x{}",json_data["date"].get<string>(),
+                                                                         json_data["mt_stand_height"].get<int>(),
+                                                                         json_data["mt_stand_width"].get<int>());
+                        logger::info("[{}] Set target directory name to {}", get_name(), target_dirname);
+
+                        /* update job save path */ 
+                        try {
+                            fs::path dest = fs::path(mount_path) / target_dirname;
+                            if(!fs::exists(dest)){
+                                fs::create_directories(dest);
+                                _job_path = fs::path(mount_path) / target_dirname; // update target job path
+                                logger::info("[{}] Created NAS destination dirrectory : {}", get_name(), dest.string());
+
+                                /* stream counter reset */
+                                for(auto it=_stream_counter.begin(); it!=_stream_counter.end(); ++it){
+                                    it->second = 0;
+                                }
+                            }
+                        }
+                        catch(const fs::filesystem_error& e){
+                            logger::error("[{}] Create directory error : {}", get_name(), e.what());
+                        }
+
+                    }
+                    else{
+                        logger::warn("[{}] missed parameters to set target directory name.", get_name());
                     }
                 }
-
             }
             catch(const zmq::error_t& e){
                 break;
