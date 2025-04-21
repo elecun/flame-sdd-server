@@ -2843,7 +2843,7 @@ background-color: rgb(212, 212, 212);</string>
       <property name="title">
        <string>로그 옵션</string>
       </property>
-      <widget class="QCheckBox" name="checkBox">
+      <widget class="QCheckBox" name="check_option_save_level2_info">
        <property name="geometry">
         <rect>
          <x>15</x>
@@ -2860,6 +2860,25 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="text">
         <string>레벨2 데이터 정보 저장</string>
+       </property>
+      </widget>
+      <widget class="QCheckBox" name="check_option_save_temperature">
+       <property name="geometry">
+        <rect>
+         <x>15</x>
+         <y>55</y>
+         <width>216</width>
+         <height>20</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Apple SD Gothic Neo</family>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>온도 로그 데이터 저장</string>
        </property>
       </widget>
      </widget>
