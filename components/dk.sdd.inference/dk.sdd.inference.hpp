@@ -1,9 +1,9 @@
 /**
  * @file dk.sdd.inference.hpp
  * @author Byunghun Hwang <bh.hwang@iae.re.kr>
- * @brief 
+ * @brief SDD model inference component
  * @version 0.1
- * @date 2024-06-30
+ * @date 2025-04-22
  * 
  * @copyright Copyright (c) 2024
  * 
@@ -13,6 +13,8 @@
 #define FLAME_DK_SDD_INFERENCE_HPP_INCLUDED
 
 #include <flame/component/object.hpp>
+#include <torch/script.h>
+#include <torch/torch.h>
 
 
 class dk_sdd_inference : public flame::component::object {
