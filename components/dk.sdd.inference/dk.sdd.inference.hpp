@@ -26,9 +26,12 @@ class dk_sdd_inference : public flame::component::object {
         void on_close() override;
         void on_message() override;
 
+    private:
+        void inference();
+
 }; /* class */
 
 EXPORT_COMPONENT_API
 
 
-#endif
+#endif  
