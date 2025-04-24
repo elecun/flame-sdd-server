@@ -54,7 +54,9 @@ class AppWindow(QMainWindow):
         
         self.__console = ConsoleLogger.get_logger() # logger
         self.__config = config  # copy configuration data
-        self.__pipeline_context = zmq.Context(14) # zmq context
+
+        n_ctx_value = config.get("n_io_context", 14)
+        self.__pipeline_context = zmq.Context(n_ctx_value) # zmq context
 
         self.__frame_defect_grid_layout = QVBoxLayout()
         self.__frame_defect_grid_plot = graph.PlotWidget()
@@ -86,7 +88,7 @@ class AppWindow(QMainWindow):
                     raise Exception(f"Cannot found UI file : {ui_path}")
                 
                 # defect graphic view frame
-                self.__frame_defect_grid_frame = self.findChild(QFrame, name="frame_defect_grid_frame")
+                self.__frame_defect_grid = self.findChild(QFrame, name="frame_defect_grid")
                 self.__frame_defect_grid_layout.addWidget(self.__frame_defect_grid_plot)
                 self.__frame_defect_grid_layout.setContentsMargins(0, 0, 0, 0)
                 self.__frame_defect_grid_plot.setBackground('w')
@@ -94,7 +96,7 @@ class AppWindow(QMainWindow):
                 self.__frame_defect_grid_plot.setLimits(xMin=0, xMax=10000, yMin=0, yMax=11)
                 self.__frame_defect_grid_plot.setRange(yRange=(0,10), xRange=(0,100))
                 self.__frame_defect_grid_plot.setMouseEnabled(x=True, y=False)
-                self.__frame_defect_grid_frame.setLayout(self.__frame_defect_grid_layout)
+                self.__frame_defect_grid.setLayout(self.__frame_defect_grid_layout)
 
                 # grid plot style
                 styles = {"color": "#000", "font-size": "15px"}
@@ -507,6 +509,18 @@ class AppWindow(QMainWindow):
                 self.label_lotno.setText(data["lot_no"])
             else:
                 self.label_lotno.setText("-")
+
+            # display mt. no
+            if "mt_no" in data:
+                self.label_mtno.setText(data["mt_no"])
+            else:
+                self.label_mtno.setText("-")
+
+            # display date
+            if "date" in data:
+                self.label_date.setText(data["date"])
+            else:
+                self.label_date.setText("-")
 
             # display mt stand height
             if "mt_stand_height" in data:
