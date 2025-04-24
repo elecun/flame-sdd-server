@@ -1839,7 +1839,7 @@ background-color: rgb(212, 212, 212);</string>
        <string notr="true">border:3px solid #0D0;</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="btn_exposure_time_set_all_2">
+     <widget class="QPushButton" name="btn_light_level_set_all">
       <property name="geometry">
        <rect>
         <x>1040</x>
