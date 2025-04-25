@@ -70,14 +70,13 @@ class AppWindow(QMainWindow):
         self.__camera_status_monitor_subscriber = None      # camera grabbing status monitor subscriber
         self.__line_signal_monitor_subscriber = None        # line signal status monitor subscriber
         self.__light_control_subscriber = None              # light control subscriber
-        self.__dk_level2_data_subscriber = None
-        self.__dk_level2_status_subscriber = None
-        self.__camera_image_subscriber_map = {}
-        self.__lens_control_publisher = None
-        self.__hmd_signal_control_publisher = None
-        self.__line_signal_control_publisher = None
-        
-        self.__camera_control_publisher_map = {}
+        self.__dk_level2_data_subscriber = None             # level2 data subscriber
+        self.__dk_level2_status_subscriber = None           # level2 status subscriber
+        self.__camera_image_subscriber_map = {}             # camera image subscriber
+        self.__lens_control_publisher = None                # lens control publisher
+        self.__hmd_signal_control_publisher = None          # hmd signal control publisher
+        self.__line_signal_control_publisher = None         # line signal control publisher (test use only)
+        self.__camera_control_publisher_map = {}            # camera control publishers
 
         # variables
         self.__total_frames = 0
@@ -99,15 +98,28 @@ class AppWindow(QMainWindow):
                 self.__frame_defect_grid_plot.setBackground('w')
                 self.__frame_defect_grid_plot.showGrid(x=True, y=True)
                 self.__frame_defect_grid_plot.setLimits(xMin=0, xMax=10000, yMin=0, yMax=11)
-                self.__frame_defect_grid_plot.setRange(yRange=(0,10), xRange=(0,100))
+                self.__frame_defect_grid_plot.setRange(yRange=(0,len(config["camera_ids"])), xRange=(0,100))
                 self.__frame_defect_grid_plot.setMouseEnabled(x=True, y=False)
                 self.__frame_defect_grid.setLayout(self.__frame_defect_grid_layout)
-
-                # grid plot style
                 styles = {"color": "#000", "font-size": "15px"}
-                self.__frame_defect_grid_plot.setLabel("left", "Camera Channels", **styles)
+                self.__frame_defect_grid_plot.setLabel("left", "Camera IDs", **styles)
                 self.__frame_defect_grid_plot.setLabel("bottom", "Frame Counts", **styles)
                 self.__frame_defect_grid_plot.addLegend()
+
+                # temperature graphic view frame
+                self.__frame_temperature_grid = self.findChild(QFrame, name="frame_temperature_grid")
+                self.__frame_temperature_grid_layout.addWidget(self.__frame_temperature_grid_plot)
+                self.__frame_temperature_grid_layout.setContentsMargins(0, 0, 0, 0)
+                self.__frame_temperature_grid_plot.setBackground('w')
+                self.__frame_temperature_grid_plot.showGrid(x=True, y=True)
+                self.__frame_temperature_grid_plot.setLimits(xMin=0, xMax=10000, yMin=0, yMax=11)
+                self.__frame_temperature_grid_plot.setRange(yRange=(0,len(config["temperature_ids"])), xRange=(0,100))
+                self.__frame_temperature_grid_plot.setMouseEnabled(x=True, y=False)
+                self.__frame_temperature_grid.setLayout(self.__frame_temperature_grid_layout)
+                styles = {"color": "#000", "font-size": "15px"}
+                self.__frame_temperature_grid_plot.setLabel("left", "Temperature IDs", **styles)
+                self.__frame_temperature_grid_plot.setLabel("bottom", "Time", **styles)
+                self.__frame_temperature_grid_plot.addLegend()
                 
                 # register button event callback function
                 self.btn_focus_set_1.clicked.connect(partial(self.on_btn_focus_set, 1))
@@ -120,44 +132,36 @@ class AppWindow(QMainWindow):
                 self.btn_focus_set_8.clicked.connect(partial(self.on_btn_focus_set, 8))
                 self.btn_focus_set_9.clicked.connect(partial(self.on_btn_focus_set, 9))
                 self.btn_focus_set_10.clicked.connect(partial(self.on_btn_focus_set, 10))
-                self.btn_exposure_time_set_all.clicked.connect(self.on_btn_exposure_time_set_all) # set exposure time
-                self.btn_light_level_set_all.clicked.connect(self.on_btn_light_level_set_all) # set light level
-                self.btn_focus_read_all.clicked.connect(self.on_btn_focus_read_all)
-                self.btn_focus_initialize_all.clicked.connect(self.on_btn_focus_initialize_all)
+                self.btn_exposure_time_set_all.clicked.connect(self.on_btn_exposure_time_set_all)   # set exposure time all
+                self.btn_light_level_set_all.clicked.connect(self.on_btn_light_level_set_all)       # set light level all
                 self.btn_focus_preset_set_all.clicked.connect(self.on_btn_focus_preset_set_all)
                 self.btn_focus_preset_load.clicked.connect(self.on_btn_focus_preset_load)
                 self.check_online_signal.stateChanged.connect(self.on_check_online_signal)
                 self.check_offline_signal.stateChanged.connect(self.on_check_offline_signal)
                 self.check_hmd_signal.clicked.connect(self.on_check_hmd_signal)
-                self.btn_light_control_off.clicked.connect(self.on_btn_light_control_off)
-
-                # register dial event callback function
-                self.dial_light_control.valueChanged.connect(self.on_change_light_control)
-                self.dial_light_control.sliderReleased.connect(self.on_set_light_control)
+                self.btn_light_off.clicked.connect(self.on_btn_light_off)
 
                 # default status indication
                 self.set_status_inactive("label_onsite_controller_status")
                 self.set_status_inactive("label_level2_status")
-                self.set_status_inactive("label_camera_status")
-                self.set_status_inactive("label_lens_status")
-                self.set_status_inactive("label_nas_status")
                 self.set_status_inactive("label_light_controller_status")
+                self.set_status_inactive("label_nas_status")
+                self.set_status_inactive("label_line_signal_status")
                 self.set_status_inactive("label_hmd_signal_1_status")
                 self.set_status_inactive("label_hmd_signal_2_status")
-                self.set_status_inactive("label_line_signal_status")
+                self.set_status_inactive("label_sdd_processing_status")               
+                
 
-                # find focus preset files in preset directory
-                #preset_path = pathlib.Path(config["app_path"])/pathlib.Path(config["preset_path"])
-                self.__config["preset_path"] = pathlib.Path(config["preset_path"]).as_posix()
-                #self.__config["preset_path"] = preset_path.as_posix()
-                #self.__console.info(f"+ Preset Path : {config["preset_path"]}")
+                # find preset files in preset directory (default : /home/preset/)
+                self.__config["preset_path"] = config.get("preset_path", "/home/preset/")
                 if os.path.exists(pathlib.Path(self.__config["preset_path"])):
                     preset_files = [f for f in os.listdir(self.__config["preset_path"])]
                     for preset in preset_files:
-                        self.combobox_focus_preset.addItem(preset)
+                        self.combobox_preset.addItem(preset)
 
                 # create temperature monitoring subscriber
-                if "use_temperature_monitor" in config and config["use_temperature_monitor"]:
+                use_temperature_monitor = self.__config.get("use_temperature_monitor", False)
+                if use_temperature_monitor:
                     if "temp_stream_source" in config and "temp_stream_sub_topic" in config:
                         try:
                             self.__console.info("+ Create Temperature Monitoring Subscriber...")
@@ -275,7 +279,7 @@ class AppWindow(QMainWindow):
 
     def on_btn_focus_preset_load(self):
         """ load focus preset """
-        selected_preset = self.combobox_focus_preset.currentText()
+        selected_preset = self.combobox_preset.currentText()
 
         if selected_preset:
             absolute_path = pathlib.Path(self.__config["preset_path"])/selected_preset
@@ -330,11 +334,10 @@ class AppWindow(QMainWindow):
         """ control value update """
         self.label_light_control_value.setText(str(value))
     
-    def on_btn_light_control_off(self):
+    def on_btn_light_off(self):
         """ light off """
         self.__light_control_subscriber.set_off(self.__config["dmx_ip"], self.__config["dmx_port"], self.__config["light_ids"])
         self.label_light_control_value.setText("0")
-        self.dial_light_control.setValue(0)
 
 
     def on_btn_focus_set(self, id:int):
@@ -344,6 +347,14 @@ class AppWindow(QMainWindow):
             self.__lens_control_publisher.focus_move(lens_id=id, value=int(focus_value))
         else:
             self.statusBar().showMessage(f"Lens control pipeline cannot be found")
+
+    def on_btn_exposure_time_set_all(self):
+        """ set all exposure time"""
+        pass
+
+    def on_btn_light_level_set_all(self):
+        """ set all light level """
+        pass
 
     def on_btn_exposure_time_set(self, id:int):
         """ camera exposure time control """
