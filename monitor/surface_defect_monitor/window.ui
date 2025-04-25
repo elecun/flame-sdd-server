@@ -2657,6 +2657,29 @@ background-color: rgb(212, 212, 212);</string>
        </property>
       </widget>
      </widget>
+     <widget class="QPushButton" name="btn_light_off">
+      <property name="geometry">
+       <rect>
+        <x>1040</x>
+        <y>220</y>
+        <width>196</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>Arial</family>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">color: rgb(0,0,0);
+border: 3px solid #f00;
+background-color: rgb(212, 212, 212);</string>
+      </property>
+      <property name="text">
+       <string>조명 전체 OFF</string>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="tab_1">
      <attribute name="title">
