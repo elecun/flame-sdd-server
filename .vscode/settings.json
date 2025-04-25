@@ -95,6 +95,5 @@
         "locale": "cpp",
         "print": "cpp",
         "stack": "cpp"
-    },
-    "python.analysis.autoImportCompletions": true
+    }
 }
