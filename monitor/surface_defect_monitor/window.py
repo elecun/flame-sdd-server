@@ -55,23 +55,28 @@ class AppWindow(QMainWindow):
         self.__console = ConsoleLogger.get_logger() # logger
         self.__config = config  # copy configuration data
 
+        ### configure zmq context
         n_ctx_value = config.get("n_io_context", 14)
         self.__pipeline_context = zmq.Context(n_ctx_value) # zmq context
 
+        ### chart & graph view layout
         self.__frame_defect_grid_layout = QVBoxLayout()
         self.__frame_defect_grid_plot = graph.PlotWidget()
+        self.__frame_temperature_grid_layout = QVBoxLayout()
+        self.__frame_temperature_grid_plot = graph.PlotWidget()
 
-        # device/service control interfaces
-        self.__temp_monitor_subscriber = None
-        self.__camera_status_monitor_subscriber = None
-        self.__lens_control_publisher = None
-        self.__hmd_signal_control_publisher = None
-        self.__line_signal_control_publisher = None
-        self.__line_signal_monitor_subscriber = None
-        self.__light_control_subscriber = None
+        ### device/service control interfaces
+        self.__temperature_monitor_subscriber = None        # temperature monitor subscriber
+        self.__camera_status_monitor_subscriber = None      # camera grabbing status monitor subscriber
+        self.__line_signal_monitor_subscriber = None        # line signal status monitor subscriber
+        self.__light_control_subscriber = None              # light control subscriber
         self.__dk_level2_data_subscriber = None
         self.__dk_level2_status_subscriber = None
         self.__camera_image_subscriber_map = {}
+        self.__lens_control_publisher = None
+        self.__hmd_signal_control_publisher = None
+        self.__line_signal_control_publisher = None
+        
         self.__camera_control_publisher_map = {}
 
         # variables
@@ -115,16 +120,8 @@ class AppWindow(QMainWindow):
                 self.btn_focus_set_8.clicked.connect(partial(self.on_btn_focus_set, 8))
                 self.btn_focus_set_9.clicked.connect(partial(self.on_btn_focus_set, 9))
                 self.btn_focus_set_10.clicked.connect(partial(self.on_btn_focus_set, 10))
-                self.btn_exposure_time_set_1.clicked.connect(partial(self.on_btn_exposure_time_set, 1))
-                self.btn_exposure_time_set_2.clicked.connect(partial(self.on_btn_exposure_time_set, 2))
-                self.btn_exposure_time_set_3.clicked.connect(partial(self.on_btn_exposure_time_set, 3))
-                self.btn_exposure_time_set_4.clicked.connect(partial(self.on_btn_exposure_time_set, 4))
-                self.btn_exposure_time_set_5.clicked.connect(partial(self.on_btn_exposure_time_set, 5))
-                self.btn_exposure_time_set_6.clicked.connect(partial(self.on_btn_exposure_time_set, 6))
-                self.btn_exposure_time_set_7.clicked.connect(partial(self.on_btn_exposure_time_set, 7))
-                self.btn_exposure_time_set_8.clicked.connect(partial(self.on_btn_exposure_time_set, 8))
-                self.btn_exposure_time_set_9.clicked.connect(partial(self.on_btn_exposure_time_set, 9))
-                self.btn_exposure_time_set_10.clicked.connect(partial(self.on_btn_exposure_time_set, 10))
+                self.btn_exposure_time_set_all.clicked.connect(self.on_btn_exposure_time_set_all) # set exposure time
+                self.btn_light_level_set_all.clicked.connect(self.on_btn_light_level_set_all) # set light level
                 self.btn_focus_read_all.clicked.connect(self.on_btn_focus_read_all)
                 self.btn_focus_initialize_all.clicked.connect(self.on_btn_focus_initialize_all)
                 self.btn_focus_preset_set_all.clicked.connect(self.on_btn_focus_preset_set_all)
@@ -164,9 +161,9 @@ class AppWindow(QMainWindow):
                     if "temp_stream_source" in config and "temp_stream_sub_topic" in config:
                         try:
                             self.__console.info("+ Create Temperature Monitoring Subscriber...")
-                            self.__temp_monitor_subscriber = TemperatureMonitorSubscriber(self.__pipeline_context, connection=config["temp_stream_source"], topic=config["temp_stream_sub_topic"])
-                            self.__temp_monitor_subscriber.temperature_update_signal.connect(self.on_update_temperature)
-                            self.__temp_monitor_subscriber.start() # run in thread
+                            self.__temperature_monitor_subscriber = TemperatureMonitorSubscriber(self.__pipeline_context, connection=config["temp_stream_source"], topic=config["temp_stream_sub_topic"])
+                            self.__temperature_monitor_subscriber.temperature_update_signal.connect(self.on_update_temperature)
+                            self.__temperature_monitor_subscriber.start() # run in thread
                         except Exception as e:
                             self.__console.warning(f"Temperature Monitor has problem : {e}")
                 else:
@@ -420,8 +417,8 @@ class AppWindow(QMainWindow):
             self.__console.info("Close Line Signal Monitor Subscriber")
 
         # close temperature monitor subscriber
-        if self.__temp_monitor_subscriber:
-            self.__temp_monitor_subscriber.close()
+        if self.__temperature_monitor_subscriber:
+            self.__temperature_monitor_subscriber.close()
             self.__console.info("Close Temperature Subscriber")
 
         # close level2 data subscriber
