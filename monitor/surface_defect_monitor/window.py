@@ -53,6 +53,23 @@ class DateTimeAxis(graph.DateAxisItem):
     def tickStrings(self, values, scale, spacing):
         return [time.strftime('%Y.%m.%d %H:%M:%S', time.localtime(v)) for v in values]
 
+class TimeAxisItem(graph.AxisItem):
+    def tickStrings(self, values, scale, spacing): # Custom tick labels: show only first, middle, last
+        if not values:
+            return []
+        labels = []
+        total = len(values)
+        for i, val in enumerate(values):
+            if i == 0 or i == total // 2 or i == total - 1:
+                try:
+                    ts = datetime.fromtimestamp(val)
+                    labels.append(time.strftime('%Y.%m.%d %H:%M:%S'))
+                except:
+                    labels.append('')
+            else:
+                labels.append('')
+        return labels
+
 class AppWindow(QMainWindow):
     def __init__(self, config:dict):
         """ initialization """
@@ -71,7 +88,10 @@ class AppWindow(QMainWindow):
         self.__frame_temperature_grid_layout = QVBoxLayout()
         self.__frame_temperature_grid_plot = graph.PlotWidget(axisItems={'bottom': DateTimeAxis()})
         self.__frame_temperature_x = deque(maxlen=config["temperature_max_data_size"])
-        self.__frame_temperature_y = deque(maxlen=config["temperature_max_data_size"])
+        self.__frame_temperature_y = {}
+        self.__frame_temperature_curves = {}
+        for i in config["temperature_ids"]:
+            self.__frame_temperature_y[str(i)] = deque(maxlen=config["temperature_max_data_size"])
 
         ### device/service control interfaces
         self.__temperature_monitor_subscriber = None        # temperature monitor subscriber
@@ -99,7 +119,7 @@ class AppWindow(QMainWindow):
                 self.__frame_defect_grid = self.findChild(QFrame, name="frame_defect_grid")
                 self.__frame_defect_grid_layout.addWidget(self.__frame_defect_grid_plot)
                 self.__frame_defect_grid_layout.setContentsMargins(5,5,5,5)
-                self.__frame_defect_grid_plot.setBackground('black')
+                self.__frame_defect_grid_plot.setBackground('white')
                 self.__frame_defect_grid_plot.showGrid(x=True, y=True)
                 self.__frame_defect_grid_plot.setLimits(xMin=0, xMax=10000, yMin=0, yMax=11)
                 self.__frame_defect_grid_plot.setRange(yRange=(0,len(config["camera_ids"])), xRange=(0,100))
@@ -114,16 +134,20 @@ class AppWindow(QMainWindow):
                 self.__frame_temperature_grid = self.findChild(QFrame, name="frame_temperature_grid")
                 self.__frame_temperature_grid_layout.addWidget(self.__frame_temperature_grid_plot)
                 self.__frame_temperature_grid_layout.setContentsMargins(5,5,5,5)
-                self.__frame_temperature_grid_plot.setBackground('black')
+                self.__frame_temperature_grid_plot.setBackground('white')
                 self.__frame_temperature_grid_plot.showGrid(x=True, y=True)
                 self.__frame_temperature_grid_plot.setLimits(xMin=0, xMax=10000, yMin=0, yMax=200)
-                self.__frame_temperature_grid_plot.setRange(yRange=(0,100), xRange=(0,360))
+                self.__frame_temperature_grid_plot.setYRange(0, 100)
                 self.__frame_temperature_grid_plot.setMouseEnabled(x=True, y=False)
                 self.__frame_temperature_grid.setLayout(self.__frame_temperature_grid_layout)
-                styles = {"color": "#fff", "font-size": "15px"}
-                self.__frame_temperature_grid_plot.setLabel("left", "Temperature IDs", **styles)
+                styles = {"color": "#000", "font-size": "15px"}
+                self.__frame_temperature_grid_plot.setLabel("left", "Temperature", **styles)
                 self.__frame_temperature_grid_plot.setLabel("bottom", "Time", **styles)
                 self.__frame_temperature_grid_plot.addLegend()
+                colors = ['red', 'green', 'blue', 'cyan', 'magenta', 'yellow', 'orange', 'purple']
+                for idx, id in enumerate(config["temperature_ids"]):
+                    self.__frame_temperature_curves[str(id)] = self.__frame_temperature_grid_plot.plot(pen=graph.mkPen(colors[idx % len(colors)], width=2), name=f"Temperature {id}")
+                
                 
                 # register button event callback function
                 self.btn_preset_load.clicked.connect(self.on_btn_preset_load)
@@ -535,17 +559,13 @@ class AppWindow(QMainWindow):
                     widget.setText(f"{values[id]}")
 
             # update temperature plot
-            #self.__frame_temperature_grid_plot.clear()
+            self.__frame_temperature_x.append(datetime.datetime.now()) # append X
 
-            colors = ['red', 'green', 'blue', 'cyan', 'magenta', 'yellow', 'orange', 'purple']
-            self.__frame_temperature_x.append(datetime.datetime.now())
-            temp_values = [values[k] for k in sorted(values.keys(), key=str)]
-            self.__frame_temperature_y.append(temp_values)
+            for k in values.keys():
+                self.__frame_temperature_y[k].append(values[k])
+                self.__frame_temperature_curves[k].setData(list(self.__frame_temperature_x), 
+                                                           list(self.__frame_temperature_y[k]))
 
-            self.__frame_defect_grid_plot.setData(list(self.__frame_temperature_x), list(self.__frame_temperature_y))
-
-            self.__frame_temperature_grid_plot.plot(x=list(self.__frame_temperature_x), y=list(self.__frame_temperature_y), 
-                                                    pen=graph.mkPen(colors[i % len(colors)], width=2), name=f"Series")
             self.__frame_temperature_grid_plot.enableAutoRange(axis=graph.ViewBox.XYAxes)
             self.__frame_temperature_grid_plot.show()
 

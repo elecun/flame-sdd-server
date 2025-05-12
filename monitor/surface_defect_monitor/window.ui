@@ -3083,17 +3083,17 @@ background-color: rgb(212, 212, 212);</string>
        </property>
       </widget>
      </widget>
-     <widget class="QPushButton" name="btn_test">
+     <widget class="QGroupBox" name="groupBox_3">
       <property name="geometry">
        <rect>
-        <x>690</x>
-        <y>190</y>
-        <width>113</width>
-        <height>32</height>
+        <x>640</x>
+        <y>125</y>
+        <width>601</width>
+        <height>146</height>
        </rect>
       </property>
-      <property name="text">
-       <string>test</string>
+      <property name="title">
+       <string>Test use only</string>
       </property>
      </widget>
     </widget>
@@ -3113,6 +3113,9 @@ background-color: rgb(212, 212, 212);</string>
       <weight>75</weight>
       <bold>true</bold>
      </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true"/>
     </property>
     <property name="tabPosition">
      <enum>QTabWidget::South</enum>
@@ -3445,7 +3448,7 @@ border: 1px solid white;</string>
        </rect>
       </property>
       <property name="styleSheet">
-       <string notr="true">background-color: rgb(0,0,0);</string>
+       <string notr="true">background-color: rgb(255,255,255);</string>
       </property>
       <property name="frameShape">
        <enum>QFrame::NoFrame</enum>
@@ -3463,7 +3466,7 @@ border: 1px solid white;</string>
      <x>0</x>
      <y>0</y>
      <width>1280</width>
-     <height>24</height>
+     <height>43</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuControl">
