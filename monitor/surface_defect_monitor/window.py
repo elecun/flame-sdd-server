@@ -10,7 +10,7 @@ import threading
 import queue
 import time
 import numpy as np
-from datetime import datetime
+import datetime
 import pyqtgraph as graph
 import random
 import zmq
@@ -19,18 +19,19 @@ import json
 import cv2
 from functools import partial
 from concurrent.futures import ThreadPoolExecutor
+import platform
 
 try:
     # using PyQt5
     from PyQt5.QtGui import QImage, QPixmap, QCloseEvent, QStandardItem, QStandardItemModel
-    from PyQt5.QtWidgets import QApplication, QFrame, QMainWindow, QLabel, QPushButton, QMessageBox
-    from PyQt5.QtWidget import QProgressBar, QFileDialog, QComboBox, QLineEdit, QSlider, QCheckBox, QComboBox
+    from PyQt5.QtWidgets import QApplication, QFrame, QMainWindow, QLabel, QPushButton, QMessageBox, QDialog
+    from PyQt5.QtWidgets import QProgressBar, QFileDialog, QComboBox, QLineEdit, QSlider, QCheckBox, QComboBox
     from PyQt5.uic import loadUi
     from PyQt5.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
 except ImportError:
     # using PyQt6
     from PyQt6.QtGui import QImage, QPixmap, QCloseEvent, QStandardItem, QStandardItemModel
-    from PyQt6.QtWidgets import QApplication, QFrame, QMainWindow, QLabel, QPushButton, QCheckBox, QComboBox
+    from PyQt6.QtWidgets import QApplication, QFrame, QMainWindow, QLabel, QPushButton, QCheckBox, QComboBox, QDialog
     from PyQt6.QtWidgets import QMessageBox, QProgressBar, QFileDialog, QComboBox, QLineEdit, QSlider, QVBoxLayout
     from PyQt6.uic import loadUi
     from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
@@ -46,6 +47,10 @@ from subscriber.dmx_light_control import DMXLightControlSubscriber
 from subscriber.camera import CameraMonitorSubscriber
 from subscriber.dk_level2 import DKLevel2DataSubscriber
 from subscriber.dk_level2_status import DKLevel2StatusSubscriber
+
+class DateTimeAxis(graph.DateAxisItem):
+    def tickStrings(self, values, scale, spacing):
+        return [time.strftime('%Y.%m.%d %H:%M:%S', time.localtime(v)) for v in values]
 
 class AppWindow(QMainWindow):
     def __init__(self, config:dict):
@@ -63,19 +68,15 @@ class AppWindow(QMainWindow):
         self.__frame_defect_grid_layout = QVBoxLayout()
         self.__frame_defect_grid_plot = graph.PlotWidget()
         self.__frame_temperature_grid_layout = QVBoxLayout()
-        self.__frame_temperature_grid_plot = graph.PlotWidget()
+        self.__frame_temperature_grid_plot = graph.PlotWidget(axisItems={'bottom': DateTimeAxis()})
 
         ### device/service control interfaces
         self.__temperature_monitor_subscriber = None        # temperature monitor subscriber
-        self.__camera_status_monitor_subscriber = None      # camera grabbing status monitor subscriber
         self.__line_signal_monitor_subscriber = None        # line signal status monitor subscriber
         self.__light_control_subscriber = None              # light control subscriber
         self.__dk_level2_data_subscriber = None             # level2 data subscriber
-        self.__dk_level2_status_subscriber = None           # level2 status subscriber
         self.__camera_image_subscriber_map = {}             # camera image subscriber
         self.__lens_control_publisher = None                # lens control publisher
-        self.__hmd_signal_control_publisher = None          # hmd signal control publisher
-        self.__line_signal_control_publisher = None         # line signal control publisher (test use only)
         self.__camera_control_publisher_map = {}            # camera control publishers
 
         # variables
@@ -94,8 +95,8 @@ class AppWindow(QMainWindow):
                 # defect graphic view frame
                 self.__frame_defect_grid = self.findChild(QFrame, name="frame_defect_grid")
                 self.__frame_defect_grid_layout.addWidget(self.__frame_defect_grid_plot)
-                self.__frame_defect_grid_layout.setContentsMargins(0, 0, 0, 0)
-                self.__frame_defect_grid_plot.setBackground('w')
+                self.__frame_defect_grid_layout.setContentsMargins(5,5,5,5)
+                self.__frame_defect_grid_plot.setBackground('black')
                 self.__frame_defect_grid_plot.showGrid(x=True, y=True)
                 self.__frame_defect_grid_plot.setLimits(xMin=0, xMax=10000, yMin=0, yMax=11)
                 self.__frame_defect_grid_plot.setRange(yRange=(0,len(config["camera_ids"])), xRange=(0,100))
@@ -109,19 +110,20 @@ class AppWindow(QMainWindow):
                 # temperature graphic view frame
                 self.__frame_temperature_grid = self.findChild(QFrame, name="frame_temperature_grid")
                 self.__frame_temperature_grid_layout.addWidget(self.__frame_temperature_grid_plot)
-                self.__frame_temperature_grid_layout.setContentsMargins(0, 0, 0, 0)
-                self.__frame_temperature_grid_plot.setBackground('w')
+                self.__frame_temperature_grid_layout.setContentsMargins(5,5,5,5)
+                self.__frame_temperature_grid_plot.setBackground('black')
                 self.__frame_temperature_grid_plot.showGrid(x=True, y=True)
-                self.__frame_temperature_grid_plot.setLimits(xMin=0, xMax=10000, yMin=0, yMax=11)
-                self.__frame_temperature_grid_plot.setRange(yRange=(0,len(config["temperature_ids"])), xRange=(0,100))
+                self.__frame_temperature_grid_plot.setLimits(xMin=0, xMax=10000, yMin=0, yMax=200)
+                self.__frame_temperature_grid_plot.setRange(yRange=(0,100), xRange=(0,360))
                 self.__frame_temperature_grid_plot.setMouseEnabled(x=True, y=False)
                 self.__frame_temperature_grid.setLayout(self.__frame_temperature_grid_layout)
-                styles = {"color": "#000", "font-size": "15px"}
+                styles = {"color": "#fff", "font-size": "15px"}
                 self.__frame_temperature_grid_plot.setLabel("left", "Temperature IDs", **styles)
                 self.__frame_temperature_grid_plot.setLabel("bottom", "Time", **styles)
                 self.__frame_temperature_grid_plot.addLegend()
                 
                 # register button event callback function
+                self.btn_preset_load.clicked.connect(self.on_btn_preset_load)
                 self.btn_focus_set_1.clicked.connect(partial(self.on_btn_focus_set, 1))
                 self.btn_focus_set_2.clicked.connect(partial(self.on_btn_focus_set, 2))
                 self.btn_focus_set_3.clicked.connect(partial(self.on_btn_focus_set, 3))
@@ -132,14 +134,19 @@ class AppWindow(QMainWindow):
                 self.btn_focus_set_8.clicked.connect(partial(self.on_btn_focus_set, 8))
                 self.btn_focus_set_9.clicked.connect(partial(self.on_btn_focus_set, 9))
                 self.btn_focus_set_10.clicked.connect(partial(self.on_btn_focus_set, 10))
+                self.btn_focus_preset_set_all.clicked.connect(self.on_btn_focus_preset_set_all)     # set focus all
                 self.btn_exposure_time_set_all.clicked.connect(self.on_btn_exposure_time_set_all)   # set exposure time all
                 self.btn_light_level_set_all.clicked.connect(self.on_btn_light_level_set_all)       # set light level all
-                self.btn_focus_preset_set_all.clicked.connect(self.on_btn_focus_preset_set_all)
-                self.btn_focus_preset_load.clicked.connect(self.on_btn_focus_preset_load)
-                self.check_online_signal.stateChanged.connect(self.on_check_online_signal)
-                self.check_offline_signal.stateChanged.connect(self.on_check_offline_signal)
-                self.check_hmd_signal.clicked.connect(self.on_check_hmd_signal)
-                self.btn_light_off.clicked.connect(self.on_btn_light_off)
+                self.btn_light_off.clicked.connect(self.on_btn_light_off)                           # light off
+                self.btn_inference_model_apply.clicked.connect(self.on_btn_inference_model_apply)               # change sdd model
+                self.btn_test.clicked.connect(self.on_test)
+
+
+                # checkbox callback functions
+                self.check_option_save_level2_info.stateChanged.connect(self.on_check_option_save_level2_info)
+                self.check_option_save_temperature.stateChanged.connect(self.on_check_option_save_temperature)
+                self.check_inference_batch_processing.stateChanged.connect(self.on_check_inference_batch_processing)
+                self.check_inference_save_results.stateChanged.connect(self.on_check_inference_save_results)
 
                 # default status indication
                 self.set_status_inactive("label_onsite_controller_status")
@@ -150,22 +157,29 @@ class AppWindow(QMainWindow):
                 self.set_status_inactive("label_hmd_signal_1_status")
                 self.set_status_inactive("label_hmd_signal_2_status")
                 self.set_status_inactive("label_sdd_processing_status")               
-                
 
-                # find preset files in preset directory (default : /home/preset/)
-                self.__config["preset_path"] = config.get("preset_path", "/home/preset/")
+                # find preset files in preset directory (default : ./bin/preset)
+                self.__config["preset_path"] = (pathlib.Path(self.__config["root_path"]) / "bin" / "preset").as_posix()
                 if os.path.exists(pathlib.Path(self.__config["preset_path"])):
                     preset_files = [f for f in os.listdir(self.__config["preset_path"])]
                     for preset in preset_files:
                         self.combobox_preset.addItem(preset)
+
+                # find sdd model files in model directory (default : sdd_default.py)
+                self.__config["model_path"] = (pathlib.Path(self.__config["root_path"]) / "bin" / "model").as_posix()
+                if os.path.exists(pathlib.Path(self.__config["model_path"])):
+                    model_files = [f for f in os.listdir(self.__config["model_path"])]
+                    for model in model_files:
+                        self.combobox_inference_sdd_model.addItem(model)
 
                 # create temperature monitoring subscriber
                 use_temperature_monitor = self.__config.get("use_temperature_monitor", False)
                 if use_temperature_monitor:
                     if "temp_stream_source" in config and "temp_stream_sub_topic" in config:
                         try:
-                            self.__console.info("+ Create Temperature Monitoring Subscriber...")
-                            self.__temperature_monitor_subscriber = TemperatureMonitorSubscriber(self.__pipeline_context, connection=config["temp_stream_source"], topic=config["temp_stream_sub_topic"])
+                            self.__temperature_monitor_subscriber = TemperatureMonitorSubscriber(self.__pipeline_context, 
+                                                                                                 connection=config["temp_stream_source"], 
+                                                                                                 topic=config["temp_stream_sub_topic"])
                             self.__temperature_monitor_subscriber.temperature_update_signal.connect(self.on_update_temperature)
                             self.__temperature_monitor_subscriber.start() # run in thread
                         except Exception as e:
@@ -173,78 +187,64 @@ class AppWindow(QMainWindow):
                 else:
                     self.__console.warning("Temperature Monitor is not enabled")
 
-                # camera status monitoring subscriber
-                if "use_camera_status_monitor" in config and config["use_camera_status_monitor"]:
-                    if "camera_status_monitor_source" in config and "camera_status_monitor_topic" in config:
-                        self.__console.info("+ Create Camera Status Monitoring Subscriber...")
-                        self.__camera_status_monitor_subscriber = CameraStatusMonitorSubscriber(self.__pipeline_context, connection=config["camera_status_monitor_source"], topic=config["camera_status_monitor_topic"])
-                        self.__camera_status_monitor_subscriber.status_update_signal.connect(self.on_update_camera_status)
-                        self.__camera_status_monitor_subscriber.start() # run in thread
-
                 # dk level2 data monitoring subscriber
-                if "use_dk_level2_interface" in config and config["use_dk_level2_interface"]:
+                use_dk_level2_interface = self.__config.get("use_dk_level2_interface", False)
+                if use_dk_level2_interface:
                     if "dk_level2_interface_source" in config and "dk_level2_interface_sub_topic" in config:
-                        self.__console.info("+ Create DK Level2 Data Subscriber...")
-                        self.__dk_level2_data_subscriber = DKLevel2DataSubscriber(self.__pipeline_context, connection=config["dk_level2_interface_source"], topic=config["dk_level2_interface_sub_topic"])
+                        self.__dk_level2_data_subscriber = DKLevel2DataSubscriber(self.__pipeline_context, 
+                                                                                  connection=config["dk_level2_interface_source"], 
+                                                                                  topic=config["dk_level2_interface_sub_topic"])
                         self.__dk_level2_data_subscriber.level2_data_update_signal.connect(self.on_update_dk_level2_data)
                         self.__dk_level2_data_subscriber.start()
-
-                        self.__console.info("+ Create DK Level2 Status Subscriber...")
-                        self.__dk_level2_status_subscriber = DKLevel2StatusSubscriber(self.__pipeline_context, connection=config["dk_level2_status_source"], topic=config["dk_level2_status_sub_topic"])
-                        self.__dk_level2_status_subscriber.level2_status_update_signal.connect(self.on_update_dk_level2_status)
-                        self.__dk_level2_status_subscriber.start()
                 else:
                     self.__console.warning("DK Level2 Data Interface is not enabled")
 
                 # create lens control publisher
-                if "use_lens_control" in config and config["use_lens_control"]:
+                use_lens_control = self.__config.get("use_lens_control", False)
+                if use_lens_control:
                     if "lens_control_source" in config:
                         try:
-                            self.__console.info("+ Create Lens Control Publisher...")
-                            self.__lens_control_publisher = LensControlPublisher(self.__pipeline_context, connection=config["lens_control_source"])
+                            self.__lens_control_publisher = LensControlPublisher(self.__pipeline_context, 
+                                                                                 connection=config["lens_control_source"])
                         except Exception as e:
                             self.__console.warning(f"Lens Control Publisher has problem : {e}")
                 else:
-                    self.__console.warning("Lens Control is not enabled.")
-
-                # create line(online, offline) control publisher
-                if "use_line_signal_control" in config and config["use_line_signal_control"]:
-                    if "line_signal_control_source" in config:
-                        self.__console.info("+ Create Line Signal Control Publisher...")
-                        self.__line_signal_control_publisher = LineSignalPublisher(self.__pipeline_context, connection=config["line_signal_control_source"])
-                else:
-                    self.__console.warning("Line Signal Control is not enabled.")
+                    self.__console.warning("Lens Control is not enabled")
                 
                 # create line signal monitoring subscriber
-                if "use_line_signal_monitor" in config and config["use_line_signal_monitor"]:
+                use_line_signal_monitor = self.__config.get("use_line_signal_monitor", False)
+                if use_line_signal_monitor:
                     if "line_signal_monitor_source" in config and "line_signal_monitor_topic" in config:
-                        self.__console.info("+ Create Line Signal Monitoring Subscriber...")
-                        self.__line_signal_monitor_subscriber = LineSignalSubscriber(self.__pipeline_context, connection=config["line_signal_monitor_source"], topic=config["line_signal_monitor_topic"])
+                        self.__line_signal_monitor_subscriber = LineSignalSubscriber(self.__pipeline_context, 
+                                                                                     connection=config["line_signal_monitor_source"], 
+                                                                                     topic=config["line_signal_monitor_topic"])
                         self.__line_signal_monitor_subscriber.line_signal.connect(self.on_update_line_signal)
                         self.__line_signal_monitor_subscriber.start()
                 else:
                     self.__console.warning("Line Signal Monitor is not enabled")
                         
                 # create camera control publisher
-                if "use_camera_control" in config and config["use_camera_control"]:
+                use_camera_control = self.__config.get("use_camera_control", False)
+                if use_camera_control:
                     for idx, id in enumerate(config["camera_ids"]):
                         portname = f"camera_control_source_{id}"
-                        self.__console.info("+ Create Camera #{id} Control Publisher...")
-                        self.__camera_control_publisher_map[id] = CameraControlPublisher(self.__pipeline_context, connection=config[portname])
+                        self.__console.info("- Start Camera #{id} Control...")
+                        self.__camera_control_publisher_map[id] = CameraControlPublisher(self.__pipeline_context, 
+                                                                                         connection=config[portname])
                 else:
                     self.__console.warning("Camera Control is not enabled.")
 
-                # create light control requester (!!! control by line signal)
-                if "use_light_control" in config and config["use_light_control"]:
+                # create light control with DMX
+                use_light_control = self.__config.get("use_light_control", False)
+                if use_light_control:
                     if "line_signal_monitor_source" in config:
                         try:
-                            self.__console.info("+ Create DMX Light Control Subscriber")
-                            self.__light_control_subscriber = DMXLightControlSubscriber(self.__pipeline_context, connection=config["line_signal_monitor_source"], 
+                            self.__light_control_subscriber = DMXLightControlSubscriber(self.__pipeline_context, 
+                                                                                        connection=config["line_signal_monitor_source"], 
                                                                                         dmx_ip=config["dmx_ip"], dmx_port=config["dmx_port"], 
                                                                                         light_ids=config["light_ids"], topic=config["line_signal_monitor_topic"])
-                            self.__light_control_subscriber.dmx_alive_signal.connect(self.on_update_dmx_light_status)
+                            self.__light_control_subscriber.dmx_alive_signal.connect(self.on_update_dmx_light_control)
                             self.__light_control_subscriber.start()
-                            self.__console.info("+ Create DMX Light Control Subscriber....")
                         except Exception as e:
                             self.__console.warning(f"DMX Light Control Subscriber has problem : {e}")
                 else:
@@ -252,12 +252,11 @@ class AppWindow(QMainWindow):
 
                 # map between camera device and windows
                 self.__frame_window_map = {}
-
                 for idx, id in enumerate(config["camera_ids"]):
                     self.__frame_window_map[id] = self.findChild(QLabel, config["camera_windows"][idx])
                     self.__console.info(f"Ready for camera grabber #{id} monitoring")
                     portname = f"image_stream_monitor_source_{id}"
-                    self.__console.info("+ Create Camera #{id} Monitoring Subscriber...")
+                    self.__console.info("- Start Camera #{id} Monitoring...")
                     self.__camera_image_subscriber_map[id] = CameraMonitorSubscriber(self.__pipeline_context,connection=config[portname],
                                                                                      topic=f"{config['image_stream_monitor_topic_prefix']}{id}")
                     self.__camera_image_subscriber_map[id].frame_update_signal.connect(self.on_update_camera_image)
@@ -266,130 +265,216 @@ class AppWindow(QMainWindow):
         except Exception as e:
             self.__console.error(f"{e}")
 
-    def clear_all(self):
-        """ clear graphic view """
-        try:
-            self.__frame_defect_grid_plot.clear()
-        except Exception as e:
-            self.__console.error(f"{e}")
+    def clear_defect_plot(self):
+        self.__frame_defect_grid_plot.clear()
 
-    def on_btn_focus_initialize_all(self):
-        """ initialize all """
-        self.__lens_control_publisher.focus_init_all()
+    def clear_temperature_plot(self):
+        self.__frame_temperature_grid_plot.clear()
 
-    def on_btn_focus_preset_load(self):
-        """ load focus preset """
+    def on_btn_preset_load(self):
         selected_preset = self.combobox_preset.currentText()
 
         if selected_preset:
             absolute_path = pathlib.Path(self.__config["preset_path"])/selected_preset
-            self.__console.info(f"Selected Focus Lens Control preset : {absolute_path}")
+            self.__console.info(f"Selected Preset : {absolute_path}")
 
             try:
                 # file load (json format)
                 preset_file = open(absolute_path, encoding='utf-8')
-                focus_preset = json.load(preset_file)
+                preset = json.load(preset_file)
                 preset_file.close()
 
-                # apply to the gui
-                for lens_id in focus_preset["focus_value"]:
+                # set focus value
+                for lens_id in preset["focus_value"]:
                     edit_focus = self.findChild(QLineEdit, name=f"edit_focus_value_{lens_id}")
                     if edit_focus:
-                        edit_focus.setText(str(focus_preset["focus_value"][lens_id]))
+                        edit_focus.setText(str(preset["focus_value"][lens_id]))
+                # set camera exposure time
+                for camera_id in preset["camera_exposure_time"]:
+                    edit_exposure_time = self.findChild(QLineEdit, name=f"edit_exposure_time_value_{camera_id}")
+                    if edit_exposure_time:
+                        edit_exposure_time.setText(str(preset["camera_exposure_time"][camera_id]))
+                # set light value
+                for light_id in preset["light_value"]:
+                    edit_light_value = self.findChild(QLineEdit, name=f"edit_light_level_value_{light_id}")
+                    if edit_light_value:
+                        edit_light_value.setText(str(preset["light_value"][light_id]))
 
             except json.JSONDecodeError as e:
-                self.__console.error(f"Focus Preset Load Error : {e}")
+                QMessageBox.critical(self, "Error", f"Preset file load failed. ({e})")
             except FileNotFoundError as e:
-                self.__console.error(f"{absolute_path} File not found")
+                QMessageBox.critical(self, "Error", f"Preset file does not exist. ({absolute_path})")
     
     
+    ### change lens focus value
     def on_btn_focus_preset_set_all(self):
-        """ set focus preset for all lens """
         for lens_id in self.__config["camera_ids"]:
             self.on_btn_focus_set(lens_id)
-    
-    def __check_line_signal(self):
-        """ check & set line signal """
-        online_checked = self.check_online_signal.isChecked()
-        offline_checked = self.check_offline_signal.isChecked()
-        hmd_checked = self.check_hmd_signal.isChecked()
-        if self.__line_signal_control_publisher:
-            self.__line_signal_control_publisher.set_line_signal(online_checked, offline_checked,hmd_checked)
-        else:
-            self.__console.error("Line Signal Control Publisher is None")
-
-    def on_check_online_signal(self, state):
-        """ online signal control """
-        self.__check_line_signal()
-            
-    def on_check_offline_signal(self, state):
-        """ offline signal control """
-        self.__check_line_signal
-
-    def on_check_hmd_signal(self, state):
-        """ hmd signal control """
-        self.__check_line_signal()
-
-    def on_change_light_control(self, value):
-        """ control value update """
-        self.label_light_control_value.setText(str(value))
-    
-    def on_btn_light_off(self):
-        """ light off """
-        self.__light_control_subscriber.set_off(self.__config["dmx_ip"], self.__config["dmx_port"], self.__config["light_ids"])
-        self.label_light_control_value.setText("0")
-
 
     def on_btn_focus_set(self, id:int):
-        """ focus move control """
         if self.__lens_control_publisher:
             focus_value = self.findChild(QLineEdit, name=f"edit_focus_value_{id}").text()
-            self.__lens_control_publisher.focus_move(lens_id=id, value=int(focus_value))
+            if focus_value is not None:
+                self.__lens_control_publisher.focus_move(lens_id=id, value=int(focus_value))
         else:
-            self.statusBar().showMessage(f"Lens control pipeline cannot be found")
+            QMessageBox.critical(self, "Error", f"Lens control is not activated. Check your configuration(*.cfg).")
 
+    ### Change for all of camera exposure time
     def on_btn_exposure_time_set_all(self):
-        """ set all exposure time"""
-        pass
+        for cam_id in self.__config["camera_ids"]:
+            self.__exposure_time_set(cam_id)
 
-    def on_btn_light_level_set_all(self):
-        """ set all light level """
-        pass
-
-    def on_btn_exposure_time_set(self, id:int):
-        """ camera exposure time control """
+    def __exposure_time_set(self, id:int):
         if id in self.__camera_control_publisher_map.keys():
             et_val = self.findChild(QLineEdit, name=f"edit_exposure_time_value_{id}").text()
-            self.__camera_control_publisher_map[id].set_exposure_time(id, float(et_val))
+            if et_val is not None:
+                self.__camera_control_publisher_map[id].set_exposure_time(id, float(et_val))
         else:
-            self.statusBar().showMessage(f"Camera #{id} control pipeline cannot be found")
-            
-    
-    def on_btn_focus_read_all(self):
-        """ call all focus value read (async) """
-        self.__lens_control_publisher.read_focus()
+            QMessageBox.critical(self, "Error", f"Camera #{id} control pipieline is not activated")
 
-    def on_update_focus(self, data:dict):
-        """ update focus value for all lens """
-        for id, value in data.items():
-            component = self.findChild(QLineEdit, name=f"edit_focus_value_{id}")
-            if component !=  None:
-                component.setText(str(value))
+    ### Change for all of light level (note!! idx is not a light id)
+    def on_btn_light_level_set_all(self):
+        brightness = []
+        for idx, id in enumerate(self.__config["light_ids"]):
+            light_value = self.findChild(QLineEdit, name=f"edit_light_level_value_{idx+1}").text()
+            if light_value is not None:
+                brightness.append(int(light_value))
+            else:
+                brightness.append(0)
+        self.__light_set(ids=[idx+1], value=brightness)
+
+    def __light_set(self, ids:list, values:list):
+        self.__light_control_subscriber.set_control_multi(self.__config["dmx_ip"], self.__config["dmx_port"], ids, brightness=values)
+    
+    def on_btn_light_off(self):
+        self.__light_control_subscriber.set_off(self.__config["dmx_ip"], self.__config["dmx_port"], self.__config["light_ids"])
+    
+    def on_btn_inference_model_apply(self):
+        selected_model = self.combobox_inference_sdd_model.currentText()
+
+        if selected_model:
+            absolute_path = pathlib.Path(self.__config["model_path"])/selected_model
+            self.__console.info(f"Selected Model : {absolute_path}")
+
+            try:
+                # file load (json format)
+                preset_file = open(absolute_path, encoding='utf-8')
+                preset = json.load(preset_file)
+                preset_file.close()
+
+                # set focus value
+                for lens_id in preset["focus_value"]:
+                    edit_focus = self.findChild(QLineEdit, name=f"edit_focus_value_{lens_id}")
+                    if edit_focus:
+                        edit_focus.setText(str(preset["focus_value"][lens_id]))
+                # set camera exposure time
+                for camera_id in preset["camera_exposure_time"]:
+                    edit_exposure_time = self.findChild(QLineEdit, name=f"edit_exposure_time_value_{camera_id}")
+                    if edit_exposure_time:
+                        edit_exposure_time.setText(str(preset["camera_exposure_time"][camera_id]))
+                # set light value
+                for light_id in preset["light_value"]:
+                    edit_light_value = self.findChild(QLineEdit, name=f"edit_light_level_value_{light_id}")
+                    if edit_light_value:
+                        edit_light_value.setText(str(preset["light_value"][light_id]))
+
+            except json.JSONDecodeError as e:
+                QMessageBox.critical(self, "Error", f"Preset file load failed. ({e})")
+            except FileNotFoundError as e:
+                QMessageBox.critical(self, "Error", f"Preset file does not exist. ({absolute_path})")
+
+    def on_test(self):
+        test_data = {}
+        test_data["1"] = str(random.randint(1, 100))
+        test_data["2"] = str(random.randint(1, 100))
+        test_data["3"] = str(random.randint(1, 100))
+        test_data["4"] = str(random.randint(1, 100))
+        test_data["5"] = str(random.randint(1, 100))
+        test_data["6"] = str(random.randint(1, 100))
+        test_data["7"] = str(random.randint(1, 100))
+        test_data["8"] = str(random.randint(1, 100))
+
+        self.__frame_temperature_grid_plot.clear()
+
+        start_time = datetime.datetime.now()
+        colors = ['red', 'green', 'blue', 'cyan', 'magenta', 'yellow', 'orange', 'purple']
+
+        for i in range(8):
+            #times = np.array([(start_time + datetime.timedelta(seconds=j)).timestamp() for j in range(100)])
+            times = [random.randint(1, 100) for _ in range(100)]
+            #values = np.random.normal(loc=i*10, scale=2.0, size=100)
+            values = [random.randint(1, 100) for _ in range(100)]
+            self.__frame_temperature_grid_plot.plot(x=times, y=values, pen=graph.mkPen(colors[i % len(colors)], width=2), name=f"Series {i+1}")
+            print(values)
+            print(times)
+
+        self.__frame_temperature_grid_plot.enableAutoRange(axis=graph.ViewBox.XYAxes)
+        self.__frame_temperature_grid_plot.show()
+
+        # self.x = list(range(10))
+        # self.num_series = 8
+        # self.colors = ['r', 'g', 'b', 'y', 'm', 'c', 'w', 'k']  # 기본 색상들
+        # self.curves = []
+
+        # now = datetime.datetime.now()
+        # timestamps = np.array([(now - datetime.timedelta(seconds=99 - i)).timestamp() for i in range(10)])
+        # readable_times = [datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S') if i%50==0 else '' for i, ts in enumerate(timestamps)]
+        
+        # x_indices = list(range(len(readable_times)))
+        # axis = self.__frame_temperature_grid_plot.getAxis('bottom')
+        # axis.setTicks([list(zip(x_indices, readable_times))])
+
+        # now = time.time()
+        # x = [now + i * 60 for i in range(100)]  # 1분 간격
         
 
-    def on_update_lens_control_status(self, msg:str): # update lens control pipeline status
-        self.label_lens_control_pipeline_message.setText(msg)
+        # for i in range(self.num_series):
+        #     y = np.random.normal(size=100)
+        #     curve = self.__frame_temperature_grid_plot.plot(x, y, pen=graph.mkPen(self.colors[i % len(self.colors)], width=2), name=f"Item {i+1}")
+        #     self.curves.append(curve)
+        # self.__frame_temperature_grid_plot.enableAutoRange(axis=graph.ViewBox.XAxis)
+        # self.__frame_temperature_grid_plot.show()
+        
+        # n_sample = 10
+        # y = [random.randint(1, 10) for _ in range(n_sample)]
+        # x = [random.randint(0, 4000) for _ in range(n_sample)]
+        # c = [random.choice(['r', 'g', 'b']) for _ in range(n_sample)]
 
+        # self.__frame_temperature_grid_plot.plot(1, 1, pen='y')
+        # self.__frame_temperature_grid_plot.enableAutoRange(axis=graph.ViewBox.XAxis)
+        # self.__frame_temperature_grid_plot.show()
+
+        # points = []
+        # for idx in range(n_sample):
+        #     points.append({'pos': (x[idx], y[idx]), 'brush': c[idx], 'size': 10, 'symbol':'s'})
+
+        # scatter = graph.ScatterPlotItem()
+        # scatter.addPoints(points)
+        # self.__frame_temperature_grid_plot.addItem(scatter)
+        # self.__frame_defect_grid_plot.enableAutoRange(axis=graph.ViewBox.XAxis)
+        # self.__frame_defect_grid_plot.show()
+
+    ### checkbox options
+    def on_check_option_save_level2_info(self, state):
+        # online_checked = self.check_online_signal.isChecked()
+        pass
+
+    def on_check_option_save_temperature(self, state):
+        pass
+
+    
+    def on_check_inference_batch_processing(self, state):
+        pass
+
+    def on_check_inference_save_results(self, state):
+        pass
+
+
+
+    ### show grabbed images
     def on_update_camera_image(self, camera_id:int, image:np.ndarray):
         """ show image on window for each camera id """
         h, w, ch = image.shape
-        check = self.findChild(QCheckBox, "chk_show_alignment_line")
-        if check and check.isChecked():
-            cx = w//2
-            cy = h//2
-            cv2.line(image, (cx, 0), (cx, h), (0, 255, 0), 1) #(960, 0) (960, 1920)
-            cv2.line(image, (0, cy), (w, cy), (0, 255, 0), 1) # 
-
         qt_image = QImage(image.data, w, h, ch*w, QImage.Format.Format_RGB888)
         pixmap = QPixmap.fromImage(qt_image)
         try:
@@ -397,35 +482,8 @@ class AppWindow(QMainWindow):
             self.__frame_window_map[camera_id].show()
         except Exception as e:
             self.__console.error(e)
-    
                 
     def closeEvent(self, event:QCloseEvent) -> None: 
-        """ terminate main window """      
-
-        # close light control requester
-        if self.__light_control_subscriber:
-            self.__light_control_subscriber.close()
-            self.__console.info("Close Light Control Subscriber")
-
-        # close lens control publisher
-        if self.__lens_control_publisher:
-            self.__lens_control_publisher.close()
-            self.__console.info("Close Lens Control Publisher")
-
-        # close hmd signal control publisher
-        if self.__hmd_signal_control_publisher:
-            self.__hmd_signal_control_publisher.close()
-            self.__console.info("Close HMD Signal Control Publisher")
-
-        # close line signal control publisher
-        if self.__line_signal_control_publisher:
-            self.__line_signal_control_publisher.close()
-            self.__console.info("Close Line Signal Control Publisher")
-
-        # close line signal monitoring subscriber
-        if self.__line_signal_monitor_subscriber:
-            self.__line_signal_monitor_subscriber.close()
-            self.__console.info("Close Line Signal Monitor Subscriber")
 
         # close temperature monitor subscriber
         if self.__temperature_monitor_subscriber:
@@ -437,25 +495,30 @@ class AppWindow(QMainWindow):
             self.__dk_level2_data_subscriber.close()
             self.__console.info("Close DK Level2 Data Subscriber")
 
-        # close level2 status subscriber
-        if self.__dk_level2_status_subscriber:
-            self.__dk_level2_status_subscriber.close()
-            self.__console.info("Close DK Level2 Status Subscriber")
-    
-        # close camera status monitor subscriber
-        if self.__camera_status_monitor_subscriber:
-            self.__camera_status_monitor_subscriber.close()
-            self.__console.info("Close Camera Status Monitor Subscriber")
+        # close lens control publisher
+        if self.__lens_control_publisher:
+            self.__lens_control_publisher.close()
+            self.__console.info("Close Lens Control Publisher")
 
-        # close camera stream monitoring subscriber
-        if len(self.__camera_image_subscriber_map.keys())>0:
-            with ThreadPoolExecutor(max_workers=10) as executor:
-                executor.map(lambda subscriber: subscriber.close(), self.__camera_image_subscriber_map.values())
+        # close line signal monitoring subscriber
+        if self.__line_signal_monitor_subscriber:
+            self.__line_signal_monitor_subscriber.close()
+            self.__console.info("Close Line Signal Monitor Subscriber")
 
         # close camera control publisher
         if len(self.__camera_control_publisher_map.keys())>0:
             with ThreadPoolExecutor(max_workers=10) as executor:
                 executor.map(lambda publisher: publisher.close(), self.__camera_control_publisher_map.values())
+
+        # close light control requester
+        if self.__light_control_subscriber:
+            self.__light_control_subscriber.close()
+            self.__console.info("Close Light Control Subscriber")
+
+        # close camera stream monitoring subscriber
+        if len(self.__camera_image_subscriber_map.keys())>0:
+            with ThreadPoolExecutor(max_workers=10) as executor:
+                executor.map(lambda subscriber: subscriber.close(), self.__camera_image_subscriber_map.values())       
 
         # context termination with linger=0
         self.__pipeline_context.destroy(0)
@@ -463,26 +526,16 @@ class AppWindow(QMainWindow):
         return super().closeEvent(event)
 
     def on_update_temperature(self, values:dict):
-        """ update temperature value in GUI """
         try:
-            if "1" in values:   
-                self.label_temperature_value_1.setText(str(values["1"]))
-            if "2" in values:
-                self.label_temperature_value_2.setText(str(values["2"]))
-            if "3" in values:
-                self.label_temperature_value_3.setText(str(values["3"]))
-            if "4" in values:
-                self.label_temperature_value_4.setText(str(values["4"]))
-            if "5" in values:
-                self.label_temperature_value_5.setText(str(values["5"]))
-            if "6" in values:
-                self.label_temperature_value_6.setText(str(values["6"]))
-            if "7" in values:
-                self.label_temperature_value_7.setText(str(values["7"]))
-            if "8" in values:
-                self.label_temperature_value_8.setText(str(values["8"]))
+            for idx, id in enumerate(values):
+                widget = self.findChild(QLabel, name=f"label_temperature_value_{id}")
+                if widget:
+                    widget.setText(f"{values[id]}")
         except Exception as e:
-            pass
+            self.__console.error(f"Temperature update error")
+
+
+
 
     def on_update_camera_status(self, status:str):
         """ update camera status """
@@ -590,7 +643,7 @@ class AppWindow(QMainWindow):
         except json.JSONDecodeError as e:
             self.__console.error(f"Line Signal Update Error : {e.what()}")
 
-    def on_update_dmx_light_status(self, data:str):
+    def on_update_dmx_light_control(self, data:str):
         """ update dmx light status """
         try:
             if "alive" in data:

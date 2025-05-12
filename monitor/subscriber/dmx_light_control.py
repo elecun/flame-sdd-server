@@ -47,6 +47,7 @@ class DMXLightControlSubscriber(QThread):
         self.__dmx_ip = dmx_ip
         self.__dmx_port = dmx_port
         self.__brightness = 0
+        self.__brightness_array = []
         self.__light_ids = light_ids
 
         # initialize zmq
@@ -88,7 +89,7 @@ class DMXLightControlSubscriber(QThread):
                             # control by line signal
                             if "hmd_signal_1_on" in data and "hmd_signal_2_on" in data and "online_signal_on" in data:
                                 if data["hmd_signal_1_on"] and data["online_signal_on"]: # in
-                                    self.set_control(self.__dmx_ip, self.__dmx_port, self.__light_ids, self.__brightness)
+                                    self.set_control_multi(self.__dmx_ip, self.__dmx_port, self.__light_ids, self.__brightness_array)
 
                                 elif not data["hmd_signal_2_on"] and data["online_signal_on"]: # out
                                     self.set_off(self.__dmx_ip, self.__dmx_port, self.__light_ids)
@@ -137,6 +138,23 @@ class DMXLightControlSubscriber(QThread):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.sendto(packet, (ip, port))
         sock.close()
+
+    def set_control_multi(self, ip:str, port:int, device_ids:list, brightness:list):
+        if len(device_ids)!=len(brightness):
+            self.__console.error("Number of device is not equal to number of values")
+            return
+        
+        self.__brightness_array = brightness
+
+        dmx_data = bytearray(512)
+        for idx, id in enumerate(device_ids):
+            dmx_data[id] = brightness[idx]
+        packet = self.__create_artnet_dmx_packet(sequence=0, physical=0, universe=0, data=dmx_data)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.sendto(packet, (ip, port))
+        sock.close()
+        self.__console.info(f"<DMX Light Monitor> {brightness}")
+
 
     def set_control(self, ip:str, port:int, device_ids:list, brightness:int):
         """ turn on the light """

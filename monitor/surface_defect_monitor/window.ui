@@ -24,7 +24,7 @@
     <normaloff>.</normaloff>.</iconset>
   </property>
   <property name="toolTip">
-   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save as...&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   <string/>
   </property>
   <property name="styleSheet">
    <string notr="true"/>
@@ -54,7 +54,7 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>2</number>
     </property>
     <property name="tabBarAutoHide">
      <bool>false</bool>
@@ -108,6 +108,9 @@
          <pointsize>12</pointsize>
         </font>
        </property>
+       <property name="toolTip">
+        <string>On-Site 제어기 준비 상태</string>
+       </property>
        <property name="styleSheet">
         <string notr="true">background-color: rgb(200,200,200);
 color: rgb(0,0,0);</string>
@@ -133,6 +136,9 @@ color: rgb(0,0,0);</string>
          <family>Arial</family>
          <pointsize>12</pointsize>
         </font>
+       </property>
+       <property name="toolTip">
+        <string>레벨2 연결 상태</string>
        </property>
        <property name="styleSheet">
         <string notr="true">background-color: rgb(200,200,200);
@@ -160,6 +166,9 @@ color: rgb(0,0,0);</string>
          <pointsize>12</pointsize>
         </font>
        </property>
+       <property name="toolTip">
+        <string>NAS 연결 상태</string>
+       </property>
        <property name="styleSheet">
         <string notr="true">background-color: rgb(200,200,200);
 color: rgb(0,0,0);</string>
@@ -185,6 +194,9 @@ color: rgb(0,0,0);</string>
          <family>Arial</family>
          <pointsize>12</pointsize>
         </font>
+       </property>
+       <property name="toolTip">
+        <string>조명 제어기 연결 상태</string>
        </property>
        <property name="styleSheet">
         <string notr="true">background-color: rgb(200,200,200);
@@ -212,6 +224,9 @@ color: rgb(0,0,0);</string>
          <pointsize>12</pointsize>
         </font>
        </property>
+       <property name="toolTip">
+        <string>형강 진입 신호 #1</string>
+       </property>
        <property name="styleSheet">
         <string notr="true">background-color: rgb(200,200,200);
 color: rgb(0,0,0);</string>
@@ -237,6 +252,9 @@ color: rgb(0,0,0);</string>
          <family>Arial</family>
          <pointsize>12</pointsize>
         </font>
+       </property>
+       <property name="toolTip">
+        <string>장비 온라인 상태</string>
        </property>
        <property name="styleSheet">
         <string notr="true">background-color: rgb(200,200,200);
@@ -264,6 +282,9 @@ color: rgb(0,0,0);</string>
          <pointsize>12</pointsize>
         </font>
        </property>
+       <property name="toolTip">
+        <string>형강 진입 신호 #2</string>
+       </property>
        <property name="styleSheet">
         <string notr="true">background-color: rgb(200,200,200);
 color: rgb(0,0,0);</string>
@@ -289,6 +310,9 @@ color: rgb(0,0,0);</string>
          <family>Arial</family>
          <pointsize>12</pointsize>
         </font>
+       </property>
+       <property name="toolTip">
+        <string>표면 결함 검출 처리 상태</string>
        </property>
        <property name="styleSheet">
         <string notr="true">background-color: rgb(200,200,200);
@@ -838,7 +862,7 @@ border:3px solid #00F;
 color: rgb(255,255,255);</string>
       </property>
       <property name="text">
-       <string>°C</string>
+       <string>0</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
@@ -1237,6 +1261,9 @@ color:rgb(0,255,0);</string>
          <pointsize>12</pointsize>
         </font>
        </property>
+       <property name="toolTip">
+        <string>H (형강 폭)</string>
+       </property>
        <property name="styleSheet">
         <string notr="true">background-color: rgb(0,0,0);
 color:rgb(0,255,0);</string>
@@ -1284,6 +1311,9 @@ color:rgb(0,255,0);</string>
          <pointsize>12</pointsize>
         </font>
        </property>
+       <property name="toolTip">
+        <string>총 이론 길이(mm)</string>
+       </property>
        <property name="styleSheet">
         <string notr="true">background-color: rgb(0,0,0);
 color:rgb(0,255,0);</string>
@@ -1309,6 +1339,9 @@ color:rgb(0,255,0);</string>
          <family>Arial</family>
          <pointsize>12</pointsize>
         </font>
+       </property>
+       <property name="toolTip">
+        <string>B (형강 높이)</string>
        </property>
        <property name="styleSheet">
         <string notr="true">background-color: rgb(0,0,0);
@@ -1336,6 +1369,9 @@ color:rgb(0,255,0);</string>
          <pointsize>12</pointsize>
         </font>
        </property>
+       <property name="toolTip">
+        <string>T1 (Web 두께)</string>
+       </property>
        <property name="styleSheet">
         <string notr="true">background-color: rgb(0,0,0);
 color:rgb(0,255,0);</string>
@@ -1361,6 +1397,9 @@ color:rgb(0,255,0);</string>
          <family>Arial</family>
          <pointsize>12</pointsize>
         </font>
+       </property>
+       <property name="toolTip">
+        <string>T2 (Flange 두께)</string>
        </property>
        <property name="styleSheet">
         <string notr="true">background-color: rgb(0,0,0);
@@ -1456,6 +1495,9 @@ color:rgb(0,255,0);</string>
          <pointsize>12</pointsize>
         </font>
        </property>
+       <property name="toolTip">
+        <string>강편 번호</string>
+       </property>
        <property name="styleSheet">
         <string notr="true">background-color: rgb(0,0,0);
 color:rgb(0,255,0);</string>
@@ -1533,8 +1575,14 @@ color:rgb(0,255,0);</string>
         <height>26</height>
        </rect>
       </property>
+      <property name="toolTip">
+       <string>#9 카메라 노출값</string>
+      </property>
       <property name="styleSheet">
        <string notr="true">border:3px solid #0D0;</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
      <widget class="QLineEdit" name="edit_light_level_value_1">
@@ -1546,8 +1594,17 @@ color:rgb(0,255,0);</string>
         <height>26</height>
        </rect>
       </property>
+      <property name="toolTip">
+       <string>#1 조명 밝기 값</string>
+      </property>
+      <property name="statusTip">
+       <string/>
+      </property>
       <property name="styleSheet">
        <string notr="true">border:3px solid #F00;</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
      <widget class="QLineEdit" name="edit_exposure_time_value_3">
@@ -1559,8 +1616,14 @@ color:rgb(0,255,0);</string>
         <height>26</height>
        </rect>
       </property>
+      <property name="toolTip">
+       <string>#3 카메라 노출값</string>
+      </property>
       <property name="styleSheet">
        <string notr="true">border:3px solid #0D0;</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
      <widget class="QLineEdit" name="edit_exposure_time_value_6">
@@ -1572,8 +1635,14 @@ color:rgb(0,255,0);</string>
         <height>26</height>
        </rect>
       </property>
+      <property name="toolTip">
+       <string extracomment="test">#6 카메라 노출값</string>
+      </property>
       <property name="styleSheet">
        <string notr="true">border:3px solid #0D0;</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
      <widget class="QLineEdit" name="edit_exposure_time_value_5">
@@ -1585,8 +1654,14 @@ color:rgb(0,255,0);</string>
         <height>26</height>
        </rect>
       </property>
+      <property name="toolTip">
+       <string>#5 카메라 노출값</string>
+      </property>
       <property name="styleSheet">
        <string notr="true">border:3px solid #0D0;</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
      <widget class="QLineEdit" name="edit_light_level_value_4">
@@ -1598,8 +1673,14 @@ color:rgb(0,255,0);</string>
         <height>26</height>
        </rect>
       </property>
+      <property name="toolTip">
+       <string>#4 조명 밝기 값</string>
+      </property>
       <property name="styleSheet">
        <string notr="true">border:3px solid #F00;</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
      <widget class="QLineEdit" name="edit_light_level_value_8">
@@ -1611,8 +1692,14 @@ color:rgb(0,255,0);</string>
         <height>26</height>
        </rect>
       </property>
+      <property name="toolTip">
+       <string>#8 조명 밝기 값</string>
+      </property>
       <property name="styleSheet">
        <string notr="true">border:3px solid #F00;</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
      <widget class="QLineEdit" name="edit_light_level_value_2">
@@ -1624,8 +1711,14 @@ color:rgb(0,255,0);</string>
         <height>26</height>
        </rect>
       </property>
+      <property name="toolTip">
+       <string>#2 조명 밝기 값</string>
+      </property>
       <property name="styleSheet">
        <string notr="true">border:3px solid #F00;</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
      <widget class="QLineEdit" name="edit_exposure_time_value_2">
@@ -1637,8 +1730,14 @@ color:rgb(0,255,0);</string>
         <height>26</height>
        </rect>
       </property>
+      <property name="toolTip">
+       <string>#2 카메라 노출값</string>
+      </property>
       <property name="styleSheet">
        <string notr="true">border:3px solid #0D0;</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
      <widget class="QLineEdit" name="edit_exposure_time_value_4">
@@ -1650,8 +1749,14 @@ color:rgb(0,255,0);</string>
         <height>26</height>
        </rect>
       </property>
+      <property name="toolTip">
+       <string>#4 카메라 노출값</string>
+      </property>
       <property name="styleSheet">
        <string notr="true">border:3px solid #0D0;</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
      <widget class="QLineEdit" name="edit_light_level_value_7">
@@ -1663,8 +1768,14 @@ color:rgb(0,255,0);</string>
         <height>26</height>
        </rect>
       </property>
+      <property name="toolTip">
+       <string>#7 조명 밝기 값</string>
+      </property>
       <property name="styleSheet">
        <string notr="true">border:3px solid #F00;</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
      <widget class="QLineEdit" name="edit_exposure_time_value_10">
@@ -1676,8 +1787,14 @@ color:rgb(0,255,0);</string>
         <height>26</height>
        </rect>
       </property>
+      <property name="toolTip">
+       <string>#10 카메라 노출값</string>
+      </property>
       <property name="styleSheet">
        <string notr="true">border:3px solid #0D0;</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
      <widget class="QLabel" name="label_4">
@@ -1721,8 +1838,14 @@ color:rgb(0,255,0);</string>
         <height>26</height>
        </rect>
       </property>
+      <property name="toolTip">
+       <string>#7 카메라 노출값</string>
+      </property>
       <property name="styleSheet">
        <string notr="true">border:3px solid #0D0;</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
      <widget class="QLineEdit" name="edit_light_level_value_3">
@@ -1734,8 +1857,14 @@ color:rgb(0,255,0);</string>
         <height>26</height>
        </rect>
       </property>
+      <property name="toolTip">
+       <string>#3 조명 밝기 값</string>
+      </property>
       <property name="styleSheet">
        <string notr="true">border:3px solid #F00;</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
      <widget class="QLineEdit" name="edit_exposure_time_value_1">
@@ -1747,8 +1876,14 @@ color:rgb(0,255,0);</string>
         <height>26</height>
        </rect>
       </property>
+      <property name="toolTip">
+       <string>#1 카메라 노출값</string>
+      </property>
       <property name="styleSheet">
        <string notr="true">border:3px solid #0D0;</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
      <widget class="QLineEdit" name="edit_light_level_value_5">
@@ -1760,8 +1895,14 @@ color:rgb(0,255,0);</string>
         <height>26</height>
        </rect>
       </property>
+      <property name="toolTip">
+       <string>#5 조명 밝기 값</string>
+      </property>
       <property name="styleSheet">
        <string notr="true">border:3px solid #F00;</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
      <widget class="QPushButton" name="btn_exposure_time_set_all">
@@ -1778,13 +1919,16 @@ color:rgb(0,255,0);</string>
         <family>Arial</family>
        </font>
       </property>
+      <property name="toolTip">
+       <string/>
+      </property>
       <property name="styleSheet">
        <string notr="true">color: rgb(0,0,0);
 border: 3px solid #0d0;
 background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="text">
-       <string>카메라 노출 업데이트</string>
+       <string>카메라 노출 적용</string>
       </property>
      </widget>
      <widget class="QLineEdit" name="edit_light_level_value_9">
@@ -1796,8 +1940,14 @@ background-color: rgb(212, 212, 212);</string>
         <height>26</height>
        </rect>
       </property>
+      <property name="toolTip">
+       <string>#9 조명 밝기 값</string>
+      </property>
       <property name="styleSheet">
        <string notr="true">border:3px solid #F00;</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
      <widget class="QLineEdit" name="edit_light_level_value_10">
@@ -1809,8 +1959,14 @@ background-color: rgb(212, 212, 212);</string>
         <height>26</height>
        </rect>
       </property>
+      <property name="toolTip">
+       <string>#10 조명 밝기 값</string>
+      </property>
       <property name="styleSheet">
        <string notr="true">border:3px solid #F00;</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
      <widget class="QLineEdit" name="edit_light_level_value_6">
@@ -1822,8 +1978,14 @@ background-color: rgb(212, 212, 212);</string>
         <height>26</height>
        </rect>
       </property>
+      <property name="toolTip">
+       <string>#6 조명 밝기 값</string>
+      </property>
       <property name="styleSheet">
        <string notr="true">border:3px solid #F00;</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
      <widget class="QLineEdit" name="edit_exposure_time_value_8">
@@ -1835,8 +1997,14 @@ background-color: rgb(212, 212, 212);</string>
         <height>26</height>
        </rect>
       </property>
+      <property name="toolTip">
+       <string>#8 카메라 노출값</string>
+      </property>
       <property name="styleSheet">
        <string notr="true">border:3px solid #0D0;</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
      <widget class="QPushButton" name="btn_light_level_set_all">
@@ -1859,7 +2027,7 @@ border: 3px solid #f00;
 background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="text">
-       <string>조명 밝기 업데이트</string>
+       <string>조명 밝기 적용</string>
       </property>
      </widget>
      <widget class="QLineEdit" name="edit_focus_value_8">
@@ -2034,7 +2202,7 @@ background-color: rgb(212, 212, 212);</string>
        </rect>
       </property>
      </widget>
-     <widget class="QPushButton" name="btn_focus_preset_load">
+     <widget class="QPushButton" name="btn_preset_load">
       <property name="geometry">
        <rect>
         <x>300</x>
@@ -2688,10 +2856,10 @@ background-color: rgb(212, 212, 212);</string>
      <widget class="QGroupBox" name="groupBox_2">
       <property name="geometry">
        <rect>
-        <x>15</x>
+        <x>20</x>
         <y>10</y>
-        <width>481</width>
-        <height>81</height>
+        <width>561</width>
+        <height>196</height>
        </rect>
       </property>
       <property name="font">
@@ -2702,23 +2870,23 @@ background-color: rgb(212, 212, 212);</string>
       <property name="title">
        <string>표면결함 검출 모델</string>
       </property>
-      <widget class="QComboBox" name="combobox_sdd_model">
+      <widget class="QComboBox" name="combobox_inference_sdd_model">
        <property name="geometry">
         <rect>
-         <x>120</x>
-         <y>30</y>
-         <width>236</width>
-         <height>36</height>
+         <x>140</x>
+         <y>70</y>
+         <width>256</width>
+         <height>31</height>
         </rect>
        </property>
       </widget>
       <widget class="QLabel" name="label_6">
        <property name="geometry">
         <rect>
-         <x>10</x>
-         <y>28</y>
+         <x>30</x>
+         <y>70</y>
          <width>96</width>
-         <height>36</height>
+         <height>31</height>
         </rect>
        </property>
        <property name="font">
@@ -2734,13 +2902,13 @@ background-color: rgb(212, 212, 212);</string>
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
       </widget>
-      <widget class="QPushButton" name="btn_sdd_model_apply">
+      <widget class="QPushButton" name="btn_inference_model_apply">
        <property name="geometry">
         <rect>
-         <x>355</x>
-         <y>30</y>
-         <width>91</width>
-         <height>36</height>
+         <x>415</x>
+         <y>70</y>
+         <width>131</width>
+         <height>31</height>
         </rect>
        </property>
        <property name="font">
@@ -2749,113 +2917,21 @@ background-color: rgb(212, 212, 212);</string>
          <pointsize>13</pointsize>
         </font>
        </property>
-       <property name="text">
-        <string>Apply</string>
-       </property>
-      </widget>
-     </widget>
-     <widget class="QGroupBox" name="groupBox_6">
-      <property name="geometry">
-       <rect>
-        <x>640</x>
-        <y>150</y>
-        <width>306</width>
-        <height>71</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>Arial</family>
-        <pointsize>12</pointsize>
-       </font>
-      </property>
-      <property name="title">
-       <string>화면 표시 옵션</string>
-      </property>
-      <widget class="QCheckBox" name="chk_show_alignment_line">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>30</y>
-         <width>281</width>
-         <height>20</height>
-        </rect>
-       </property>
-       <property name="font">
-        <font>
-         <family>Arial</family>
-         <pointsize>13</pointsize>
-        </font>
+       <property name="styleSheet">
+        <string notr="true">color: rgb(0,0,0);
+background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="text">
-        <string>카메라 모니터링창에 얼라인먼트 라인 표시</string>
+        <string>변경 적용</string>
        </property>
       </widget>
-     </widget>
-     <widget class="QGroupBox" name="groupBox_3">
-      <property name="geometry">
-       <rect>
-        <x>640</x>
-        <y>235</y>
-        <width>526</width>
-        <height>106</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>Arial</family>
-        <pointsize>12</pointsize>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true"/>
-      </property>
-      <property name="title">
-       <string>제어 신호 발생 (Software Signal)</string>
-      </property>
-      <widget class="QCheckBox" name="check_online_signal">
-       <property name="geometry">
-        <rect>
-         <x>15</x>
-         <y>55</y>
-         <width>211</width>
-         <height>20</height>
-        </rect>
-       </property>
-       <property name="font">
-        <font>
-         <family>Arial</family>
-        </font>
-       </property>
-       <property name="text">
-        <string>온라인 상태신호 발생 유지</string>
-       </property>
-      </widget>
-      <widget class="QCheckBox" name="check_offline_signal">
-       <property name="geometry">
-        <rect>
-         <x>285</x>
-         <y>30</y>
-         <width>211</width>
-         <height>20</height>
-        </rect>
-       </property>
-       <property name="font">
-        <font>
-         <family>Arial</family>
-        </font>
-       </property>
-       <property name="text">
-        <string>오프라인 상태신호 발생 유지</string>
-       </property>
-      </widget>
-      <widget class="QCheckBox" name="check_hmd_signal">
+      <widget class="QLabel" name="label_17">
        <property name="geometry">
         <rect>
          <x>15</x>
          <y>30</y>
-         <width>211</width>
-         <height>20</height>
+         <width>111</width>
+         <height>31</height>
         </rect>
        </property>
        <property name="font">
@@ -2865,14 +2941,83 @@ background-color: rgb(212, 212, 212);</string>
         </font>
        </property>
        <property name="text">
-        <string>MD 신호 발생 유지</string>
+        <string>현재 적용 모델 :</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_inference_current_model">
+       <property name="geometry">
+        <rect>
+         <x>135</x>
+         <y>30</y>
+         <width>411</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>-</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QCheckBox" name="check_inference_batch_processing">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>125</y>
+         <width>291</width>
+         <height>26</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="toolTip">
+        <string>영상이 모두 캡쳐된 후, 일괄 모델 추론 진행</string>
+       </property>
+       <property name="text">
+        <string>데이터 일괄 처리 (Batch Processing)</string>
+       </property>
+      </widget>
+      <widget class="QCheckBox" name="check_inference_save_results">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>155</y>
+         <width>216</width>
+         <height>26</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <family>Arial</family>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="toolTip">
+        <string>추론 결과 이미지를 별도로 저장</string>
+       </property>
+       <property name="text">
+        <string>추론 결과 이미지 저장</string>
        </property>
       </widget>
      </widget>
      <widget class="Line" name="line_8">
       <property name="geometry">
        <rect>
-        <x>610</x>
+        <x>605</x>
         <y>15</y>
         <width>16</width>
         <height>321</height>
@@ -2888,7 +3033,7 @@ background-color: rgb(212, 212, 212);</string>
         <x>640</x>
         <y>10</y>
         <width>596</width>
-        <height>126</height>
+        <height>101</height>
        </rect>
       </property>
       <property name="font">
@@ -2897,7 +3042,7 @@ background-color: rgb(212, 212, 212);</string>
        </font>
       </property>
       <property name="title">
-       <string>로그 옵션</string>
+       <string>옵션 설정</string>
       </property>
       <widget class="QCheckBox" name="check_option_save_level2_info">
        <property name="geometry">
@@ -2905,7 +3050,7 @@ background-color: rgb(212, 212, 212);</string>
          <x>15</x>
          <y>30</y>
          <width>216</width>
-         <height>20</height>
+         <height>26</height>
         </rect>
        </property>
        <property name="font">
@@ -2922,9 +3067,9 @@ background-color: rgb(212, 212, 212);</string>
        <property name="geometry">
         <rect>
          <x>15</x>
-         <y>55</y>
+         <y>60</y>
          <width>216</width>
-         <height>20</height>
+         <height>26</height>
         </rect>
        </property>
        <property name="font">
@@ -2937,6 +3082,19 @@ background-color: rgb(212, 212, 212);</string>
         <string>온도 로그 데이터 저장</string>
        </property>
       </widget>
+     </widget>
+     <widget class="QPushButton" name="btn_test">
+      <property name="geometry">
+       <rect>
+        <x>690</x>
+        <y>190</y>
+        <width>113</width>
+        <height>32</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>test</string>
+      </property>
      </widget>
     </widget>
    </widget>
@@ -2960,7 +3118,7 @@ background-color: rgb(212, 212, 212);</string>
      <enum>QTabWidget::South</enum>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>2</number>
     </property>
     <widget class="QWidget" name="tab_4">
      <attribute name="title">
@@ -3287,7 +3445,7 @@ border: 1px solid white;</string>
        </rect>
       </property>
       <property name="styleSheet">
-       <string notr="true">background-color: rgb(255,255,255);</string>
+       <string notr="true">background-color: rgb(0,0,0);</string>
       </property>
       <property name="frameShape">
        <enum>QFrame::NoFrame</enum>
