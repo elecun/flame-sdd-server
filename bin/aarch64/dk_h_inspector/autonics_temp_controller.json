@@ -1,0 +1,33 @@
+{
+    "rt_cycle_ns" : 1000000000,
+    "verbose" : 1,
+
+    "parameters":{
+        "simulation_mode":true,
+        "device" : "/dev/ttyS5",
+        "baudrate" : 9600,
+        "parity" : "N",
+        "data_bit" : 8,
+        "stop_bit" : 1,
+        "flow_control" : "none",
+        "timeout_sec" : 1.0,
+        "slaves":[1,2,3,4,5,6,7,8]
+    },
+
+    "dataport":{
+        "status" : {
+            "transport" : "tcp",
+            "host":"*",
+            "port" : 5601,
+            "socket_type" : "pub",
+            "queue_size" : 1000
+        },
+        "temp_stream":{
+            "transport" : "tcp",
+            "host":"*",
+            "port" : 5603,
+            "socket_type" : "pub",
+            "queue_size" : 1000
+        }
+    }
+}

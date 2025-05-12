@@ -78,6 +78,8 @@ class TemperatureMonitorSubscriber(QThread):
                     if topic.decode() == self.__topic:
                         data = json.loads(data.decode('utf8').replace("'", '"'))
                         self.temperature_update_signal.emit(data)
+
+                        print("ok")
             
             except json.JSONDecodeError as e:
                 self.__console.critical(f"<Temperature Monitor>[DecodeError] {e}")

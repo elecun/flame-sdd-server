@@ -72,8 +72,6 @@ bool autonics_temp_controller::on_init(){
 
 void autonics_temp_controller::on_loop(){
 
-    
-
     try{
         json data_pack;
 
@@ -117,6 +115,8 @@ void autonics_temp_controller::on_loop(){
 
             /* send data */
             msg_multipart.send(*get_port("temp_stream"), ZMQ_DONTWAIT);
+
+            logger::info("sent");
         }
     }
     catch(std::runtime_error& e){
