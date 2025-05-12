@@ -20,6 +20,7 @@ import cv2
 from functools import partial
 from concurrent.futures import ThreadPoolExecutor
 import platform
+from collections import deque
 
 try:
     # using PyQt5
@@ -69,6 +70,8 @@ class AppWindow(QMainWindow):
         self.__frame_defect_grid_plot = graph.PlotWidget()
         self.__frame_temperature_grid_layout = QVBoxLayout()
         self.__frame_temperature_grid_plot = graph.PlotWidget(axisItems={'bottom': DateTimeAxis()})
+        self.__frame_temperature_x = deque(maxlen=config["temperature_max_data_size"])
+        self.__frame_temperature_y = deque(maxlen=config["temperature_max_data_size"])
 
         ### device/service control interfaces
         self.__temperature_monitor_subscriber = None        # temperature monitor subscriber
@@ -139,7 +142,6 @@ class AppWindow(QMainWindow):
                 self.btn_light_level_set_all.clicked.connect(self.on_btn_light_level_set_all)       # set light level all
                 self.btn_light_off.clicked.connect(self.on_btn_light_off)                           # light off
                 self.btn_inference_model_apply.clicked.connect(self.on_btn_inference_model_apply)               # change sdd model
-                self.btn_test.clicked.connect(self.on_test)
 
 
                 # checkbox callback functions
@@ -531,8 +533,24 @@ class AppWindow(QMainWindow):
                 widget = self.findChild(QLabel, name=f"label_temperature_value_{id}")
                 if widget:
                     widget.setText(f"{values[id]}")
+
+            # update temperature plot
+            #self.__frame_temperature_grid_plot.clear()
+
+            colors = ['red', 'green', 'blue', 'cyan', 'magenta', 'yellow', 'orange', 'purple']
+            self.__frame_temperature_x.append(datetime.datetime.now())
+            temp_values = [values[k] for k in sorted(values.keys(), key=str)]
+            self.__frame_temperature_y.append(temp_values)
+
+            self.__frame_defect_grid_plot.setData(list(self.__frame_temperature_x), list(self.__frame_temperature_y))
+
+            self.__frame_temperature_grid_plot.plot(x=list(self.__frame_temperature_x), y=list(self.__frame_temperature_y), 
+                                                    pen=graph.mkPen(colors[i % len(colors)], width=2), name=f"Series")
+            self.__frame_temperature_grid_plot.enableAutoRange(axis=graph.ViewBox.XYAxes)
+            self.__frame_temperature_grid_plot.show()
+
         except Exception as e:
-            self.__console.error(f"Temperature update error")
+            self.__console.error(f"Temperature update error : {e}")
 
 
 

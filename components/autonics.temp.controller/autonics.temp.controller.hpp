@@ -40,6 +40,9 @@ class autonics_temp_controller : public flame::component::object {
         /* device/fieldbus functions */
         bool _init_modbus();    /* initialize modbus RTU */
 
+        /* options */
+        atomic<bool> _simulation_mode { false };
+
 
     private:
         /* task impl. of status publisher for every 1 sec */
