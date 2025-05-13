@@ -5,3 +5,4 @@ psutil
 pyzmq
 nidaqmx
 pyqtgraph
+pillow

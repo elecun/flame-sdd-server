@@ -364,7 +364,7 @@ class AppWindow(QMainWindow):
                 brightness.append(int(light_value))
             else:
                 brightness.append(0)
-        self.__light_set(ids=[idx+1], value=brightness)
+        self.__light_set(ids=self.__config["light_ids"], value=brightness)
 
     def __light_set(self, ids:list, values:list):
         self.__light_control_subscriber.set_control_multi(self.__config["dmx_ip"], self.__config["dmx_port"], ids, brightness=values)
