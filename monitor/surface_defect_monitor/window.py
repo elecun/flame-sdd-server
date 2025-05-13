@@ -50,25 +50,21 @@ from subscriber.dk_level2 import DKLevel2DataSubscriber
 from subscriber.dk_level2_status import DKLevel2StatusSubscriber
 
 class DateTimeAxis(graph.DateAxisItem):
-    def tickStrings(self, values, scale, spacing):
-        return [time.strftime('%Y.%m.%d %H:%M:%S', time.localtime(v)) for v in values]
+    def __init__(self, spacing=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.time_spacing = spacing
 
-class TimeAxisItem(graph.AxisItem):
-    def tickStrings(self, values, scale, spacing): # Custom tick labels: show only first, middle, last
-        if not values:
-            return []
-        labels = []
-        total = len(values)
-        for i, val in enumerate(values):
-            if i == 0 or i == total // 2 or i == total - 1:
-                try:
-                    ts = datetime.fromtimestamp(val)
-                    labels.append(time.strftime('%Y.%m.%d %H:%M:%S'))
-                except:
-                    labels.append('')
-            else:
-                labels.append('')
-        return labels
+    def tickStrings(self, values, scale, spacing):
+        return [datetime.datetime.fromtimestamp(v).strftime('%Y.%m.%d %H:%M:%S') for v in values]
+    
+    def tickValues(self, minVal, maxVal, size):
+        start = int(minVal // self.time_spacing) * self.time_spacing
+        values = []
+        v = start
+        while v <= maxVal:
+            values.append(v)
+            v += self.time_spacing
+        return [(self.time_spacing, values)]
 
 class AppWindow(QMainWindow):
     def __init__(self, config:dict):
@@ -86,12 +82,10 @@ class AppWindow(QMainWindow):
         self.__frame_defect_grid_layout = QVBoxLayout()
         self.__frame_defect_grid_plot = graph.PlotWidget()
         self.__frame_temperature_grid_layout = QVBoxLayout()
-        self.__frame_temperature_grid_plot = graph.PlotWidget(axisItems={'bottom': DateTimeAxis()})
+        self.__frame_temperature_grid_plot = graph.PlotWidget(axisItems={'bottom': DateTimeAxis(orientation='bottom', spacing=config.get("temperature_time_spacing",1))})
         self.__frame_temperature_x = deque(maxlen=config["temperature_max_data_size"])
-        self.__frame_temperature_y = {}
-        self.__frame_temperature_curves = {}
-        for i in config["temperature_ids"]:
-            self.__frame_temperature_y[str(i)] = deque(maxlen=config["temperature_max_data_size"])
+        self.__frame_temperature_y = [deque(maxlen=config["temperature_max_data_size"]) for _ in range(len(config["temperature_ids"]))]
+        self.__frame_temperature_curves = []
 
         ### device/service control interfaces
         self.__temperature_monitor_subscriber = None        # temperature monitor subscriber
@@ -136,17 +130,20 @@ class AppWindow(QMainWindow):
                 self.__frame_temperature_grid_layout.setContentsMargins(5,5,5,5)
                 self.__frame_temperature_grid_plot.setBackground('white')
                 self.__frame_temperature_grid_plot.showGrid(x=True, y=True)
-                self.__frame_temperature_grid_plot.setLimits(xMin=0, xMax=10000, yMin=0, yMax=200)
+                self.__frame_temperature_grid_plot.setLimits(yMin=0, yMax=200)
                 self.__frame_temperature_grid_plot.setYRange(0, 100)
                 self.__frame_temperature_grid_plot.setMouseEnabled(x=True, y=False)
                 self.__frame_temperature_grid.setLayout(self.__frame_temperature_grid_layout)
                 styles = {"color": "#000", "font-size": "15px"}
                 self.__frame_temperature_grid_plot.setLabel("left", "Temperature", **styles)
                 self.__frame_temperature_grid_plot.setLabel("bottom", "Time", **styles)
-                self.__frame_temperature_grid_plot.addLegend()
                 colors = ['red', 'green', 'blue', 'cyan', 'magenta', 'yellow', 'orange', 'purple']
                 for idx, id in enumerate(config["temperature_ids"]):
-                    self.__frame_temperature_curves[str(id)] = self.__frame_temperature_grid_plot.plot(pen=graph.mkPen(colors[idx % len(colors)], width=2), name=f"Temperature {id}")
+                    curve = self.__frame_temperature_grid_plot.plot([],[],pen=graph.mkPen(colors[idx % len(colors)], width=2))
+                    self.__frame_temperature_curves.append(curve)
+                    legend = graph.LegendItem(offset=(130*id, 1)) # show on top
+                    legend.setParentItem(self.__frame_temperature_grid_plot.getPlotItem())
+                    legend.addItem(curve, f"Temperature {id}")
                 
                 
                 # register button event callback function
@@ -409,77 +406,6 @@ class AppWindow(QMainWindow):
             except FileNotFoundError as e:
                 QMessageBox.critical(self, "Error", f"Preset file does not exist. ({absolute_path})")
 
-    def on_test(self):
-        test_data = {}
-        test_data["1"] = str(random.randint(1, 100))
-        test_data["2"] = str(random.randint(1, 100))
-        test_data["3"] = str(random.randint(1, 100))
-        test_data["4"] = str(random.randint(1, 100))
-        test_data["5"] = str(random.randint(1, 100))
-        test_data["6"] = str(random.randint(1, 100))
-        test_data["7"] = str(random.randint(1, 100))
-        test_data["8"] = str(random.randint(1, 100))
-
-        self.__frame_temperature_grid_plot.clear()
-
-        start_time = datetime.datetime.now()
-        colors = ['red', 'green', 'blue', 'cyan', 'magenta', 'yellow', 'orange', 'purple']
-
-        for i in range(8):
-            #times = np.array([(start_time + datetime.timedelta(seconds=j)).timestamp() for j in range(100)])
-            times = [random.randint(1, 100) for _ in range(100)]
-            #values = np.random.normal(loc=i*10, scale=2.0, size=100)
-            values = [random.randint(1, 100) for _ in range(100)]
-            self.__frame_temperature_grid_plot.plot(x=times, y=values, pen=graph.mkPen(colors[i % len(colors)], width=2), name=f"Series {i+1}")
-            print(values)
-            print(times)
-
-        self.__frame_temperature_grid_plot.enableAutoRange(axis=graph.ViewBox.XYAxes)
-        self.__frame_temperature_grid_plot.show()
-
-        # self.x = list(range(10))
-        # self.num_series = 8
-        # self.colors = ['r', 'g', 'b', 'y', 'm', 'c', 'w', 'k']  # 기본 색상들
-        # self.curves = []
-
-        # now = datetime.datetime.now()
-        # timestamps = np.array([(now - datetime.timedelta(seconds=99 - i)).timestamp() for i in range(10)])
-        # readable_times = [datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S') if i%50==0 else '' for i, ts in enumerate(timestamps)]
-        
-        # x_indices = list(range(len(readable_times)))
-        # axis = self.__frame_temperature_grid_plot.getAxis('bottom')
-        # axis.setTicks([list(zip(x_indices, readable_times))])
-
-        # now = time.time()
-        # x = [now + i * 60 for i in range(100)]  # 1분 간격
-        
-
-        # for i in range(self.num_series):
-        #     y = np.random.normal(size=100)
-        #     curve = self.__frame_temperature_grid_plot.plot(x, y, pen=graph.mkPen(self.colors[i % len(self.colors)], width=2), name=f"Item {i+1}")
-        #     self.curves.append(curve)
-        # self.__frame_temperature_grid_plot.enableAutoRange(axis=graph.ViewBox.XAxis)
-        # self.__frame_temperature_grid_plot.show()
-        
-        # n_sample = 10
-        # y = [random.randint(1, 10) for _ in range(n_sample)]
-        # x = [random.randint(0, 4000) for _ in range(n_sample)]
-        # c = [random.choice(['r', 'g', 'b']) for _ in range(n_sample)]
-
-        # self.__frame_temperature_grid_plot.plot(1, 1, pen='y')
-        # self.__frame_temperature_grid_plot.enableAutoRange(axis=graph.ViewBox.XAxis)
-        # self.__frame_temperature_grid_plot.show()
-
-        # points = []
-        # for idx in range(n_sample):
-        #     points.append({'pos': (x[idx], y[idx]), 'brush': c[idx], 'size': 10, 'symbol':'s'})
-
-        # scatter = graph.ScatterPlotItem()
-        # scatter.addPoints(points)
-        # self.__frame_temperature_grid_plot.addItem(scatter)
-        # self.__frame_defect_grid_plot.enableAutoRange(axis=graph.ViewBox.XAxis)
-        # self.__frame_defect_grid_plot.show()
-
     ### checkbox options
     def on_check_option_save_level2_info(self, state):
         # online_checked = self.check_online_signal.isChecked()
@@ -551,28 +477,24 @@ class AppWindow(QMainWindow):
             
         return super().closeEvent(event)
 
-    def on_update_temperature(self, values:dict):
+    def on_update_temperature(self, values:dict): # key:str, value:str
         try:
             for idx, id in enumerate(values):
                 widget = self.findChild(QLabel, name=f"label_temperature_value_{id}")
                 if widget:
                     widget.setText(f"{values[id]}")
 
-            # update temperature plot
-            self.__frame_temperature_x.append(datetime.datetime.now()) # append X
+            # value added
+            self.__frame_temperature_x.append(datetime.datetime.now().timestamp()) # append x(time) axis data
+            for idx, id in enumerate(self.__config["temperature_ids"]):         # append y(temperature) axis data
+                self.__frame_temperature_y[idx].append(float(values[str(id)]))
 
-            for k in values.keys():
-                self.__frame_temperature_y[k].append(values[k])
-                self.__frame_temperature_curves[k].setData(list(self.__frame_temperature_x), 
-                                                           list(self.__frame_temperature_y[k]))
-
-            self.__frame_temperature_grid_plot.enableAutoRange(axis=graph.ViewBox.XYAxes)
-            self.__frame_temperature_grid_plot.show()
+            # update plot
+            for idx, id in enumerate(self.__config["temperature_ids"]):
+                self.__frame_temperature_curves[idx].setData(list(self.__frame_temperature_x), list(self.__frame_temperature_y[idx]))
 
         except Exception as e:
             self.__console.error(f"Temperature update error : {e}")
-
-
 
 
     def on_update_camera_status(self, status:str):
