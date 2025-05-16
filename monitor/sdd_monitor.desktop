@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=DK H Steel Inspector Monitor
+Comment=Start Monitoring Program
+Exec=bash -c "make monitor"
+Path=/home/dev/dev/flame-sdd-server/monitor
+Icon=/home/dev/dev/flame-sdd-server/monitor/resource/icon.png
+Terminal=false
+Type=Application
