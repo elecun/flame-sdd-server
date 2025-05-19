@@ -1,0 +1,24 @@
+{
+    "rt_cycle_ns" : 1000000000,
+    "verbose" : 1,
+
+    "parameters":{
+    },
+
+    "dataport":{
+        "status" : {
+            "transport" : "tcp",
+            "host":"*",
+            "port" : 5900,
+            "socket_type" : "pub",
+            "queue_size" : 1000
+        },
+        "echo":{
+            "transport" : "tcp",
+            "host":"*",
+            "port" : 5901,
+            "socket_type" : "rep",
+            "queue_size" : 1000
+        }
+    }
+}

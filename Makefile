@@ -140,6 +140,11 @@ dk_light_linker.comp:	$(BUILDDIR)dk.light.linker.o
 $(BUILDDIR)dk.light.linker.o:	$(CURRENT_DIR)/components/dk.light.linker/dk.light.linker.cc
 									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
 
+system_echo.comp:	$(BUILDDIR)system.echo.o
+							$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(BUILDDIR)$@ $^ $(LDLIBS)
+$(BUILDDIR)system.echo.o:	$(CURRENT_DIR)/components/system.echo/system.echo.cc
+									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
+
 # autonics temperature controller component
 autonics_temp_controller.comp:	$(BUILDDIR)autonics.temp.controller.o
 							$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(BUILDDIR)$@ $^ $(LDLIBS) -lmodbus
@@ -164,7 +169,7 @@ $(BUILDDIR)control_impl.o:	$(CURRENT_DIR)/components/computar.vlmpz.controller/c
 
 all : flame
 
-dk_h_inspector : flame basler_gige_cam_grabber.comp synology_nas_file_stacker.comp ni_daq_controller.comp dk_level2_interface.comp general_file_stacker.comp dummy_image_pusher.comp
+dk_h_inspector : flame basler_gige_cam_grabber.comp synology_nas_file_stacker.comp ni_daq_controller.comp dk_level2_interface.comp general_file_stacker.comp dummy_image_pusher.comp system_echo.comp
 
 dk_h_inspector_onsite : flame autonics_temp_controller.comp computar_vlmpz_controller.comp
 
