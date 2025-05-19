@@ -48,6 +48,7 @@ from subscriber.dmx_light_control import DMXLightControlSubscriber
 from subscriber.camera import CameraMonitorSubscriber
 from subscriber.dk_level2 import DKLevel2DataSubscriber
 from subscriber.dk_level2_status import DKLevel2StatusSubscriber
+from requester.system_alive import SystemAliveRequester
 
 class DateTimeAxis(graph.DateAxisItem):
     def __init__(self, spacing=None, *args, **kwargs):
@@ -95,6 +96,7 @@ class AppWindow(QMainWindow):
         self.__camera_image_subscriber_map = {}             # camera image subscriber
         self.__lens_control_publisher = None                # lens control publisher
         self.__camera_control_publisher_map = {}            # camera control publishers
+        self.__system_alive_requester_map = {}              # system requester
 
         # variables
         self.__total_frames = 0
@@ -285,6 +287,13 @@ class AppWindow(QMainWindow):
                     self.__camera_image_subscriber_map[id].frame_update_signal.connect(self.on_update_camera_image)
                     self.__camera_image_subscriber_map[id].start()
 
+                # system alive check requester
+                for idx, src in enumerate(config["system_echo_source"]):
+                    self.__system_alive_requester_map[src["id"]] = SystemAliveRequester(self.__pipeline_context, connection=src["source"], alive_msg=src["echo"])
+                    self.__system_alive_requester_map[src["id"]].alive_update_signal.connect(partial(self.on_update_alive, src["id"], src["name"]))
+                    self.__console.info("- Start System Echo Requester...")
+                
+
         except Exception as e:
             self.__console.error(f"{e}")
 
@@ -434,6 +443,12 @@ class AppWindow(QMainWindow):
             self.__frame_window_map[camera_id].show()
         except Exception as e:
             self.__console.error(e)
+
+    def on_update_alive(self, id:int, name:str):
+        if id==1: # sdd server mw
+            pass
+        elif id==2: # controller mw
+            pass
                 
     def closeEvent(self, event:QCloseEvent) -> None: 
 
