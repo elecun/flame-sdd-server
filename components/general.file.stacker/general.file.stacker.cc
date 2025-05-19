@@ -161,15 +161,16 @@ void general_file_stacker::_level2_dispatch_task(const vector<string> target_pat
 
                     // level2 data processing
                     if(json_data.contains("date") && json_data.contains("mt_stand_height") and json_data.contains("mt_stand_width")){
+                        string date = json_data["date"].get<string>().substr(0, 8);
                         target_dirname = fmt::format("{}_{}x{}",json_data["date"].get<string>(),
                                                                 json_data["mt_stand_height"].get<int>(),
                                                                 json_data["mt_stand_width"].get<int>());
-                        logger::info("[{}] Set target directory name to {}", get_name(), target_dirname);
+                        logger::info("[{}] Set target directory name to {}/{}", get_name(), date, target_dirname);
 
                         /* update job save path */ 
                         for(string target:target_path){
                             try {
-                                fs::path dest = fs::path(target) / target_dirname;
+                                fs::path dest = fs::path(target) / date / target_dirname;
                                 if(!fs::exists(dest)){
                                     fs::create_directories(dest);
                                     _job_full_path.push_back(dest); //add target job path

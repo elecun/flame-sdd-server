@@ -4,10 +4,10 @@
 
     "parameters":{
         "target_path":[
-            "/home/dev/test1",
-            "/home/dev/test2"
+            "/home/dk-sdd/nas_storage",
+            "/home/dk-sdd/sdd_job_temp"
         ],
-        "use_level2_interface":false,
+        "use_level2_interface":true,
         "image_streams" : [
             {"id":1, "dirname":"camera_1"},
             {"id":2, "dirname":"camera_2"},
