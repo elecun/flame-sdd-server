@@ -115,6 +115,11 @@ general_file_stacker.comp:	$(BUILDDIR)general.file.stacker.o
 $(BUILDDIR)general.file.stacker.o:	$(CURRENT_DIR)/components/general.file.stacker/general.file.stacker.cc
 							$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
 
+dummy_image_pusher.comp:	$(BUILDDIR)dummy.image.pusher.o
+						$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(BUILDDIR)$@ $^ $(LDLIBS) -lopencv_core -lopencv_imgcodecs -lopencv_highgui -lopencv_imgproc
+$(BUILDDIR)dummy.image.pusher.o:	$(CURRENT_DIR)/components/dummy.image.pusher/dummy.image.pusher.cc
+							$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
+
 ni_daq_pulse_generator.comp:	$(BUILDDIR)ni.daq.pulse.generator.o
 							$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(BUILDDIR)$@ $^ $(LDLIBS) -lnidaqmx
 $(BUILDDIR)ni.daq.pulse.generator.o:	$(CURRENT_DIR)/components/ni.daq.pulse.generator/ni.daq.pulse.generator.cc
@@ -159,7 +164,7 @@ $(BUILDDIR)control_impl.o:	$(CURRENT_DIR)/components/computar.vlmpz.controller/c
 
 all : flame
 
-dk_h_inspector : flame basler_gige_cam_grabber.comp synology_nas_file_stacker.comp ni_daq_controller.comp dk_level2_interface.comp general_file_stacker.comp
+dk_h_inspector : flame basler_gige_cam_grabber.comp synology_nas_file_stacker.comp ni_daq_controller.comp dk_level2_interface.comp general_file_stacker.comp dummy_image_pusher.comp
 
 dk_h_inspector_onsite : flame autonics_temp_controller.comp computar_vlmpz_controller.comp
 

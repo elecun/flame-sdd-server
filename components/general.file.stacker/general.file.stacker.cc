@@ -53,6 +53,8 @@ bool general_file_stacker::on_init(){
         }
     }
 
+    logger::info("[{}] File Stacker is now running...", get_name());
+
     return true;
 }
 
