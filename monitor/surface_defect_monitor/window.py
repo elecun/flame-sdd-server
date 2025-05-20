@@ -96,7 +96,7 @@ class AppWindow(QMainWindow):
         self.__camera_image_subscriber_map = {}             # camera image subscriber
         self.__lens_control_publisher = None                # lens control publisher
         self.__camera_control_publisher_map = {}            # camera control publishers
-        self.__system_alive_requester_map = {}              # system requester
+        self.__system_echo_requester_map = {}               # system echo(alive check) requester
 
         # variables
         self.__total_frames = 0
@@ -290,8 +290,8 @@ class AppWindow(QMainWindow):
 
                 # system alive check requester
                 for idx, src in enumerate(config["system_echo_sources"]):
-                    self.__system_alive_requester_map[src["id"]] = SystemEchoRequester(self.__pipeline_context, connection=src["source"], alive_msg=src["echo"])
-                    self.__system_alive_requester_map[src["id"]].alive_update_signal.connect(partial(self.on_update_alive, src["id"], src["name"]))
+                    self.__system_echo_requester_map[src["id"]] = SystemEchoRequester(self.__pipeline_context, connection=src["source"], alive_msg=src["echo"])
+                    self.__system_echo_requester_map[src["id"]].alive_update_signal.connect(partial(self.on_update_alive, src["id"], src["name"]))
                     self.__console.info("- Start System Echo Requester...")
                 
 
@@ -488,6 +488,10 @@ class AppWindow(QMainWindow):
             with ThreadPoolExecutor(max_workers=10) as executor:
                 executor.map(lambda subscriber: subscriber.close(), self.__camera_image_subscriber_map.values())       
 
+        # close echo requester
+        for requester in self.__system_echo_requester_map.values():
+            requester.close()
+            self.__console.info("Close System Echo Requester")
         # context termination with linger=0
         self.__pipeline_context.destroy(0)
             
