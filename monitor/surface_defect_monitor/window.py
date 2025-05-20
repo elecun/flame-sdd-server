@@ -48,7 +48,7 @@ from subscriber.dmx_light_control import DMXLightControlSubscriber
 from subscriber.camera import CameraMonitorSubscriber
 from subscriber.dk_level2 import DKLevel2DataSubscriber
 from subscriber.dk_level2_status import DKLevel2StatusSubscriber
-from requester.system_alive import SystemAliveRequester
+from requester.system_echo import SystemEchoRequester
 
 class DateTimeAxis(graph.DateAxisItem):
     def __init__(self, spacing=None, *args, **kwargs):
@@ -164,7 +164,7 @@ class AppWindow(QMainWindow):
                 self.btn_exposure_time_set_all.clicked.connect(self.on_btn_exposure_time_set_all)   # set exposure time all
                 self.btn_light_level_set_all.clicked.connect(self.on_btn_light_level_set_all)       # set light level all
                 self.btn_light_off.clicked.connect(self.on_btn_light_off)                           # light off
-                self.btn_inference_model_apply.clicked.connect(self.on_btn_inference_model_apply)               # change sdd model
+                self.btn_inference_model_apply.clicked.connect(self.on_btn_inference_model_apply)   # change sdd model
 
 
                 # checkbox callback functions
@@ -289,8 +289,8 @@ class AppWindow(QMainWindow):
                     self.__camera_image_subscriber_map[id].start()
 
                 # system alive check requester
-                for idx, src in enumerate(config["system_echo_source"]):
-                    self.__system_alive_requester_map[src["id"]] = SystemAliveRequester(self.__pipeline_context, connection=src["source"], alive_msg=src["echo"])
+                for idx, src in enumerate(config["system_echo_sources"]):
+                    self.__system_alive_requester_map[src["id"]] = SystemEchoRequester(self.__pipeline_context, connection=src["source"], alive_msg=src["echo"])
                     self.__system_alive_requester_map[src["id"]].alive_update_signal.connect(partial(self.on_update_alive, src["id"], src["name"]))
                     self.__console.info("- Start System Echo Requester...")
                 

@@ -1,5 +1,5 @@
 """ 
-System Alive Check Requester
+System Echo(Alive) Check Requester
 @author Byunghun Hwang <bh.hwang@iae.re.kr>
 """
 
@@ -21,6 +21,7 @@ import time
 from typing import Any, Dict
 from functools import partial
 import threading
+import uuid
 
 # zmq socket monitoring event map
 EVENT_MAP = {}
@@ -29,17 +30,17 @@ for name in dir(zmq):
         value = getattr(zmq, name)
         EVENT_MAP[value] = name
 
-class SystemAliveRequester(QThread):
+class SystemEchoRequester(QThread):
 
     alive_update_signal = pyqtSignal(bool)
 
-    def __init__(self, context:zmq.Context, connection:str, alive_msg:str):
+    def __init__(self, context:zmq.Context, connection:str):
         super().__init__()
 
-        self.__echo_msg = alive_msg
+        self.__connection = connection
 
         self.__console = ConsoleLogger.get_logger()
-        self.__console.info(f"+ System Alive Requester connection : {connection}")
+        self.__console.info(f"+ System Echo Requester Connection : {connection}")
 
         # intialize zmq
         self.__socket = context.socket(zmq.REQ)
@@ -67,34 +68,39 @@ class SystemAliveRequester(QThread):
             self.__poller.unregister(self.__socket)
             self.__socket.close()
         except zmq.ZMQError as e:
-            self.__console.error(f"<System Alive> {e}")
+            self.__console.error(f"<System Echo> {e}")
         
-        self.__console.info(f"Close System Alive Requester")
+        self.__console.info(f"Close System Echo Requester")
 
     def run(self):
         while not self.isInterruptionRequested():
             try:
-                self.__socket.send_string(self.__echo_msg)
+                # generate a random uuid
+                echo_msg = str(uuid.uuid4())
+                self.__console.info(f"<System Echo> Echo Message : {echo_msg}")
+
+                self.__socket.send_string(echo_msg)
 
                 if self.__poller.poll(timeout=1000):  # poll for a reply within 1 second
                     reply = self.__socket.recv_string()
-                    if reply == self.__echo_msg:
+                    if reply == echo_msg:
                         self.alive_update_signal.emit(True)
                     else:
                         self.alive_update_signal.emit(False)
                 else:
                     self.alive_update_signal.emit(False)
             
+                self.__console.info(f"<System Echo> Checking system alive...({self.__connection})")
                 time.sleep(1)
                 
             except json.JSONDecodeError as e:
-                self.__console.critical(f"<System Alive> {e}")
+                self.__console.critical(f"<System Echo>(JSON Exception) {e}")
                 continue
             except zmq.ZMQError as e:
-                self.__console.critical(f"<System Alive> {e}")
+                self.__console.critical(f"<System Echo>(ZMQ Error) {e}")
                 break
             except Exception as e:
-                self.__console.critical(f"<System Alive> {e}")
+                self.__console.critical(f"<System Echo>(General Exception) {e}")
                 break
 
 
