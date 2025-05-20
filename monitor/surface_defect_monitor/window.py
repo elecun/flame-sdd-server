@@ -168,8 +168,6 @@ class AppWindow(QMainWindow):
 
 
                 # checkbox callback functions
-                self.check_option_save_level2_info.stateChanged.connect(self.on_check_option_save_level2_info)
-                self.check_option_save_temperature.stateChanged.connect(self.on_check_option_save_temperature)
                 self.check_inference_batch_processing.stateChanged.connect(self.on_check_inference_batch_processing)
                 self.check_inference_save_results.stateChanged.connect(self.on_check_inference_save_results)
 
@@ -422,13 +420,6 @@ class AppWindow(QMainWindow):
                 QMessageBox.critical(self, "Error", f"Preset file does not exist. ({absolute_path})")
 
     ### checkbox options
-    def on_check_option_save_level2_info(self, state):
-        # online_checked = self.check_online_signal.isChecked()
-        pass
-
-    def on_check_option_save_temperature(self, state):
-        pass
-
     
     def on_check_inference_batch_processing(self, state):
         pass

@@ -12,7 +12,7 @@ try:
     from PyQt5.QtWidgets import QApplication
 except ImportError:
     # using PyQt6
-    from PyQt6.QtGui import QImage, QPixmap, QCloseEvent
+    from PyQt6.QtGui import QImage, QPixmap, QCloseEvent, QFontDatabase, QFont
     from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QMessageBox
     from PyQt6.uic import loadUi
     from PyQt6.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
@@ -51,6 +51,9 @@ if __name__ == "__main__":
                 console.info(f"+ Verbose Level : {configure['verbose']}")
 
             app = QApplication(sys.argv)
+            font_id = QFontDatabase.addApplicationFont("./resource/NEXON Lv2 Gothic.ttf")
+            font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
+            app.setFont(QFont(font_family, 10))
             app_window = AppWindow(config=configure)
             
             if "app_window_title" in configure:
