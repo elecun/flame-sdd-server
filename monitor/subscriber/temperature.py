@@ -17,6 +17,8 @@ import json
 import threading
 import time
 from typing import Any, Dict
+import os
+import datetime
 
 # connection event message parsing
 EVENT_MAP = {}
@@ -31,7 +33,7 @@ class TemperatureMonitorSubscriber(QThread):
     temperature_update_signal = pyqtSignal(dict) # signal for temperature update
     status_msg_update_signal = pyqtSignal(str) # signal for connection status message
 
-    def __init__(self, context:zmq.Context, connection:str, topic:str):
+    def __init__(self, context:zmq.Context, connection:str, topic:str, log_config:dict):
         super().__init__()
 
         self.__console = ConsoleLogger.get_logger()   # console logger
@@ -40,6 +42,7 @@ class TemperatureMonitorSubscriber(QThread):
         # store parameters
         self.__connection = connection
         self.__topic = topic
+        self.__log_config = log_config
 
         # initialize zmq
         self.__socket = context.socket(zmq.SUB)
@@ -51,12 +54,6 @@ class TemperatureMonitorSubscriber(QThread):
 
         self.__poller = zmq.Poller()
         self.__poller.register(self.__socket, zmq.POLLIN) # POLLIN, POLLOUT, POLLERR
-
-        # create socket connection status monitoring thread
-        # self._monitor_thread_stop_event = threading.Event()
-        # self._monitor_thread = threading.Thread(target=self.socket_monitor, args=(self.__socket,))
-        # self._monitor_thread.daemon = True
-        # self._monitor_thread.start()
 
         self.__console.info("* Start Temperature Subscriber")
 
@@ -78,6 +75,20 @@ class TemperatureMonitorSubscriber(QThread):
                     if topic.decode() == self.__topic:
                         data = json.loads(data.decode('utf8').replace("'", '"'))
                         self.temperature_update_signal.emit(data)
+
+                        # save temperataure log
+                        if self.__log_config.get("option_save_temperature_log", False):
+                            path = self.__log_config.get("option_save_temperature_log_path", "/tmp")
+                            fullpath = os.path.join(path, f"{datetime.datetime.today().strftime('%Y-%m-%d')}.csv")
+
+                            today = datetime.today().strftime('%Y-%m-%d')
+file_name = f'{today}.csv'
+
+                            # create direcotry if not exist
+                            if not os.path.exists(path):
+
+
+        
             
             except json.JSONDecodeError as e:
                 self.__console.critical(f"<Temperature Monitor>[DecodeError] {e}")

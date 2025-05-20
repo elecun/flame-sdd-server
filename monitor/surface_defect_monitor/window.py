@@ -203,9 +203,13 @@ class AppWindow(QMainWindow):
                 if use_temperature_monitor:
                     if "temp_stream_source" in config and "temp_stream_sub_topic" in config:
                         try:
+                            _log_config = {
+                                "option_save_temperature_log":config.get("option_save_temperature_log", False),
+                                "option_save_temperature_log_path":config.get("option_save_temperature_log_path", ""),
+                            }
                             self.__temperature_monitor_subscriber = TemperatureMonitorSubscriber(self.__pipeline_context, 
                                                                                                  connection=config["temp_stream_source"], 
-                                                                                                 topic=config["temp_stream_sub_topic"])
+                                                                                                 topic=config["temp_stream_sub_topic"],log_config=_log_config)
                             self.__temperature_monitor_subscriber.temperature_update_signal.connect(self.on_update_temperature)
                             self.__temperature_monitor_subscriber.start() # run in thread
                         except Exception as e:
@@ -290,8 +294,9 @@ class AppWindow(QMainWindow):
 
                 # system alive check requester
                 for idx, src in enumerate(config["system_echo_sources"]):
-                    self.__system_echo_requester_map[src["id"]] = SystemEchoRequester(self.__pipeline_context, connection=src["source"], alive_msg=src["echo"])
-                    self.__system_echo_requester_map[src["id"]].alive_update_signal.connect(partial(self.on_update_alive, src["id"], src["name"]))
+                    _id = src["id"]
+                    self.__system_echo_requester_map[_id] = SystemEchoRequester(self.__pipeline_context, connection=src["source"], id=_id, interval_ms=src["interval"])
+                    self.__system_echo_requester_map[_id].alive_update_signal.connect(self.on_update_alive)
                     self.__console.info("- Start System Echo Requester...")
                 
 
@@ -445,11 +450,17 @@ class AppWindow(QMainWindow):
         except Exception as e:
             self.__console.error(e)
 
-    def on_update_alive(self, id:int, name:str):
+    def on_update_alive(self, id:int, alive:bool):
         if id==1: # sdd server mw
-            pass
+            if alive:
+                self.set_status_active("label_server_status")
+            else:
+                self.set_status_inactive("label_server_status")
         elif id==2: # controller mw
-            pass
+            if alive:
+                self.set_status_active("label_onsite_controller_status")
+            else:
+                self.set_status_inactive("label_onsite_controller_status")
                 
     def closeEvent(self, event:QCloseEvent) -> None: 
 
