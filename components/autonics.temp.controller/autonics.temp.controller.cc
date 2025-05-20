@@ -18,6 +18,7 @@ bool autonics_temp_controller::on_init(){
         json param = get_profile()->parameters();
 
         _simulation_mode.store(param.value("simulation_mode", false));
+        _show_debug.store(param.value("show_debug", false));
 
         if(!_simulation_mode.load()){
 
@@ -108,11 +109,14 @@ void autonics_temp_controller::on_loop(){
         if(!data_pack.empty()){
             string topic = fmt::format("{}/temp_stream", get_name());
             string data = data_pack.dump();
-            logger::info("[{}] Publish Data : {}", get_name(), data);
 
             zmq::multipart_t msg_multipart;
             msg_multipart.addstr(topic);
             msg_multipart.addstr(data);
+
+            if(_show_debug.load()){
+                logger::debug("[{}] Temperature : {}", get_name(), data);
+            }
 
             /* send data */
             msg_multipart.send(*get_port("temp_stream"), ZMQ_DONTWAIT);

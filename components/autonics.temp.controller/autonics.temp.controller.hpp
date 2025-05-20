@@ -42,6 +42,7 @@ class autonics_temp_controller : public flame::component::object {
 
         /* options */
         atomic<bool> _simulation_mode { false };
+        atomic<bool> _show_debug { false };
 
 
     private:

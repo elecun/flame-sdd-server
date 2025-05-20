@@ -14,6 +14,8 @@ bool system_echo::on_init(){
         /* read parameters */
         json param = get_profile()->parameters();
 
+        _show_debug.store(param.value("show_debug", false));
+
         // perform task
         _echo_worker = thread(&system_echo::_echo_worker_task, this);
         logger::info("[{}] System Echo Replier is now running...", get_name());
@@ -60,7 +62,10 @@ void system_echo::_echo_worker_task(){
             if(message_result){
                 string message(static_cast<char*>(echo_msg.data()), echo_msg.size());
                 get_port("echo")->send(echo_msg, zmq::send_flags::none);
-                logger::info("[{}] Echo-Back : {}", get_name(), message);
+
+                if(_show_debug.load()){
+                    logger::debug("[{}] Echo Message : {}", get_name(), message);
+                }
             }
         }
         catch(const zmq::error_t& e){

@@ -4,6 +4,7 @@
 
     "parameters":{
         "simulation_mode":true,
+        "show_debug":true,
         "device" : "/dev/ttyS5",
         "baudrate" : 9600,
         "parity" : "N",
@@ -24,7 +25,7 @@
         },
         "temp_stream":{
             "transport" : "tcp",
-            "host":"127.0.0.1",
+            "host":"*",
             "port" : 5603,
             "socket_type" : "pub",
             "queue_size" : 1000

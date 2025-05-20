@@ -83,20 +83,7 @@ class TemperatureMonitorSubscriber(QThread):
                             _exist = os.path.isfile(fullpath)
                             with open(fullpath, mode='a', newline='') as file:
                                 writer = csv.writer(file)
-
-                                # 파일이 새로 생성된 경우 헤더 작성
-                                if not _exist:
-                                    header = ['Date', 'Temperature_1', 'Temperature_2', 'Temperature_3', 'Temperature_4', 'Temeprature_5', 'Temperature_6', 'Temperature_7', 'Temperature_8']
-                                    writer.writerow(header)
-
-                                # 데이터 추가
-                                writer.writerow(new_data)
-
-
-
-                            # # create direcotry if not exist
-                            # if not os.path.exists(path):
-
+                                writer.writerow(list(data.values()))
             
             except json.JSONDecodeError as e:
                 self.__console.critical(f"<Temperature Monitor>[DecodeError] {e}")

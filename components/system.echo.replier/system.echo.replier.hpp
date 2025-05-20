@@ -27,6 +27,7 @@ class system_echo : public flame::component::object {
 
     private:
         atomic<bool> _worker_stop {false};
+        atomic<bool> _show_debug {false};
         thread _echo_worker;
 
     private:

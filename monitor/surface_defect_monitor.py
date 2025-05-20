@@ -51,9 +51,9 @@ if __name__ == "__main__":
                 console.info(f"+ Verbose Level : {configure['verbose']}")
 
             app = QApplication(sys.argv)
-            font_id = QFontDatabase.addApplicationFont("./resource/NEXON Lv2 Gothic.ttf")
+            font_id = QFontDatabase.addApplicationFont("./resource/NanumSquareR.ttf")
             font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
-            app.setFont(QFont(font_family, 10))
+            app.setFont(QFont(font_family, 12))
             app_window = AppWindow(config=configure)
             
             if "app_window_title" in configure:
