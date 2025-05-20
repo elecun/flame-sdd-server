@@ -175,6 +175,7 @@ class AppWindow(QMainWindow):
 
                 # default status indication
                 self.set_status_inactive("label_onsite_controller_status")
+                self.set_status_inactive("label_server_status")
                 self.set_status_inactive("label_level2_status")
                 self.set_status_inactive("label_light_controller_status")
                 self.set_status_inactive("label_nas_status")
