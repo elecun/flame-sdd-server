@@ -19,14 +19,7 @@ import time
 from typing import Any, Dict
 import os
 import datetime
-
-# connection event message parsing
-EVENT_MAP = {}
-for name in dir(zmq):
-    if name.startswith('EVENT_'):
-        value = getattr(zmq, name)
-        EVENT_MAP[value] = name
-# event_description, event_value = zmq.utils.monitor.parse_monitor_message(event)
+import csv
 
 class TemperatureMonitorSubscriber(QThread):
 
@@ -76,19 +69,34 @@ class TemperatureMonitorSubscriber(QThread):
                         data = json.loads(data.decode('utf8').replace("'", '"'))
                         self.temperature_update_signal.emit(data)
 
-                        # save temperataure log
+                        # enabled save temperataure logfile
                         if self.__log_config.get("option_save_temperature_log", False):
-                            path = self.__log_config.get("option_save_temperature_log_path", "/tmp")
-                            fullpath = os.path.join(path, f"{datetime.datetime.today().strftime('%Y-%m-%d')}.csv")
 
-                            today = datetime.today().strftime('%Y-%m-%d')
-file_name = f'{today}.csv'
+                            # generate log file path
+                            dir_path = self.__log_config.get("option_save_temperature_log_path", "/tmp") # get dir path
+                            today = datetime.datetime.today().strftime('%Y-%m-%d') # get today 
+                            fullpath = os.path.join(dir_path, f"{today}.csv") # full path
+                            self.__console.info(f"Temperature log path : {fullpath}")
 
-                            # create direcotry if not exist
-                            if not os.path.exists(path):
+                            # create directory if not exist
+                            os.makedirs(dir_path, exist_ok=True) # create directory if not exist
+                            _exist = os.path.isfile(fullpath)
+                            with open(fullpath, mode='a', newline='') as file:
+                                writer = csv.writer(file)
+
+                                # 파일이 새로 생성된 경우 헤더 작성
+                                if not _exist:
+                                    header = ['Date', 'Temperature_1', 'Temperature_2', 'Temperature_3', 'Temperature_4', 'Temeprature_5', 'Temperature_6', 'Temperature_7', 'Temperature_8']
+                                    writer.writerow(header)
+
+                                # 데이터 추가
+                                writer.writerow(new_data)
 
 
-        
+
+                            # # create direcotry if not exist
+                            # if not os.path.exists(path):
+
             
             except json.JSONDecodeError as e:
                 self.__console.critical(f"<Temperature Monitor>[DecodeError] {e}")

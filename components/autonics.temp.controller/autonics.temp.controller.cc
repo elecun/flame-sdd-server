@@ -108,6 +108,7 @@ void autonics_temp_controller::on_loop(){
         if(!data_pack.empty()){
             string topic = fmt::format("{}/temp_stream", get_name());
             string data = data_pack.dump();
+            logger::info("[{}] Publish Data : {}", get_name(), data);
 
             zmq::multipart_t msg_multipart;
             msg_multipart.addstr(topic);
