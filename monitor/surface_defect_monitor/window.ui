@@ -13,7 +13,7 @@
   </property>
   <property name="font">
    <font>
-    <family>Arial</family>
+    <family>NanumSquare</family>
    </font>
   </property>
   <property name="windowTitle">
@@ -54,7 +54,7 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <property name="tabBarAutoHide">
      <bool>false</bool>
