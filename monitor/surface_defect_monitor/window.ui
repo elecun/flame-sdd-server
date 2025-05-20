@@ -41,7 +41,7 @@
     </property>
     <property name="font">
      <font>
-      <family>NEXON Lv2 Gothic</family>
+      <family>NanumSquare</family>
      </font>
     </property>
     <property name="styleSheet">
@@ -74,7 +74,8 @@
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
+        <pointsize>13</pointsize>
        </font>
       </property>
       <property name="orientation">
@@ -92,12 +93,11 @@
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>12</pointsize>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="title">
-       <string>주요 신호 및 시스템 연결 상태</string>
+       <string>신호 및 시스템 연결 상태</string>
       </property>
       <widget class="QLabel" name="label_onsite_controller_status">
        <property name="geometry">
@@ -110,8 +110,8 @@
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>12</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
          <weight>50</weight>
          <bold>false</bold>
         </font>
@@ -141,8 +141,8 @@ color: rgb(0,0,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>12</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="toolTip">
@@ -170,8 +170,8 @@ color: rgb(0,0,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>12</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="toolTip">
@@ -199,8 +199,8 @@ color: rgb(0,0,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>12</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="toolTip">
@@ -228,8 +228,8 @@ color: rgb(0,0,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>12</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="toolTip">
@@ -257,8 +257,8 @@ color: rgb(0,0,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>12</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="toolTip">
@@ -286,8 +286,8 @@ color: rgb(0,0,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>12</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="toolTip">
@@ -315,8 +315,8 @@ color: rgb(0,0,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>12</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="toolTip">
@@ -344,8 +344,8 @@ color: rgb(0,0,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>12</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="toolTip">
@@ -374,8 +374,8 @@ color: rgb(0,0,0);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>12</pointsize>
+        <family>NanumSquare</family>
+        <pointsize>13</pointsize>
         <weight>50</weight>
         <bold>false</bold>
        </font>
@@ -394,8 +394,8 @@ color: rgb(0,0,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>17</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="styleSheet">
@@ -419,8 +419,8 @@ color: rgb(0,0,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>17</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="styleSheet">
@@ -444,8 +444,8 @@ color: rgb(0,0,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>14</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="text">
@@ -466,8 +466,8 @@ color: rgb(0,0,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>14</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="text">
@@ -488,8 +488,8 @@ color: rgb(0,0,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>14</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="text">
@@ -510,8 +510,8 @@ color: rgb(0,0,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>14</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="text">
@@ -532,8 +532,8 @@ color: rgb(0,0,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>14</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="text">
@@ -554,8 +554,8 @@ color: rgb(0,0,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>14</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="text">
@@ -576,8 +576,8 @@ color: rgb(0,0,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>14</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="text">
@@ -598,8 +598,8 @@ color: rgb(0,0,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>14</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="text">
@@ -620,8 +620,8 @@ color: rgb(0,0,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>17</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="styleSheet">
@@ -645,8 +645,8 @@ color: rgb(0,0,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>17</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="styleSheet">
@@ -670,8 +670,8 @@ color: rgb(0,0,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>17</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="styleSheet">
@@ -695,8 +695,8 @@ color: rgb(0,0,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>17</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="styleSheet">
@@ -720,8 +720,8 @@ color: rgb(0,0,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>17</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="styleSheet">
@@ -745,8 +745,8 @@ color: rgb(0,0,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>17</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="styleSheet">
@@ -771,7 +771,8 @@ color: rgb(0,0,0);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
+        <pointsize>13</pointsize>
        </font>
       </property>
       <property name="text">
@@ -795,8 +796,8 @@ color: rgb(0,0,0);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>12</pointsize>
+        <family>NanumSquare</family>
+        <pointsize>13</pointsize>
        </font>
       </property>
       <property name="styleSheet">
@@ -822,7 +823,8 @@ color: rgb(255,255,255);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
+        <pointsize>13</pointsize>
        </font>
       </property>
       <property name="styleSheet">
@@ -846,8 +848,8 @@ color: rgb(255,255,255);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>12</pointsize>
+        <family>NanumSquare</family>
+        <pointsize>13</pointsize>
        </font>
       </property>
       <property name="styleSheet">
@@ -873,7 +875,8 @@ color: rgb(255,255,255);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
+        <pointsize>13</pointsize>
        </font>
       </property>
       <property name="styleSheet">
@@ -897,8 +900,8 @@ color: rgb(255,255,255);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>12</pointsize>
+        <family>NanumSquare</family>
+        <pointsize>13</pointsize>
        </font>
       </property>
       <property name="styleSheet">
@@ -924,7 +927,8 @@ color: rgb(255,255,255);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
+        <pointsize>13</pointsize>
        </font>
       </property>
       <property name="styleSheet">
@@ -948,8 +952,8 @@ color: rgb(255,255,255);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>12</pointsize>
+        <family>NanumSquare</family>
+        <pointsize>13</pointsize>
        </font>
       </property>
       <property name="styleSheet">
@@ -975,8 +979,8 @@ color: rgb(255,255,255);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>12</pointsize>
+        <family>NanumSquare</family>
+        <pointsize>13</pointsize>
        </font>
       </property>
       <property name="styleSheet">
@@ -1002,8 +1006,8 @@ color: rgb(255,255,255);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>12</pointsize>
+        <family>NanumSquare</family>
+        <pointsize>13</pointsize>
        </font>
       </property>
       <property name="styleSheet">
@@ -1029,8 +1033,8 @@ color: rgb(255,255,255);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>12</pointsize>
+        <family>NanumSquare</family>
+        <pointsize>13</pointsize>
        </font>
       </property>
       <property name="styleSheet">
@@ -1056,8 +1060,8 @@ color: rgb(255,255,255);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>12</pointsize>
+        <family>NanumSquare</family>
+        <pointsize>13</pointsize>
        </font>
       </property>
       <property name="styleSheet">
@@ -1083,7 +1087,8 @@ color: rgb(255,255,255);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
+        <pointsize>13</pointsize>
        </font>
       </property>
       <property name="styleSheet">
@@ -1107,7 +1112,8 @@ color: rgb(255,255,255);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
+        <pointsize>13</pointsize>
        </font>
       </property>
       <property name="styleSheet">
@@ -1131,7 +1137,8 @@ color: rgb(255,255,255);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
+        <pointsize>13</pointsize>
        </font>
       </property>
       <property name="styleSheet">
@@ -1155,7 +1162,8 @@ color: rgb(255,255,255);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
+        <pointsize>13</pointsize>
        </font>
       </property>
       <property name="styleSheet">
@@ -1179,7 +1187,8 @@ color: rgb(255,255,255);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
+        <pointsize>13</pointsize>
        </font>
       </property>
       <property name="styleSheet">
@@ -1203,7 +1212,8 @@ color: rgb(255,255,255);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
+        <pointsize>13</pointsize>
        </font>
       </property>
       <property name="orientation">
@@ -1221,8 +1231,8 @@ color: rgb(255,255,255);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>12</pointsize>
+        <family>NanumSquare</family>
+        <pointsize>13</pointsize>
        </font>
       </property>
       <property name="title">
@@ -1239,7 +1249,8 @@ color: rgb(255,255,255);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="text">
@@ -1260,8 +1271,8 @@ color: rgb(255,255,255);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>12</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="styleSheet">
@@ -1286,7 +1297,8 @@ color:rgb(0,255,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="text">
@@ -1307,8 +1319,8 @@ color:rgb(0,255,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>12</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="toolTip">
@@ -1336,7 +1348,8 @@ color:rgb(0,255,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="text">
@@ -1357,8 +1370,8 @@ color:rgb(0,255,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>12</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="toolTip">
@@ -1386,8 +1399,8 @@ color:rgb(0,255,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>12</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="toolTip">
@@ -1415,8 +1428,8 @@ color:rgb(0,255,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>12</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="toolTip">
@@ -1444,8 +1457,8 @@ color:rgb(0,255,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>12</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="toolTip">
@@ -1473,7 +1486,8 @@ color:rgb(0,255,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="text">
@@ -1494,8 +1508,8 @@ color:rgb(0,255,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>12</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="styleSheet">
@@ -1520,7 +1534,8 @@ color:rgb(0,255,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="text">
@@ -1541,8 +1556,8 @@ color:rgb(0,255,0);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>12</pointsize>
+         <family>NanumSquare</family>
+         <pointsize>13</pointsize>
         </font>
        </property>
        <property name="toolTip">
@@ -1576,7 +1591,7 @@ color:rgb(0,255,0);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="text">
@@ -1600,7 +1615,7 @@ color:rgb(0,255,0);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="text">
@@ -1621,7 +1636,7 @@ color:rgb(0,255,0);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="text">
@@ -1642,7 +1657,7 @@ color:rgb(0,255,0);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="toolTip">
@@ -1666,7 +1681,7 @@ color:rgb(0,255,0);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="toolTip">
@@ -1693,7 +1708,7 @@ color:rgb(0,255,0);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="toolTip">
@@ -1717,7 +1732,7 @@ color:rgb(0,255,0);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="toolTip">
@@ -1741,7 +1756,7 @@ color:rgb(0,255,0);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="toolTip">
@@ -1765,7 +1780,7 @@ color:rgb(0,255,0);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="toolTip">
@@ -1789,7 +1804,7 @@ color:rgb(0,255,0);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="toolTip">
@@ -1813,7 +1828,7 @@ color:rgb(0,255,0);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="toolTip">
@@ -1837,7 +1852,7 @@ color:rgb(0,255,0);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="toolTip">
@@ -1861,7 +1876,7 @@ color:rgb(0,255,0);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="toolTip">
@@ -1885,7 +1900,7 @@ color:rgb(0,255,0);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="toolTip">
@@ -1909,7 +1924,7 @@ color:rgb(0,255,0);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="toolTip">
@@ -1933,7 +1948,7 @@ color:rgb(0,255,0);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="text">
@@ -1954,7 +1969,7 @@ color:rgb(0,255,0);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="text">
@@ -1975,7 +1990,7 @@ color:rgb(0,255,0);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="toolTip">
@@ -1999,7 +2014,7 @@ color:rgb(0,255,0);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="toolTip">
@@ -2023,7 +2038,7 @@ color:rgb(0,255,0);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="toolTip">
@@ -2047,7 +2062,7 @@ color:rgb(0,255,0);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="toolTip">
@@ -2071,7 +2086,7 @@ color:rgb(0,255,0);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="toolTip">
@@ -2097,7 +2112,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="toolTip">
@@ -2121,7 +2136,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="toolTip">
@@ -2145,7 +2160,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="toolTip">
@@ -2169,7 +2184,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="toolTip">
@@ -2193,7 +2208,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="styleSheet">
@@ -2216,8 +2231,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>13</pointsize>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="text">
@@ -2238,8 +2252,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>13</pointsize>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="text">
@@ -2260,8 +2273,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>13</pointsize>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="text">
@@ -2282,7 +2294,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="styleSheet">
@@ -2304,7 +2316,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="styleSheet">
@@ -2326,8 +2338,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>13</pointsize>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="text">
@@ -2366,8 +2377,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>13</pointsize>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="text">
@@ -2388,7 +2398,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
      </widget>
@@ -2403,7 +2413,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="styleSheet">
@@ -2425,8 +2435,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>13</pointsize>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="text">
@@ -2447,8 +2456,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>13</pointsize>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="text">
@@ -2469,7 +2477,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="styleSheet">
@@ -2491,7 +2499,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="styleSheet">
@@ -2513,8 +2521,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>13</pointsize>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="text">
@@ -2535,7 +2542,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="styleSheet">
@@ -2557,8 +2564,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>13</pointsize>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="text">
@@ -2579,8 +2585,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>13</pointsize>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="text">
@@ -2601,8 +2606,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>13</pointsize>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="text">
@@ -2623,8 +2627,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>13</pointsize>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="text">
@@ -2645,8 +2648,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>13</pointsize>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="text">
@@ -2667,8 +2669,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>13</pointsize>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="text">
@@ -2689,8 +2690,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>13</pointsize>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="text">
@@ -2711,8 +2711,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>13</pointsize>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="text">
@@ -2733,7 +2732,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="styleSheet">
@@ -2755,7 +2754,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="styleSheet">
@@ -2777,7 +2776,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="styleSheet">
@@ -2799,7 +2798,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="styleSheet">
@@ -2821,7 +2820,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="styleSheet">
@@ -2843,8 +2842,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>13</pointsize>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="text">
@@ -2865,8 +2863,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>13</pointsize>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="text">
@@ -2887,8 +2884,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>12</pointsize>
+        <family>NanumSquare</family>
         <weight>50</weight>
         <bold>false</bold>
        </font>
@@ -2911,8 +2907,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>13</pointsize>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="text">
@@ -2933,8 +2928,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
-        <pointsize>13</pointsize>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="text">
@@ -2955,7 +2949,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="styleSheet">
@@ -2995,7 +2989,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="title">
@@ -3012,8 +3006,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>12</pointsize>
+         <family>NanumSquare</family>
         </font>
        </property>
        <property name="text">
@@ -3031,8 +3024,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv2 Gothic</family>
-         <pointsize>13</pointsize>
+         <family>NanumSquare</family>
         </font>
        </property>
        <property name="text">
@@ -3051,7 +3043,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv2 Gothic</family>
+        <family>NanumSquare</family>
        </font>
       </property>
       <property name="styleSheet">
@@ -3079,7 +3071,7 @@ background-color: rgb(212, 212, 212);</string>
       </property>
       <property name="font">
        <font>
-        <family>NEXON Lv1 Gothic</family>
+        <family>NanumSquare</family>
         <pointsize>12</pointsize>
        </font>
       </property>
@@ -3097,7 +3089,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv1 Gothic</family>
+         <family>NanumSquare</family>
         </font>
        </property>
       </widget>
@@ -3112,7 +3104,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv1 Gothic</family>
+         <family>NanumSquare</family>
          <pointsize>13</pointsize>
         </font>
        </property>
@@ -3134,7 +3126,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv1 Gothic</family>
+         <family>NanumSquare</family>
          <pointsize>13</pointsize>
         </font>
        </property>
@@ -3157,7 +3149,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv1 Gothic</family>
+         <family>NanumSquare</family>
          <pointsize>13</pointsize>
         </font>
        </property>
@@ -3179,7 +3171,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv1 Gothic</family>
+         <family>NanumSquare</family>
          <pointsize>13</pointsize>
         </font>
        </property>
@@ -3201,7 +3193,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv1 Gothic</family>
+         <family>NanumSquare</family>
          <pointsize>13</pointsize>
         </font>
        </property>
@@ -3223,7 +3215,7 @@ background-color: rgb(212, 212, 212);</string>
        </property>
        <property name="font">
         <font>
-         <family>NEXON Lv1 Gothic</family>
+         <family>NanumSquare</family>
          <pointsize>13</pointsize>
         </font>
        </property>
@@ -3253,81 +3245,6 @@ background-color: rgb(212, 212, 212);</string>
        <enum>Qt::Vertical</enum>
       </property>
      </widget>
-     <widget class="QGroupBox" name="groupBox_5">
-      <property name="geometry">
-       <rect>
-        <x>640</x>
-        <y>10</y>
-        <width>596</width>
-        <height>101</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>NEXON Lv1 Gothic</family>
-        <pointsize>12</pointsize>
-       </font>
-      </property>
-      <property name="title">
-       <string>옵션 설정</string>
-      </property>
-      <widget class="QCheckBox" name="check_option_save_level2_info">
-       <property name="geometry">
-        <rect>
-         <x>15</x>
-         <y>30</y>
-         <width>216</width>
-         <height>26</height>
-        </rect>
-       </property>
-       <property name="font">
-        <font>
-         <family>NEXON Lv1 Gothic</family>
-         <pointsize>13</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>레벨2 데이터 정보 저장</string>
-       </property>
-      </widget>
-      <widget class="QCheckBox" name="check_option_save_temperature">
-       <property name="geometry">
-        <rect>
-         <x>15</x>
-         <y>60</y>
-         <width>216</width>
-         <height>26</height>
-        </rect>
-       </property>
-       <property name="font">
-        <font>
-         <family>NEXON Lv1 Gothic</family>
-         <pointsize>13</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>온도 로그 데이터 저장</string>
-       </property>
-      </widget>
-     </widget>
-     <widget class="QGroupBox" name="groupBox_3">
-      <property name="geometry">
-       <rect>
-        <x>640</x>
-        <y>125</y>
-        <width>601</width>
-        <height>146</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>NEXON Lv1 Gothic</family>
-       </font>
-      </property>
-      <property name="title">
-       <string>Test use only</string>
-      </property>
-     </widget>
     </widget>
    </widget>
    <widget class="QTabWidget" name="tab_monitor">
@@ -3341,7 +3258,7 @@ background-color: rgb(212, 212, 212);</string>
     </property>
     <property name="font">
      <font>
-      <family>NEXON Lv2 Gothic</family>
+      <family>NanumSquare</family>
       <weight>75</weight>
       <bold>true</bold>
      </font>
@@ -3367,6 +3284,11 @@ background-color: rgb(212, 212, 212);</string>
         <width>320</width>
         <height>180</height>
        </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>NanumSquare</family>
+       </font>
       </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(0, 0, 0);
@@ -3396,6 +3318,11 @@ border: 1px solid white;</string>
         <height>180</height>
        </rect>
       </property>
+      <property name="font">
+       <font>
+        <family>NanumSquare</family>
+       </font>
+      </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(0, 0, 0);
 color:rgb(255,255,255);
@@ -3417,6 +3344,11 @@ border: 1px solid white;</string>
         <width>320</width>
         <height>180</height>
        </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>NanumSquare</family>
+       </font>
       </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(0, 0, 0);
@@ -3440,6 +3372,11 @@ border: 1px solid white;</string>
         <height>180</height>
        </rect>
       </property>
+      <property name="font">
+       <font>
+        <family>NanumSquare</family>
+       </font>
+      </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(0, 0, 0);
 color:rgb(255,255,255);
@@ -3461,6 +3398,11 @@ border: 1px solid white;</string>
         <width>320</width>
         <height>180</height>
        </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>NanumSquare</family>
+       </font>
       </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(0, 0, 0);
@@ -3484,6 +3426,11 @@ border: 1px solid white;</string>
         <height>180</height>
        </rect>
       </property>
+      <property name="font">
+       <font>
+        <family>NanumSquare</family>
+       </font>
+      </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(0, 0, 0);
 color:rgb(255,255,255);
@@ -3505,6 +3452,11 @@ border: 1px solid white;</string>
         <width>320</width>
         <height>180</height>
        </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>NanumSquare</family>
+       </font>
       </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(0, 0, 0);
@@ -3528,6 +3480,11 @@ border: 1px solid white;</string>
         <height>180</height>
        </rect>
       </property>
+      <property name="font">
+       <font>
+        <family>NanumSquare</family>
+       </font>
+      </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(0, 0, 0);
 color:rgb(255,255,255);
@@ -3549,6 +3506,11 @@ border: 1px solid white;</string>
         <width>320</width>
         <height>180</height>
        </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>NanumSquare</family>
+       </font>
       </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(0, 0, 0);
@@ -3572,6 +3534,11 @@ border: 1px solid white;</string>
         <height>180</height>
        </rect>
       </property>
+      <property name="font">
+       <font>
+        <family>NanumSquare</family>
+       </font>
+      </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(0, 0, 0);
 color:rgb(255,255,255);
@@ -3593,6 +3560,11 @@ border: 1px solid white;</string>
         <width>320</width>
         <height>180</height>
        </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>NanumSquare</family>
+       </font>
       </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(0, 0, 0);
@@ -3621,6 +3593,11 @@ border: 1px solid white;</string>
         <width>320</width>
         <height>180</height>
        </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>NanumSquare</family>
+       </font>
       </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(0, 0, 0);
