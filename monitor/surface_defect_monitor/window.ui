@@ -1353,7 +1353,7 @@ color:rgb(0,255,0);</string>
         </font>
        </property>
        <property name="text">
-        <string>FM Length :</string>
+        <string>Length :</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
