@@ -41,6 +41,7 @@ from util.logger.console import ConsoleLogger
 from subscriber.temperature import TemperatureMonitorSubscriber
 from subscriber.camera_status import CameraStatusMonitorSubscriber
 from publisher.lens_control import LensControlPublisher
+from observer.network_storage import NASStatusObserver
 from publisher.camera_control import CameraControlPublisher
 from publisher.line_signal import LineSignalPublisher
 from subscriber.line_signal import LineSignalSubscriber
@@ -97,6 +98,7 @@ class AppWindow(QMainWindow):
         self.__lens_control_publisher = None                # lens control publisher
         self.__camera_control_publisher_map = {}            # camera control publishers
         self.__system_echo_requester_map = {}               # system echo(alive check) requester
+        self.__nas_status_observer = None                   # nas status observer   
 
         # variables
         self.__total_frames = 0
@@ -250,6 +252,12 @@ class AppWindow(QMainWindow):
                         self.__line_signal_monitor_subscriber.start()
                 else:
                     self.__console.warning("Line Signal Monitor is not enabled")
+
+                # create nas status observer
+                use_nas_status_monitor = self.__config.get("use_nas_status_monitor", False)
+                if use_nas_status_monitor:
+                    self.__nas_status_observer = NASStatusObserver(config["nas_status_file_path"])
+                    self.__nas_status_observer.status_update_signal.connect(self.on_update_nas_status)
                         
                 # create camera control publisher
                 use_camera_control = self.__config.get("use_camera_control", False)
@@ -548,52 +556,14 @@ class AppWindow(QMainWindow):
         """ update dk level2 data """
         try:
             # display lot no
-            if "lot_no" in data:
-                self.label_lotno.setText(data["lot_no"])
-            else:
-                self.label_lotno.setText("-")
-
-            # display mt. no
-            if "mt_no" in data:
-                self.label_mtno.setText(data["mt_no"])
-            else:
-                self.label_mtno.setText("-")
-
-            # display date
-            if "date" in data:
-                self.label_date.setText(data["date"])
-            else:
-                self.label_date.setText("-")
-
-            # display mt stand height
-            if "mt_stand_height" in data:
-                self.label_mt_stand_height.setText(str(int(data["mt_stand_height"]/10)))
-            else:
-                self.label_mt_stand_height.setText("-")
-
-            # display mt stand width
-            if "mt_stand_width" in data:
-                self.label_mt_stand_width.setText(str(int(data["mt_stand_width"]/10)))
-            else:
-                self.label_mt_stand_width.setText("-")
-
-            # display mt stand t1
-            if "mt_stand_t1" in data:
-                self.label_mt_stand_t1.setText(str(int(data["mt_stand_t1"]/10)))
-            else:
-                self.label_mt_stand_t1.setText("-")
-
-            # display mt stand t2
-            if "mt_stand_t2" in data:
-                self.label_mt_stand_t2.setText(str(int(data["mt_stand_t2"]/10)))
-            else:
-                self.label_mt_stand_t2.setText("-")
-
-            # display fm length
-            if "fm_length" in data:
-                self.label_fm_length.setText(str(data["fm_length"]))
-            else:
-                self.label_fm_length.setText("-")
+            self.label_lotno.setText(data.get("lot_no", "-")) # display lot no
+            self.label_mtno.setText(data.get("mt_no", "-")) # display mt no
+            self.label_date.setText(data.get("date", datetime.datetime.today().strftime('@%Y-%m-%d-%H-%M-%S'))) # display date
+            self.label_mt_stand_height.setText(str(int(data.get("mt_stand_height", 0)/10)))
+            self.label_mt_stand_width.setText(str(int(data.get("mt_stand_width", 0)/10)))
+            self.label_mt_stand_t1.setText(str(int(data.get("mt_stand_t1", 0)/10)))
+            self.label_mt_stand_t2.setText(str(int(data.get("mt_stand_t2", 0)/10)))
+            self.label_fm_length.setText(str(data.get("fm_length", 0)))
 
         except json.JSONDecodeError as e:
             self.__console.error(f"DK Level2 Data Update Error : {e.waht()}")
@@ -602,28 +572,31 @@ class AppWindow(QMainWindow):
         """ update library signal status """
         try:
             # online signal
-            if "online_signal_on" in data:
-                if data["online_signal_on"]:
-                    self.set_status_active("label_line_signal_status")
-                else:
-                    self.set_status_inactive("label_line_signal_status")
+            if data.get("online_signal_on", False):
+                self.set_status_active("label_line_signal_status")
+            else:
+                self.set_status_inactive("label_line_signal_status")
 
             # HMD signal 1
-            if "hmd_signal_1_on" in data:
-                if data["hmd_signal_1_on"]:
-                    self.set_status_active("label_hmd_signal_1_status")
-                else:
-                    self.set_status_inactive("label_hmd_signal_1_status")
+            if data.get("hmd_signal_1_on", False):
+                self.set_status_active("label_hmd_signal_1_status")
+            else:
+                self.set_status_inactive("label_hmd_signal_1_status")
 
             # HMD signal 2
-            if "hmd_signal_2_on" in data:
-                if data["hmd_signal_2_on"]:
-                    self.set_status_active("label_hmd_signal_2_status")
-                else:
-                    self.set_status_inactive("label_hmd_signal_2_status")
+            if data.get("hmd_signal_2_on", False):
+                self.set_status_active("label_hmd_signal_2_status")
+            else:
+                self.set_status_inactive("label_hmd_signal_2_status")
 
         except json.JSONDecodeError as e:
             self.__console.error(f"Line Signal Update Error : {e.what()}")
+
+    def on_update_nas_status(self, status:dict):
+        if status.get("available", False):
+            self.set_status_active("label_nas_status")
+        else:
+            self.set_status_inactive("label_nas_status")
 
     def on_update_dmx_light_control(self, data:str):
         """ update dmx light status """
