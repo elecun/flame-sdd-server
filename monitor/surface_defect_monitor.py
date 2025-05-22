@@ -43,15 +43,19 @@ if __name__ == "__main__":
 
             configure["root_path"] = ROOT_PATH
             configure["app_path"] = (pathlib.Path(__file__).parent / APP_NAME)
+            configure["model_path"] = ROOT_PATH / configure["model_path"]
+            configure["preset_path"] = ROOT_PATH / configure["preset_path"]
             configure["verbose"] = args.verbose
 
             if args.verbose:
                 console.info(f"+ Root Path : {configure['root_path']}")
                 console.info(f"+ Application Path : {configure['app_path']}")
+                console.info(f"+ Model Path : {configure['model_path']}")
+                console.info(f"+ Preset Path : {configure['preset_path']}")
                 console.info(f"+ Verbose Level : {configure['verbose']}")
 
             app = QApplication(sys.argv)
-            font_id = QFontDatabase.addApplicationFont("./resource/NanumSquareR.ttf")
+            font_id = QFontDatabase.addApplicationFont((ROOT_PATH / configure['font_path']).as_posix())
             font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
             app.setFont(QFont(font_family, 12))
             app_window = AppWindow(config=configure)

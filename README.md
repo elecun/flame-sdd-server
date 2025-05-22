@@ -1,6 +1,11 @@
 # flame-sdd-server
 
-SDD Server for DK
+## Dependencies for flame engine
+```
+$ sudo aptget install libzmq3-dev libopencv-dev
+```
+
+
 
 ```
 $ sudo apt install build-essential git libopencv-dev libzmq3-dev nmon ksh

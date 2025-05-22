@@ -18,30 +18,32 @@ import threading
 import time
 from typing import Any, Dict
 import torch
-import onnxruntime as ort
+import onnxruntime as ort #cpu verson
 import numpy as np
 import os
 from PIL import Image
+import queue
+import pathlib
 
-# connection event message parsing
-EVENT_MAP = {}
-for name in dir(zmq):
-    if name.startswith('EVENT_'):
-        value = getattr(zmq, name)
-        EVENT_MAP[value] = name
-# event_description, event_value = zmq.utils.monitor.parse_monitor_message(event)
 
 class SDDModelInference(QThread):
     processing_result_signal = pyqtSignal(dict) # signal for level2 data update
+    '''
+    models = [{cam_ids":[1,2], "model_path:"/path/mode.onnx"}, ...}]
+    '''
 
-    def __init__(self, context:zmq.Context, connection:str, topic:str, model_path:str, images_root_path:list):
+    def __init__(self, context:zmq.Context, connection:str, topic:str, models:dict, in_path:str, out_path:str):
         super().__init__()
 
         self.__console = ConsoleLogger.get_logger()   # console logger
         self.__console.info(f"SDD Model Inference Connection : {connection} (topic:{topic})")
 
-        self.__model_path = model_path
-        self.__image_root_path = images_root_path
+        # save paramters
+        self.__models = models
+        self.__images_root_path = pathlib.Path(in_path)
+        self.__out_root_path = pathlib.Path(out_path)
+        self.__job_queue = queue.Queue()
+        self.__session = []
 
         # store parameters
         self.__connection = connection
@@ -57,6 +59,10 @@ class SDDModelInference(QThread):
 
         self.__poller = zmq.Poller()
         self.__poller.register(self.__socket, zmq.POLLIN) # POLLIN, POLLOUT, POLLERR
+
+        self.__inference_stop_event = threading.Event()
+        self.__inference_job_worker = threading.Thread(target=self.__inference, daemon=True)
+        self.__inference_job_worker.start()
 
         self.__console.info("* Start SDD Model Inference")
 
@@ -80,10 +86,11 @@ class SDDModelInference(QThread):
                         if topic.decode() == self.__topic:
                             data = json.loads(data.decode('utf8').replace("'", '"'))
 
-                            if data["run"]:
-                                self.__inference()
-                                self.__console.info("Start running SDD Inference...")
-                                
+                            data["in_path"] = self.__images_root_path
+                            data["out_path"] = self.__out_root_path
+                            self.__job_queue.put(data)
+
+                            self.__console.info(f"<SDD Model Inference> Adding job to queue... (Remaining {self.__job_queue.qsize()})")
             
             except json.JSONDecodeError as e:
                 self.__console.critical(f"<SDD Model Inference>[DecodeError] {e}")
@@ -96,6 +103,8 @@ class SDDModelInference(QThread):
                 break
 
     def __inference(self):
+        while not self.__inference_stop_event.is_set():
+            time.sleep(1)
 
         # listup input files
         image_paths = self.__get_all_jpg_files(self.__image_root_path)
@@ -145,6 +154,13 @@ class SDDModelInference(QThread):
 
     def close(self):
         """ close the socket and context """
+        # clear job queue
+        while not self.__job_queue.empty():
+            self.__job_queue.get()
+        self.__inference_stop_event.set()
+        self.__console.info(f"<SDD Model Inference> Waiting for job done...")
+        self.__inference_job_worker.join()
+
         self.requestInterruption()
         self.quit()
         self.wait()

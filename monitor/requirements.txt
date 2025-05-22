@@ -6,3 +6,4 @@ pyzmq
 nidaqmx
 pyqtgraph
 pillow
+onnxruntime

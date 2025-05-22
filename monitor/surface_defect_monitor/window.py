@@ -97,6 +97,7 @@ class AppWindow(QMainWindow):
         self.__light_control_subscriber = None              # light control subscriber
         self.__dk_level2_data_subscriber = None             # level2 data subscriber
         self.__dk_level2_status_subscriber = None           # level2 status subscriber
+        self.__sdd_inference_subscriber = None              # sdd inference subscriber
         self.__camera_image_subscriber_map = {}             # camera image subscriber
         self.__lens_control_publisher = None                # lens control publisher
         self.__camera_control_publisher_map = {}            # camera control publishers
@@ -327,7 +328,11 @@ class AppWindow(QMainWindow):
                 use_sdd_inference = self.__config.get("use_sdd_inference", False)
                 if use_sdd_inference:
                     self.__sdd_inference_subscriber = SDDModelInference(self.__pipeline_context,
-                                                                        connection=config["sdd_inference_source"],)
+                                                                        connection=config["line_signal_monitor_source"],
+                                                                        topic=config["line_signal_monitor_topic"],
+                                                                        models=config["sdd_models"],
+                                                                        in_path=config["sdd_in_path"],
+                                                                        out_path=config["sdd_out_path"])
 
                 
 
