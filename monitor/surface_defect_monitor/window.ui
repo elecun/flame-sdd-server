@@ -54,7 +54,7 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>0</number>
     </property>
     <property name="tabBarAutoHide">
      <bool>false</bool>
@@ -188,7 +188,7 @@ color: rgb(0,0,0);</string>
         <set>Qt::AlignCenter</set>
        </property>
       </widget>
-      <widget class="QLabel" name="label_light_controller_status">
+      <widget class="QLabel" name="label_dmx_status">
        <property name="geometry">
         <rect>
          <x>15</x>
