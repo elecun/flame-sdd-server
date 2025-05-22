@@ -1,5 +1,5 @@
 """
-NAS (Network Attached Storage) Status Observer
+Network Observer
 @author Byunghun Hwang <bh.hwang@iae.re.kr>
 """
 
@@ -18,18 +18,17 @@ import datetime
 import time
 
 
-class NASStatusObserver(QThread):
-    """ NAS Status Monitor """
+class NetworkStatusObserver(QThread):
+    """ DMX Status Monitor """
 
     status_update_signal = pyqtSignal(dict) # signal for status
 
-    def __init__(self, fullpath:str):
+    def __init__(self, ipaddr:str):
         super().__init__()
 
         self.__console = ConsoleLogger.get_logger()   # console logger
-        self.__fullpath = fullpath
 
-        self.__console.info("* Start Network Attached Storage (NAS) Status Observer")
+        self.__console.info("* Start DMX Status Observer")
         self.start()
 
     def run(self):

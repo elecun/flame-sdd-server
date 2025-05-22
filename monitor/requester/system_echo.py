@@ -88,7 +88,6 @@ class SystemEchoRequester(QThread):
                             self.alive_update_signal.emit(self.__system_id, False)
                 else: # poller timeout
                     _echo_msg = str(uuid.uuid4())
-                    self.__console.info(f"<System Echo> Send Echo Message : {_echo_msg}")
                     self.__socket.send_string(_echo_msg)
                     self.alive_update_signal.emit(self.__system_id, False)
                 

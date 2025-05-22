@@ -42,6 +42,7 @@ from subscriber.temperature import TemperatureMonitorSubscriber
 from subscriber.camera_status import CameraStatusMonitorSubscriber
 from publisher.lens_control import LensControlPublisher
 from observer.network_storage import NASStatusObserver
+from monitor.observer.network import DMXStatusObserver
 from publisher.camera_control import CameraControlPublisher
 from publisher.line_signal import LineSignalPublisher
 from subscriber.line_signal import LineSignalSubscriber
@@ -98,7 +99,8 @@ class AppWindow(QMainWindow):
         self.__lens_control_publisher = None                # lens control publisher
         self.__camera_control_publisher_map = {}            # camera control publishers
         self.__system_echo_requester_map = {}               # system echo(alive check) requester
-        self.__nas_status_observer = None                   # nas status observer   
+        self.__nas_status_observer = None                   # nas status observer  
+        self.__dmx_status_observer = None                   # dmx status observer 
 
         # variables
         self.__total_frames = 0
@@ -258,6 +260,12 @@ class AppWindow(QMainWindow):
                 if use_nas_status_monitor:
                     self.__nas_status_observer = NASStatusObserver(config["nas_status_file_path"])
                     self.__nas_status_observer.status_update_signal.connect(self.on_update_nas_status)
+
+                # create dmx status observer
+                use_dmx_status_monitor = self.__config.get("use_dmx_status_monitor", False)
+                if use_dmx_status_monitor:
+                    self.__dmx_status_observer = DMXStatusObserver(config["dmx_ip"])
+                    self.__dmx_status_observer.status_update_signal.connect(self.on_update_dmx_status)
                         
                 # create camera control publisher
                 use_camera_control = self.__config.get("use_camera_control", False)
@@ -597,6 +605,12 @@ class AppWindow(QMainWindow):
             self.set_status_active("label_nas_status")
         else:
             self.set_status_inactive("label_nas_status")
+
+    def on_update_dmx_status(self, status:dict):
+        if status.get("available", False):
+            self.set_status_active("label_dmx_status")
+        else:
+            self.set_status_inactive("label_dmx_status")
 
     def on_update_dmx_light_control(self, data:str):
         """ update dmx light status """
