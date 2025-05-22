@@ -31,7 +31,7 @@ for name in dir(zmq):
         EVENT_MAP[value] = name
 # event_description, event_value = zmq.utils.monitor.parse_monitor_message(event)
 
-class ModelInference(QThread):
+class SDDModelInference(QThread):
     processing_result_signal = pyqtSignal(dict) # signal for level2 data update
 
     def __init__(self, context:zmq.Context, connection:str, topic:str, model_path:str, images_root_path:list):

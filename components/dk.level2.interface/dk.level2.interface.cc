@@ -503,7 +503,7 @@ void dk_level2_interface::publish_status(bool lv2_connect){
 
     json data_pack;
     string topic = fmt::format("{}/status", get_name());
-    data_pack["level2_connect"] = lv2_connect;
+    data_pack["available"] = lv2_connect;
     string data = data_pack.dump();
     zmq::multipart_t msg_multipart;
     msg_multipart.addstr(topic);

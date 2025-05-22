@@ -47,17 +47,12 @@ class general_file_stacker : public flame::component::object {
         /* working(save) directory name (by lv2 interface) */
         // string _target_dirname {""}; //date + dimension
         string _mount_path {""}; //mount abs. path
-        fs::path _job_path; //target full path (without stream id)
-        vector<fs::path> _job_full_path;
+        unordered_map<string, fs::path> _job_full_path_map; //target full path (with stream id)
 
     private:
         /* subtasks */
-        void _image_stacker_task(int stream_id, const vector<string> target_path, json stream_param);
-        void _level2_dispatch_task(const vector<string> target_path);
-
-        /* useful functions */
-        string get_current_time();
-
+        void _image_stacker_task(int stream_id, json stream_param);
+        void _level2_dispatch_task(json target_path);
 
 }; /* class */
 

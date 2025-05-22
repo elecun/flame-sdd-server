@@ -42,7 +42,7 @@ from subscriber.temperature import TemperatureMonitorSubscriber
 from subscriber.camera_status import CameraStatusMonitorSubscriber
 from publisher.lens_control import LensControlPublisher
 from observer.network_storage import NASStatusObserver
-from monitor.observer.network import DMXStatusObserver
+from monitor.observer.network_device import NetworkDeviceObserver
 from publisher.camera_control import CameraControlPublisher
 from publisher.line_signal import LineSignalPublisher
 from subscriber.line_signal import LineSignalSubscriber
@@ -51,6 +51,7 @@ from subscriber.camera import CameraMonitorSubscriber
 from subscriber.dk_level2 import DKLevel2DataSubscriber
 from subscriber.dk_level2_status import DKLevel2StatusSubscriber
 from requester.system_echo import SystemEchoRequester
+from subscriber.model_inference import SDDModelInference
 
 class DateTimeAxis(graph.DateAxisItem):
     def __init__(self, spacing=None, *args, **kwargs):
@@ -95,6 +96,7 @@ class AppWindow(QMainWindow):
         self.__line_signal_monitor_subscriber = None        # line signal status monitor subscriber
         self.__light_control_subscriber = None              # light control subscriber
         self.__dk_level2_data_subscriber = None             # level2 data subscriber
+        self.__dk_level2_status_subscriber = None           # level2 status subscriber
         self.__camera_image_subscriber_map = {}             # camera image subscriber
         self.__lens_control_publisher = None                # lens control publisher
         self.__camera_control_publisher_map = {}            # camera control publishers
@@ -179,7 +181,7 @@ class AppWindow(QMainWindow):
                 self.set_status_inactive("label_onsite_controller_status")
                 self.set_status_inactive("label_server_status")
                 self.set_status_inactive("label_level2_status")
-                self.set_status_inactive("label_light_controller_status")
+                self.set_status_inactive("label_dmx_status")
                 self.set_status_inactive("label_nas_status")
                 self.set_status_inactive("label_line_signal_status")
                 self.set_status_inactive("label_hmd_signal_1_status")
@@ -228,6 +230,13 @@ class AppWindow(QMainWindow):
                                                                                   topic=config["dk_level2_interface_sub_topic"])
                         self.__dk_level2_data_subscriber.level2_data_update_signal.connect(self.on_update_dk_level2_data)
                         self.__dk_level2_data_subscriber.start()
+
+                        self.__dk_level2_status_subscriber = DKLevel2StatusSubscriber(self.__pipeline_context,
+                                                                                      connection=config["dk_level2_interface_source"],
+                                                                                      topic=config["dk_level2_status_sub_topic"])
+                        self.__dk_level2_status_subscriber.level2_status_update_signal.connect(self.on_update_dk_level2_status)
+                        self.__dk_level2_status_subscriber.start()
+                        
                 else:
                     self.__console.warning("DK Level2 Data Interface is not enabled")
 
@@ -264,8 +273,10 @@ class AppWindow(QMainWindow):
                 # create dmx status observer
                 use_dmx_status_monitor = self.__config.get("use_dmx_status_monitor", False)
                 if use_dmx_status_monitor:
-                    self.__dmx_status_observer = DMXStatusObserver(config["dmx_ip"])
+                    self.__dmx_status_observer = NetworkDeviceObserver(config["dmx_ip"])
                     self.__dmx_status_observer.status_update_signal.connect(self.on_update_dmx_status)
+                else:
+                    self.__console.warning("DMX Status Monitor is not enabled")
                         
                 # create camera control publisher
                 use_camera_control = self.__config.get("use_camera_control", False)
@@ -287,7 +298,6 @@ class AppWindow(QMainWindow):
                                                                                         connection=config["line_signal_monitor_source"], 
                                                                                         dmx_ip=config["dmx_ip"], dmx_port=config["dmx_port"], 
                                                                                         light_ids=config["light_ids"], topic=config["line_signal_monitor_topic"])
-                            self.__light_control_subscriber.dmx_alive_signal.connect(self.on_update_dmx_light_control)
                             self.__light_control_subscriber.start()
                         except Exception as e:
                             self.__console.warning(f"DMX Light Control Subscriber has problem : {e}")
@@ -312,6 +322,13 @@ class AppWindow(QMainWindow):
                     self.__system_echo_requester_map[_id] = SystemEchoRequester(self.__pipeline_context, connection=src["source"], id=_id, interval_ms=src["interval"])
                     self.__system_echo_requester_map[_id].alive_update_signal.connect(self.on_update_alive)
                     self.__console.info("- Start System Echo Requester...")
+
+                # create sdd inference subscriber
+                use_sdd_inference = self.__config.get("use_sdd_inference", False)
+                if use_sdd_inference:
+                    self.__sdd_inference_subscriber = SDDModelInference(self.__pipeline_context,
+                                                                        connection=config["sdd_inference_source"],)
+
                 
 
         except Exception as e:
@@ -471,6 +488,16 @@ class AppWindow(QMainWindow):
                 
     def closeEvent(self, event:QCloseEvent) -> None: 
 
+        # clsoe dmx status observer
+        if self.__dmx_status_observer:
+            self.__dmx_status_observer.close()
+            self.__console.info("Close DMX Status Observer")
+
+        # close nas status observer
+        if self.__nas_status_observer:
+            self.__nas_status_observer.close()
+            self.__console.info("Close NAS Status Observer")
+
         # close temperature monitor subscriber
         if self.__temperature_monitor_subscriber:
             self.__temperature_monitor_subscriber.close()
@@ -480,6 +507,11 @@ class AppWindow(QMainWindow):
         if self.__dk_level2_data_subscriber:
             self.__dk_level2_data_subscriber.close()
             self.__console.info("Close DK Level2 Data Subscriber")
+
+        # close level2 status subscriber
+        if self.__dk_level2_status_subscriber:
+            self.__dk_level2_status_subscriber.close()
+            self.__console.info("Close DK Level2 Status Subscriber")
 
         # close lens control publisher
         if self.__lens_control_publisher:
@@ -547,23 +579,22 @@ class AppWindow(QMainWindow):
             self.label_total_images.setText(str(self.__total_frames))
 
         except json.JSONDecodeError as e:
-            self.__console.error(f"Camera Status Update Error : {e.waht()}")
+            self.__console.error(f"Camera Status Update Error : {e}")
 
     def on_update_dk_level2_status(self, data:dict):
         try:
-            if "level2_connect" in data:
-                if data["level2_connect"]:
-                    self.set_status_active("label_level2_status")
-                else:
-                    self.set_status_inactive("label_level2_status")
-        except json.JSONDecodeError as e:
-            self.__console.error(f"DK Level2 Status Update Error : {e.waht()}")
+            if data.get("available", False):
+                self.set_status_active("label_level2_status")
+            else:
+                self.set_status_inactive("label_level2_status")
+        except Exception as e:
+            self.__console.error(f"DK Level2 Status Update Error : {e}")
 
 
     def on_update_dk_level2_data(self, data:dict):
         """ update dk level2 data """
         try:
-            # display lot no
+            # display level2 information
             self.label_lotno.setText(data.get("lot_no", "-")) # display lot no
             self.label_mtno.setText(data.get("mt_no", "-")) # display mt no
             self.label_date.setText(data.get("date", datetime.datetime.today().strftime('@%Y-%m-%d-%H-%M-%S'))) # display date
@@ -573,8 +604,8 @@ class AppWindow(QMainWindow):
             self.label_mt_stand_t2.setText(str(int(data.get("mt_stand_t2", 0)/10)))
             self.label_fm_length.setText(str(data.get("fm_length", 0)))
 
-        except json.JSONDecodeError as e:
-            self.__console.error(f"DK Level2 Data Update Error : {e.waht()}")
+        except Exception as e:
+            self.__console.error(f"DK Level2 Data Update Error : {e}")
         
     def on_update_line_signal(self, data:dict):
         """ update library signal status """
@@ -597,31 +628,26 @@ class AppWindow(QMainWindow):
             else:
                 self.set_status_inactive("label_hmd_signal_2_status")
 
-        except json.JSONDecodeError as e:
-            self.__console.error(f"Line Signal Update Error : {e.what()}")
+        except Exception as e:
+            self.__console.error(f"Line Signal Update Error : {e}")
 
     def on_update_nas_status(self, status:dict):
-        if status.get("available", False):
-            self.set_status_active("label_nas_status")
-        else:
-            self.set_status_inactive("label_nas_status")
+        try:
+            if status.get("available", False):
+                self.set_status_active("label_nas_status")
+            else:
+                self.set_status_inactive("label_nas_status")
+        except Exception as e:
+            self.__console.error(f"DK Level2 Status Update Error : {e}")
 
     def on_update_dmx_status(self, status:dict):
-        if status.get("available", False):
-            self.set_status_active("label_dmx_status")
-        else:
-            self.set_status_inactive("label_dmx_status")
-
-    def on_update_dmx_light_control(self, data:str):
-        """ update dmx light status """
         try:
-            if "alive" in data:
-                if data["alive"]:
-                    self.set_status_active("label_light_controller_status")
-                else:
-                    self.set_status_inactive("label_light_controller_status")
-        except json.JSONDecodeError as e:
-            self.__console.error(f"DMX Light Status Update Error : {e.what()}")
+            if status.get("available", False):
+                self.set_status_active("label_dmx_status")
+            else:
+                self.set_status_inactive("label_dmx_status")
+        except Exception as e:
+            self.__console.error(f"DK Level2 Status Update Error : {e}")
 
     def on_update_temperature_status(self, msg:str): # update temperature control monitoring pipeline status
         self.label_temp_monitor_pipeline_message.setText(msg)

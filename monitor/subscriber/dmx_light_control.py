@@ -34,8 +34,6 @@ for name in dir(zmq):
 class DMXLightControlSubscriber(QThread):
     """ Subscriber for DMX Light Control """
 
-    dmx_alive_signal = pyqtSignal(dict)
-
     def __init__(self, context:zmq.Context, connection:str, dmx_ip:str, dmx_port:int, light_ids:list, topic:str):
         super().__init__()
 
@@ -75,13 +73,9 @@ class DMXLightControlSubscriber(QThread):
             try:
                 events = dict(self.__poller.poll(1000)) # wait 1sec
                 if self.__socket in events:
-                    if events[self.__socket] == zmq.POLLERR:
-                        self.__console.error(f"<DMX Light Control> Error: {self.__socket.getsockopt(zmq.LAST_ENDPOINT)}")
-                        self.dmx_alive_signal.emit({"alive":False})
 
                     # ready to process
-                    elif events[self.__socket] == zmq.POLLIN:
-                        self.dmx_alive_signal.emit({"alive":True})
+                    if events[self.__socket] == zmq.POLLIN:
                         topic, data = self.__socket.recv_multipart()
                         if topic.decode() == self.__topic:
                             data = json.loads(data.decode('utf8').replace("'", '"'))
@@ -93,8 +87,6 @@ class DMXLightControlSubscriber(QThread):
 
                                 elif not data["hmd_signal_2_on"] and data["online_signal_on"]: # out
                                     self.set_off(self.__dmx_ip, self.__dmx_port, self.__light_ids)
-                else:
-                    self.dmx_alive_signal.emit({"alive":False})
             
             except json.JSONDecodeError as e:
                 self.__console.critical(f"<DMX Light Control>[DecodeError] {e}")
@@ -118,13 +110,8 @@ class DMXLightControlSubscriber(QThread):
             self.__poller.unregister(self.__socket)
             self.__socket.close()
         except zmq.ZMQError as e:
-            self.__console.error(f"<Temperature Monitor> {e}")
+            self.__console.error(f"<DMX Light Control> {e}")
 
-    
-
-    def __status_monitor(self):
-        message = {"alive":self.__get_alive(self.__dmx_ip)}
-        self.dmx_alive_signal.emit(message)
 
     def get_connection_info(self) -> str:
         return self.__connection
@@ -153,7 +140,7 @@ class DMXLightControlSubscriber(QThread):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.sendto(packet, (ip, port))
         sock.close()
-        self.__console.info(f"<DMX Light Monitor> {brightness}")
+        self.__console.info(f"<DMX Light Control> {brightness}")
 
 
     def set_control(self, ip:str, port:int, device_ids:list, brightness:int):
@@ -167,7 +154,7 @@ class DMXLightControlSubscriber(QThread):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.sendto(packet, (ip, port))
         sock.close()
-        self.__console.info(f"<DMX Light Monitor> {brightness}")
+        self.__console.info(f"<DMX Light Control> {brightness}")
         
 
     def __create_artnet_dmx_packet(self, sequence, physical, universe, data):
