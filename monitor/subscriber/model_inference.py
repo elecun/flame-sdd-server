@@ -178,8 +178,7 @@ class SDDModelInference(QThread):
 
             # ONNX 세션 캐싱 또는 생성
             if model_path not in model_cache:
-                print("add cache")
-                session = ort.InferenceSession(model_path, providers=['CPUExecutionProvider'])
+                session = ort.InferenceSession(model_path, providers=['CUDAExecutionProvider'])
                 model_cache[model_path] = session
             else:
                 session = model_cache[model_path]
@@ -273,12 +272,17 @@ class SDDModelInference(QThread):
         return np.mean(np.abs(orig - recon))
 
     # 구조적 유사도(SSIM)
+    # 구조적 유사도(SSIM)
     def __compute_ssim(self, orig, recon):
         import pytorch_ssim
         import torch
         orig_tensor = torch.tensor(orig).unsqueeze(0).unsqueeze(0).float()
         recon_tensor = torch.tensor(recon).unsqueeze(0).unsqueeze(0).float()
-        return pytorch_ssim.ssim(orig_tensor, recon_tensor).item()
+        
+        # 패딩 오류 방지를 위해 window_size를 명시적으로 지정
+        ssim_func = pytorch_ssim.SSIM(window_size=11)  # 기본값과 같지만 명시함
+        return ssim_func(orig_tensor, recon_tensor).item()
+
 
     # Gradient 기반 평균 절대 오차
     def __compute_grad_mae(self, orig, recon):
