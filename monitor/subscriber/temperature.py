@@ -75,6 +75,7 @@ class TemperatureMonitorSubscriber(QThread):
                             # generate log file path
                             dir_path = self.__log_config.get("option_save_temperature_log_path", "/tmp") # get dir path
                             today = datetime.datetime.today().strftime('%Y-%m-%d') # get today 
+                            today_datetime = datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S') # get today (with time)
                             fullpath = os.path.join(dir_path, f"{today}.csv") # full path
                             self.__console.info(f"Temperature log path : {fullpath}")
 
@@ -83,7 +84,8 @@ class TemperatureMonitorSubscriber(QThread):
                             _exist = os.path.isfile(fullpath)
                             with open(fullpath, mode='a', newline='') as file:
                                 writer = csv.writer(file)
-                                writer.writerow(list(data.values()))
+                                wdata = [today_datetime] + list(data.values())
+                                writer.writerow(wdata)
             
             except json.JSONDecodeError as e:
                 self.__console.critical(f"<Temperature Monitor>[DecodeError] {e}")

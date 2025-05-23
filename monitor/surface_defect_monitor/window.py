@@ -333,6 +333,7 @@ class AppWindow(QMainWindow):
                                                                         models=config["sdd_models"],
                                                                         in_path=config["sdd_in_path"],
                                                                         out_path=config["sdd_out_path"])
+                    self.__sdd_inference_subscriber.update_status_signal.connect(self.on_update_sdd_status)
 
                 
 
@@ -490,6 +491,15 @@ class AppWindow(QMainWindow):
                 self.set_status_active("label_onsite_controller_status")
             else:
                 self.set_status_inactive("label_onsite_controller_status")
+
+    def on_update_sdd_status(self, status:dict):
+        try:
+            if status.get("working", False):
+                self.set_status_active("label_sdd_processing_status")
+            else:
+                self.set_status_inactive("label_sdd_processing_status")
+        except Exception as e:
+            self.__console.error(f"SDD Status Update Error : {e}")
                 
     def closeEvent(self, event:QCloseEvent) -> None: 
 

@@ -25,9 +25,20 @@ from PIL import Image
 import queue
 import pathlib
 
+from torchvision import transforms
+from tqdm import tqdm
+import onnxruntime as ort
+import csv
+import glob
+import numpy as np
+import torch
+import cv2
+import os
+
 
 class SDDModelInference(QThread):
-    processing_result_signal = pyqtSignal(dict) # signal for level2 data update
+    processing_result_signal = pyqtSignal(dict) #
+    update_status_signal = pyqtSignal(dict) # signal for connection status message
     '''
     models = [{cam_ids":[1,2], "model_path:"/path/mode.onnx"}, ...}]
     '''
@@ -64,6 +75,8 @@ class SDDModelInference(QThread):
         self.__inference_job_worker = threading.Thread(target=self.__inference, daemon=True)
         self.__inference_job_worker.start()
 
+
+        self.start()
         self.__console.info("* Start SDD Model Inference")
 
     def get_connection_info(self) -> str: # return connection address
@@ -74,6 +87,7 @@ class SDDModelInference(QThread):
     
     def run(self):
         """ Run the subscriber thread """
+        test = False
         while not self.isInterruptionRequested():
             try:
                 events = dict(self.__poller.poll(1000)) # wait 1 sec
@@ -91,6 +105,13 @@ class SDDModelInference(QThread):
                             self.__job_queue.put(data)
 
                             self.__console.info(f"<SDD Model Inference> Adding job to queue... (Remaining {self.__job_queue.qsize()})")
+                else:
+                    if test==False:
+                        test = {"sdd_in_path":"/home/dev/tmp_storage/20250401/20250401182801_350x350",
+                                "sdd_out_path":"/home/dev/nas_storage/20250401/20250401182801_350x350"}
+                        self.__job_queue.put(test)
+                        test = True
+
             
             except json.JSONDecodeError as e:
                 self.__console.critical(f"<SDD Model Inference>[DecodeError] {e}")
@@ -104,38 +125,196 @@ class SDDModelInference(QThread):
 
     def __inference(self):
         while not self.__inference_stop_event.is_set():
-            time.sleep(1)
+            time.sleep(0.5)
+            if not self.__job_queue.empty():
+                job_description = self.__job_queue.get()
+                self.__console.debug(f"<SDD Model Inference> Do Inference... (Remaining {self.__job_queue.qsize()})")
 
-        # listup input files
-        image_paths = self.__get_all_jpg_files(self.__image_root_path)
-        model_type = os.path.splitext(self.__model_path)[1].lower()
+                self.update_status_signal.emit({"working":True})
 
-        # model load
-        if model_type == ".pt":
-            model = torch.load(self.__model_path, map_location='cuda')
-            model.eval()
-        elif model_type == ".onnx":
-            session = ort.InferenceSession(self.__model_path)
-        else:
-            print(f"Unsupported model format: {self.__model_path}")
-            return
-        
-        # inference
-        for img_path in image_paths:
-            img = Image.open(img_path).convert("RGB")
-            input_tensor = self.__preprocess_image(img)
+                if "sdd_in_path" in job_description and "sdd_out_path" in job_description:
+                    self.__inference_all(job_description["sdd_in_path"], job_description["sdd_out_path"])
 
-            if model_type == ".pt":
-                with torch.no_grad():
-                    output = model(input_tensor)
-                    result = bool(torch.argmax(output, dim=1).item())
-            else:  # onnx
-                ort_input = {session.get_inputs()[0].name: input_tensor.numpy()}
-                ort_output = session.run(None, ort_input)
-                result = bool(np.argmax(ort_output[0], axis=1)[0])
+                self.update_status_signal.emit({"working":False})
+                self.processing_result_signal.emit({"done":True})
+                
+    def __inference_all(self, in_path:str, out_path:str):
+        # 카메라 ID 그룹별로 사용하는 ONNX 모델 경로 정의
+        camera_to_model = {
+            (1, 5, 6, 10): '/home/dev/dev/flame-sdd-server/bin/model/vae_group_1_10_5_6.onnx',
+            (2, 4, 7, 9): '/home/dev/dev/flame-sdd-server/bin/model/vae_group_2_9_4_7.onnx',
+            (3, 8): '/home/dev/dev/flame-sdd-server/bin/model/vae_group_3_8.onnx'
+        }
 
-            # result
-            self.processing_result_signal.emit(result, os.path.basename(img_path))
+        # PIL 이미지를 텐서로 변환 (크기 고정)
+        transform = transforms.Compose([
+            transforms.Resize((300, 480)),
+            transforms.ToTensor()
+        ])
+
+        # 결과 CSV 저장용 배열
+        result_rows = [['filename', 'MAE', 'SSIM', 'Grad_MAE', 'Laplacian_Diff', 'Pixel_Sum', 'result']]
+        model_cache = {}  # ONNX 세션 캐싱
+
+        # 이미지 파일 전체 수집 (camera_* 폴더 기준)
+        all_image_info = []
+        for cam_folder in glob.glob(os.path.join(in_path, 'camera_*')):
+            cam_id = int(cam_folder.split('_')[-1])
+            for ext in ('*.jpg', '*.jpeg', '*.JPG', '*.JPEG'):
+                for img_path in glob.glob(os.path.join(cam_folder, ext)):
+                    all_image_info.append((cam_id, img_path))
+
+        SAVE_IMAGE = False  # ← 결과 이미지 저장 여부 토글 (True 시 저장됨)
+
+        for cam_id, img_path in tqdm(all_image_info, desc="Inference Progress", unit="img"):
+            # 해당 카메라에 대응되는 ONNX 모델 찾기
+            model_path = None
+            for cams, path in camera_to_model.items():
+                if cam_id in cams:
+                    model_path = path
+                    break
+            if model_path is None or not os.path.exists(model_path):
+                continue
+
+            # ONNX 세션 캐싱 또는 생성
+            if model_path not in model_cache:
+                print("add cache")
+                session = ort.InferenceSession(model_path, providers=['CPUExecutionProvider'])
+                model_cache[model_path] = session
+            else:
+                session = model_cache[model_path]
+
+            # 이미지 전처리
+            img = Image.open(img_path).convert('L')
+            if cam_id in [6, 7, 8, 9, 10]:
+                img = img.transpose(Image.FLIP_LEFT_RIGHT)
+            img_tensor = transform(img).unsqueeze(0).numpy()  # shape: (1, 1, 300, 480)
+
+            # 모델 추론 수행
+            input_name = session.get_inputs()[0].name
+            output = session.run(None, {input_name: img_tensor})[0]
+            recon = output[0, 0]
+            orig = img_tensor[0, 0]
+
+            # 지표 계산
+            mae = self.__compute_mae(orig, recon)
+            ssim = self.__compute_ssim(orig, recon)
+            grad_mae = self.__compute_grad_mae(orig, recon)
+            lap_diff = self.__compute_laplacian_variance_diff(orig, recon)
+            pix_sum = self.__compute_pixel_sum(orig, recon)
+            result = self.__logistic_score([mae, ssim, grad_mae, lap_diff, pix_sum])
+
+            # CSV 결과 저장
+            result_rows.append([
+                os.path.basename(img_path),
+                mae,
+                ssim,
+                grad_mae,
+                lap_diff,
+                pix_sum,
+                result
+            ])
+
+            # 시각화 이미지 저장
+            if SAVE_IMAGE:
+                orig_img = (orig * 255).astype(np.uint8)
+                recon_img = (recon * 255).astype(np.uint8)
+                diff_img = np.abs(orig_img.astype(np.int16) - recon_img.astype(np.int16)).astype(np.uint8)
+                _, binary_diff = cv2.threshold(diff_img, 30, 255, cv2.THRESH_BINARY)
+
+                # 이미지 회전 및 색상 변환
+                orig_img = cv2.rotate(orig_img, cv2.ROTATE_90_CLOCKWISE)
+                recon_img = cv2.rotate(recon_img, cv2.ROTATE_90_CLOCKWISE)
+                binary_diff = cv2.rotate(binary_diff, cv2.ROTATE_90_CLOCKWISE)
+
+                orig_color = cv2.cvtColor(orig_img, cv2.COLOR_GRAY2BGR)
+                recon_color = cv2.cvtColor(recon_img, cv2.COLOR_GRAY2BGR)
+                diff_color = cv2.cvtColor(binary_diff, cv2.COLOR_GRAY2BGR)
+
+                # 이미지 상단 텍스트 박스 작성
+                metrics_text = [
+                    f"MAE: {mae:.4f}",
+                    f"SSIM: {ssim:.4f}",
+                    f"Grad_MAE: {grad_mae:.4f}",
+                    f"Laplacian_Diff: {lap_diff:.4f}",
+                    f"Pixel_Sum: {pix_sum}",
+                    f"Result: {'Defect' if result else 'OK'}"
+                ]
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                font_scale = 0.5
+                thickness = 1
+                line_height = 20
+                header_h = line_height * len(metrics_text) + 10
+                header = np.ones((header_h, orig_color.shape[1] * 3, 3), dtype=np.uint8) * 255
+
+                for i, line in enumerate(metrics_text):
+                    y = 10 + (i + 1) * line_height
+                    cv2.putText(header, line, (10, y), font, font_scale, (0, 0, 0), thickness)
+
+                combined = cv2.hconcat([orig_color, recon_color, diff_color])
+                final_img = cv2.vconcat([header, combined])
+
+                output_vis_dir = os.path.join(os.path.dirname(output_csv), "visual")
+                os.makedirs(output_vis_dir, exist_ok=True)
+                save_path = os.path.join(output_vis_dir, f"combined_{os.path.basename(img_path)}")
+                cv2.imwrite(save_path, final_img)
+
+        # CSV 결과 파일 저장
+        output_csv = os.path.join(out_path, "result.csv")
+        # os.makedirs(os.path.dirname(output_csv, exist_ok=True))
+        with open(output_csv, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerows(result_rows)
+
+        self.__console.info(f"<SDD Model Inference> Inference results saved to: {output_csv}")
+
+    # 평균 절대 오차
+    def __compute_mae(self, orig, recon):
+        return np.mean(np.abs(orig - recon))
+
+    # 구조적 유사도(SSIM)
+    def __compute_ssim(self, orig, recon):
+        import pytorch_ssim
+        import torch
+        orig_tensor = torch.tensor(orig).unsqueeze(0).unsqueeze(0).float()
+        recon_tensor = torch.tensor(recon).unsqueeze(0).unsqueeze(0).float()
+        return pytorch_ssim.ssim(orig_tensor, recon_tensor).item()
+
+    # Gradient 기반 평균 절대 오차
+    def __compute_grad_mae(self, orig, recon):
+        grad_orig = np.sqrt(cv2.Sobel(orig, cv2.CV_64F, 1, 0, ksize=3)**2 + cv2.Sobel(orig, cv2.CV_64F, 0, 1, ksize=3)**2)
+        grad_recon = np.sqrt(cv2.Sobel(recon, cv2.CV_64F, 1, 0, ksize=3)**2 + cv2.Sobel(recon, cv2.CV_64F, 0, 1, ksize=3)**2)
+        return np.mean(np.abs(grad_orig - grad_recon))
+
+    # 라플라시안 기반 경계 선명도 차이
+    def __compute_laplacian_variance_diff(self, orig, recon):
+        orig = orig.astype(np.float64)
+        recon = recon.astype(np.float64)
+        var_orig = np.var(cv2.Laplacian(orig, cv2.CV_64F))
+        var_recon = np.var(cv2.Laplacian(recon, cv2.CV_64F))
+        return abs(var_orig - var_recon)
+
+    # 차영상 기반 임계 픽셀 개수
+    def __compute_pixel_sum(self, orig, recon):
+        diff = np.abs((orig * 255).astype(np.uint8) - (recon * 255).astype(np.uint8))
+        _, binary = cv2.threshold(diff, 30, 255, cv2.THRESH_BINARY)
+        return np.sum(binary > 0)
+
+    # ----------------------------
+    # 로지스틱 회귀 기반 결함 판정 함수
+    # ----------------------------
+    def __logistic_score(self, metrics):
+        mae, ssim, grad_mae, lap_diff, pix_sum = metrics
+        score = (
+            318.423821 * mae +
+            21.601394 * ssim +
+            -26.708228 * grad_mae +
+            357.830399 * lap_diff +
+            -0.000003 * pix_sum +
+            -24.372392  # 바이어스 항
+        )
+        prob = 1 / (1 + np.exp(-score))
+        return 1 if prob > 0.5 else 0
 
     def __get_all_jpg_files(self, root_dir):
         jpg_files = []
@@ -154,6 +333,11 @@ class SDDModelInference(QThread):
 
     def close(self):
         """ close the socket and context """
+
+        self.requestInterruption()
+        self.quit()
+        self.wait()
+
         # clear job queue
         while not self.__job_queue.empty():
             self.__job_queue.get()
@@ -161,13 +345,9 @@ class SDDModelInference(QThread):
         self.__console.info(f"<SDD Model Inference> Waiting for job done...")
         self.__inference_job_worker.join()
 
-        self.requestInterruption()
-        self.quit()
-        self.wait()
-
         try:
             self.__socket.setsockopt(zmq.LINGER, 0)
             self.__poller.unregister(self.__socket)
             self.__socket.close()
         except zmq.ZMQError as e:
-            self.__console.error(f"<Level2 Data Monitor> {e}")
+            self.__console.error(f"<SDD Model Inference> {e}")
