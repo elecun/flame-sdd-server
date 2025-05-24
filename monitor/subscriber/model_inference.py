@@ -43,18 +43,17 @@ class SDDModelInference(QThread):
     models = [{cam_ids":[1,2], "model_path:"/path/mode.onnx"}, ...}]
     '''
 
-    def __init__(self, context:zmq.Context, connection:str, topic:str, models:dict, in_path:str, out_path:str):
+    def __init__(self, context:zmq.Context, connection:str, topic:str, model_config:dict, in_path_root:str, out_path_root:str):
         super().__init__()
 
         self.__console = ConsoleLogger.get_logger()   # console logger
         self.__console.info(f"SDD Model Inference Connection : {connection} (topic:{topic})")
 
         # save paramters
-        self.__models = models
-        self.__images_root_path = pathlib.Path(in_path)
-        self.__out_root_path = pathlib.Path(out_path)
+        self.__model_config = model_config
+        self.__images_root_path = pathlib.Path(in_path_root)
+        self.__out_root_path = pathlib.Path(out_path_root)
         self.__job_queue = queue.Queue()
-        self.__session = []
 
         # store parameters
         self.__connection = connection
@@ -87,7 +86,6 @@ class SDDModelInference(QThread):
     
     def run(self):
         """ Run the subscriber thread """
-        test = False
         while not self.isInterruptionRequested():
             try:
                 events = dict(self.__poller.poll(1000)) # wait 1 sec
@@ -100,17 +98,16 @@ class SDDModelInference(QThread):
                         if topic.decode() == self.__topic:
                             data = json.loads(data.decode('utf8').replace("'", '"'))
 
-                            data["in_path"] = self.__images_root_path
-                            data["out_path"] = self.__out_root_path
-                            self.__job_queue.put(data)
+                            if "date" in data and "mt_stand_height" in data and "mt_stand_width" in data:
+                                lv2_date = data["date"][0:8]  # YYYYMMDD
+                                lv2_mt_h = data["mt_stand_height"]
+                                lv2_mt_w = data["mt_stand_width"]
+                                target_dir = pathlib.Path(lv2_date) / f"{data['date']}_{lv2_mt_h}x{lv2_mt_w}"
+                                data["sdd_in_path"] = self.__images_root_path / target_dir
+                                data["sdd_out_path"] = self.__out_root_path / target_dir
+                                self.__job_queue.put(data)
 
-                            self.__console.info(f"<SDD Model Inference> Adding job to queue... (Remaining {self.__job_queue.qsize()})")
-                else:
-                    if test==False:
-                        test = {"sdd_in_path":"/home/dev/tmp_storage/20250401/20250401182801_350x350",
-                                "sdd_out_path":"/home/dev/nas_storage/20250401/20250401182801_350x350"}
-                        self.__job_queue.put(test)
-                        test = True
+                                self.__console.info(f"<SDD Model Inference> Adding job to queue... (Remaining {self.__job_queue.qsize()})")
 
             
             except json.JSONDecodeError as e:
@@ -126,24 +123,27 @@ class SDDModelInference(QThread):
     def __inference(self):
         while not self.__inference_stop_event.is_set():
             time.sleep(0.5)
+
+            # checl if there is a job in the queue
             if not self.__job_queue.empty():
                 job_description = self.__job_queue.get()
                 self.__console.debug(f"<SDD Model Inference> Do Inference... (Remaining {self.__job_queue.qsize()})")
 
+                # update status signal
                 self.update_status_signal.emit({"working":True})
-
+                model_root = self.__model_config.get("model_root", "/home/dk-sdd/dev/flame-sdd-server/bin/model")
                 if "sdd_in_path" in job_description and "sdd_out_path" in job_description:
-                    self.__inference_all(job_description["sdd_in_path"], job_description["sdd_out_path"])
+                    self.__inference_all(model_root, job_description["sdd_in_path"], job_description["sdd_out_path"])
 
                 self.update_status_signal.emit({"working":False})
                 self.processing_result_signal.emit({"done":True})
                 
-    def __inference_all(self, in_path:str, out_path:str):
+    def __inference_all(self, model_root, in_path:str, out_path:str):
         # 카메라 ID 그룹별로 사용하는 ONNX 모델 경로 정의
         camera_to_model = {
-            (1, 5, 6, 10): '/home/dev/dev/flame-sdd-server/bin/model/vae_group_1_10_5_6.onnx',
-            (2, 4, 7, 9): '/home/dev/dev/flame-sdd-server/bin/model/vae_group_2_9_4_7.onnx',
-            (3, 8): '/home/dev/dev/flame-sdd-server/bin/model/vae_group_3_8.onnx'
+            (1, 5, 6, 10): f"{model_root}/vae_group_1_10_5_6.onnx",
+            (2, 4, 7, 9): f"{model_root}/vae_group_2_9_4_7.onnx",
+            (3, 8): f"{model_root}/vae_group_3_8.onnx"
         }
 
         # PIL 이미지를 텐서로 변환 (크기 고정)
@@ -167,6 +167,11 @@ class SDDModelInference(QThread):
         SAVE_IMAGE = False  # ← 결과 이미지 저장 여부 토글 (True 시 저장됨)
 
         for cam_id, img_path in tqdm(all_image_info, desc="Inference Progress", unit="img"):
+            # break processing
+            if self.__inference_stop_event.is_set():
+                break
+
+            
             # 해당 카메라에 대응되는 ONNX 모델 찾기
             model_path = None
             for cams, path in camera_to_model.items():

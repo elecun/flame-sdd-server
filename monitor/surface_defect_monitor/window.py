@@ -51,7 +51,6 @@ from subscriber.camera import CameraMonitorSubscriber
 from subscriber.dk_level2 import DKLevel2DataSubscriber
 from subscriber.dk_level2_status import DKLevel2StatusSubscriber
 from requester.system_echo import SystemEchoRequester
-from subscriber.model_inference import SDDModelInference
 
 class DateTimeAxis(graph.DateAxisItem):
     def __init__(self, spacing=None, *args, **kwargs):
@@ -171,12 +170,6 @@ class AppWindow(QMainWindow):
                 self.btn_exposure_time_set_all.clicked.connect(self.on_btn_exposure_time_set_all)   # set exposure time all
                 self.btn_light_level_set_all.clicked.connect(self.on_btn_light_level_set_all)       # set light level all
                 self.btn_light_off.clicked.connect(self.on_btn_light_off)                           # light off
-                self.btn_inference_model_apply.clicked.connect(self.on_btn_inference_model_apply)   # change sdd model
-
-
-                # checkbox callback functions
-                self.check_inference_batch_processing.stateChanged.connect(self.on_check_inference_batch_processing)
-                self.check_inference_save_results.stateChanged.connect(self.on_check_inference_save_results)
 
                 # default status indication
                 self.set_status_inactive("label_onsite_controller_status")
@@ -195,13 +188,6 @@ class AppWindow(QMainWindow):
                     preset_files = [f for f in os.listdir(self.__config["preset_path"])]
                     for preset in preset_files:
                         self.combobox_preset.addItem(preset)
-
-                # find sdd model files in model directory (default : sdd_default.py)
-                self.__config["model_path"] = (pathlib.Path(self.__config["root_path"]) / "bin" / "model").as_posix()
-                if os.path.exists(pathlib.Path(self.__config["model_path"])):
-                    model_files = [f for f in os.listdir(self.__config["model_path"])]
-                    for model in model_files:
-                        self.combobox_inference_sdd_model.addItem(model)
 
                 # create temperature monitoring subscriber
                 use_temperature_monitor = self.__config.get("use_temperature_monitor", False)
@@ -327,12 +313,13 @@ class AppWindow(QMainWindow):
                 # create sdd inference subscriber
                 use_sdd_inference = self.__config.get("use_sdd_inference", False)
                 if use_sdd_inference:
+                    from subscriber.model_inference import SDDModelInference
                     self.__sdd_inference_subscriber = SDDModelInference(self.__pipeline_context,
                                                                         connection=config["line_signal_monitor_source"],
                                                                         topic=config["line_signal_monitor_topic"],
-                                                                        models=config["sdd_models"],
-                                                                        in_path=config["sdd_in_path"],
-                                                                        out_path=config["sdd_out_path"])
+                                                                        model_config=config["sdd_model_config"],
+                                                                        in_path_root=config["sdd_in_root"],
+                                                                        out_path_root=config["sdd_out_root"])
                     self.__sdd_inference_subscriber.update_status_signal.connect(self.on_update_sdd_status)
 
                 
@@ -423,49 +410,6 @@ class AppWindow(QMainWindow):
     
     def on_btn_light_off(self):
         self.__light_control_subscriber.set_off(self.__config["dmx_ip"], self.__config["dmx_port"], self.__config["light_ids"])
-    
-    def on_btn_inference_model_apply(self):
-        selected_model = self.combobox_inference_sdd_model.currentText()
-
-        if selected_model:
-            absolute_path = pathlib.Path(self.__config["model_path"])/selected_model
-            self.__console.info(f"Selected Model : {absolute_path}")
-
-            try:
-                # file load (json format)
-                preset_file = open(absolute_path, encoding='utf-8')
-                preset = json.load(preset_file)
-                preset_file.close()
-
-                # set focus value
-                for lens_id in preset["focus_value"]:
-                    edit_focus = self.findChild(QLineEdit, name=f"edit_focus_value_{lens_id}")
-                    if edit_focus:
-                        edit_focus.setText(str(preset["focus_value"][lens_id]))
-                # set camera exposure time
-                for camera_id in preset["camera_exposure_time"]:
-                    edit_exposure_time = self.findChild(QLineEdit, name=f"edit_exposure_time_value_{camera_id}")
-                    if edit_exposure_time:
-                        edit_exposure_time.setText(str(preset["camera_exposure_time"][camera_id]))
-                # set light value
-                for light_id in preset["light_value"]:
-                    edit_light_value = self.findChild(QLineEdit, name=f"edit_light_level_value_{light_id}")
-                    if edit_light_value:
-                        edit_light_value.setText(str(preset["light_value"][light_id]))
-
-            except json.JSONDecodeError as e:
-                QMessageBox.critical(self, "Error", f"Preset file load failed. ({e})")
-            except FileNotFoundError as e:
-                QMessageBox.critical(self, "Error", f"Preset file does not exist. ({absolute_path})")
-
-    ### checkbox options
-    
-    def on_check_inference_batch_processing(self, state):
-        pass
-
-    def on_check_inference_save_results(self, state):
-        pass
-
 
 
     ### show grabbed images
