@@ -37,12 +37,19 @@ bool general_file_stacker::on_init(){
     }
 
     /* level2 interface worker */
+    logger::info("-");
     if(parameters.contains("use_level2_interface")){
         bool enable = parameters.value("use_level2_interface", false);
         if(enable){
             _level2_dispatch_worker = thread(&general_file_stacker::_level2_dispatch_task, this, target_path);
             logger::info("[{}] Level2 Data interface is running...", get_name());
         }
+        else{
+            logger::debug("[{}] Level2 Data interface is not running...", get_name());
+        }
+    }
+    else{
+        logger::debug("[{}] Level2 Data interface has no use_level2_interface...", get_name());
     }
 
     logger::info("[{}] File Stacker is now running...", get_name());
@@ -87,6 +94,7 @@ void general_file_stacker::_image_stacker_task(int stream_id, json stream_param)
         string portname = fmt::format("image_stream_{}", stream_id);
         string working_dirname = stream_param.value("dirname", fmt::format("tmp_{}", stream_id));
 
+        fs::path camera_working_dir = "";
         while(!_worker_stop.load()){
             try{
 
@@ -97,14 +105,14 @@ void general_file_stacker::_image_stacker_task(int stream_id, json stream_param)
                 /* received success */
                 if(success){
 
-                    vector<fs::path> image_path;
+                    // vector<fs::path> image_path;
 
                     /* create directory for each camera */
                     for(const auto path:_job_full_path_map){
                         fs::path camera_working_dir = path.second / working_dirname;
                         if(!fs::exists(camera_working_dir)){
                             fs::create_directories(camera_working_dir);
-                            image_path.emplace_back(camera_working_dir);
+                            // image_path.emplace_back(camera_working_dir);
                             logger::info("[{}] Stream #{} data saves into {}", get_name(), stream_id, camera_working_dir.string());
                         }
                     }
@@ -119,9 +127,10 @@ void general_file_stacker::_image_stacker_task(int stream_id, json stream_param)
                     string filename = fmt::format("{}_{}.jpg", camera_id, ++_stream_counter[stream_id]);
 
                     /* save into multiple directories*/
-                    for(const auto path:image_path){
-                        cv::imwrite(fmt::format("{}/{}",path.string(), filename), decoded);
-                    }
+                    cv::imwrite(fmt::format("{}/{}",camera_working_dir.string(), filename), decoded);
+                    // for(const auto path:image_path){
+                    //     cv::imwrite(fmt::format("{}/{}/{}",camera_working_dir.string(), path.string(), filename), decoded);
+                    // }
                 }
             }
             catch(const zmq::error_t& e){
@@ -150,11 +159,15 @@ void general_file_stacker::_level2_dispatch_task(json target_path){
                 zmq::multipart_t msg_multipart;
                 bool success = msg_multipart.recv(*get_port("lv2_dispatch"));
 
+                logger::info("--{}", success);
+
                 /* if level2 data comes from level2 */
                 if(success){
                     string topic = msg_multipart.popstr();
                     string data = msg_multipart.popstr();
                     auto json_data = json::parse(data);
+
+                    logger::info("[{}]{}",get_name(), data);
 
                     /* generate target dir & name */
                     if(json_data.contains("date") && json_data.contains("mt_stand_height") and json_data.contains("mt_stand_width")){
@@ -162,6 +175,7 @@ void general_file_stacker::_level2_dispatch_task(json target_path){
                         target_dirname = fmt::format("{}_{}x{}",json_data["date"].get<string>(),
                                                                 json_data["mt_stand_height"].get<int>(),
                                                                 json_data["mt_stand_width"].get<int>());
+                        logger::debug("{}", target_dirname);
 
                         /* create directory & save level2 info (if backup only)*/
                         for(const auto& target:target_path){

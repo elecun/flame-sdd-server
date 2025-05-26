@@ -3,9 +3,12 @@
     "verbose" : 1,
 
     "parameters":{
-        "target_path":[
+        "target_path_backup":[
             {"path":"/home/dk-sdd/nas_storage", "backup_only":true},
             {"path":"/home/dk-sdd/local_storage", "backup_only":false}
+        ],
+        "target_path":[
+            {"path":"/home/dk-sdd/nas_storage", "backup_only":true}
         ],
         "use_level2_interface":true,
         "image_streams" : [

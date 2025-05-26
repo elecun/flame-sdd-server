@@ -443,12 +443,18 @@ void basler_gige_cam_grabber::_level2_dispatch_task(){
                 zmq::multipart_t msg_multipart;
                 bool success = msg_multipart.recv(*get_port("lv2_dispatch"));
                 if(success){
+
                     string topic = msg_multipart.popstr();
                     string data = msg_multipart.popstr();
                     auto json_data = json::parse(data);
 
                     // level2 data processing
                     if(json_data.contains("mt_stand_height") && json_data.contains("mt_stand_width") && json_data.contains("mt_stand_t1") && json_data.contains("mt_stand_t2")){
+
+                        /* reset frame counter */
+                        for(auto& counter:_camera_grab_counter){
+                            counter.second.store(0);
+                        }
 
                         /* 1. for move focus function processing */
                         int height = json_data["mt_stand_height"].get<int>();

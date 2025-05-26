@@ -129,6 +129,8 @@ class DMXLightControlSubscriber(QThread):
     def set_control_multi(self, ip:str, port:int, device_ids:list, brightness:list):
         if len(device_ids)!=len(brightness):
             self.__console.error("Number of device is not equal to number of values")
+            print(device_ids)
+            print(brightness)
             return
         
         self.__brightness_array = brightness

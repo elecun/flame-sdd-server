@@ -107,7 +107,6 @@ class AppWindow(QMainWindow):
         self.__dmx_status_observer = None                   # dmx status observer 
 
         # variables
-        self.__total_frames = 0 # total frames
         self.__last_preset_file = "" # last preset file
         self.__system_online = False # system is on-line
 
@@ -582,12 +581,12 @@ class AppWindow(QMainWindow):
         """ update camera status """
         try:
             status = json.loads(status)
-            self.__total_frames = 0
+            sum = 0
             for camera_id in self.__config["camera_ids"]:
                 if str(camera_id) in status:
-                    self.__total_frames = self.__total_frames + status[str(camera_id)]["frames"]
+                    sum = sum + status[str(camera_id)]["frames"]
             
-            self.label_total_images.setText(str(self.__total_frames))
+            self.label_total_images.setText(str(sum))
 
         except json.JSONDecodeError as e:
             self.__console.error(f"Camera Status Update Error : {e}")
