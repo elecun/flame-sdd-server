@@ -21,6 +21,8 @@ from functools import partial
 from concurrent.futures import ThreadPoolExecutor
 import platform
 from collections import deque
+import re
+from typing import List, Tuple
 
 try:
     # using PyQt5
@@ -39,12 +41,10 @@ except ImportError:
     
 from util.logger.console import ConsoleLogger
 from subscriber.temperature import TemperatureMonitorSubscriber
-from subscriber.camera_status import CameraStatusMonitorSubscriber
 from publisher.lens_control import LensControlPublisher
 from observer.network_storage import NASStatusObserver
 from monitor.observer.network_device import NetworkDeviceObserver
 from publisher.camera_control import CameraControlPublisher
-from publisher.line_signal import LineSignalPublisher
 from subscriber.line_signal import LineSignalSubscriber
 from subscriber.dmx_light_control import DMXLightControlSubscriber
 from subscriber.camera import CameraMonitorSubscriber
@@ -183,10 +183,11 @@ class AppWindow(QMainWindow):
                 self.set_status_inactive("label_sdd_processing_status")               
 
                 # find preset files in preset directory (default : ./bin/preset)
+                self.__preset_files = []
                 self.__config["preset_path"] = (pathlib.Path(self.__config["root_path"]) / "bin" / "preset").as_posix()
                 if os.path.exists(pathlib.Path(self.__config["preset_path"])):
-                    preset_files = [f for f in os.listdir(self.__config["preset_path"])]
-                    for preset in preset_files:
+                    self.__preset_files = [f for f in os.listdir(self.__config["preset_path"])]
+                    for preset in self.__preset_files:
                         self.combobox_preset.addItem(preset)
 
                 # create temperature monitoring subscriber
@@ -212,6 +213,7 @@ class AppWindow(QMainWindow):
                 use_dk_level2_interface = self.__config.get("use_dk_level2_interface", False)
                 if use_dk_level2_interface:
                     if "dk_level2_interface_source" in config and "dk_level2_interface_sub_topic" in config:
+                        self.__dk_level2_preset_file = self.__auto_select_preset()
                         self.__dk_level2_data_subscriber = DKLevel2DataSubscriber(self.__pipeline_context, 
                                                                                   connection=config["dk_level2_interface_source"], 
                                                                                   topic=config["dk_level2_interface_sub_topic"])
@@ -563,6 +565,24 @@ class AppWindow(QMainWindow):
             self.label_mt_stand_t2.setText(str(int(data.get("mt_stand_t2", 0)/10)))
             self.label_fm_length.setText(str(data.get("fm_length", 0)))
 
+            # load nearest preset file
+            near_preset = self.__find_nearest_preset(h=int(data.get("mt_stand_height", 0)/10),
+                                                     b=int(data.get("mt_stand_width", 0)/10),
+                                                     filenames=self.__preset_files)
+            if near_preset:
+                self.combobox_preset.setCurrentText(near_preset)
+                self.__console.info(f"Selected Nearest Preset : {near_preset}")
+                self.on_btn_preset_load()
+                if (self.__config.get("use_nearest_preset_auto_select",False)):
+                    self.__console.info("Set focus, exposure time and light level by LV2 data")
+                    self.on_btn_exposure_time_set_all()
+                    time.sleep(0.1)
+                    self.on_btn_light_level_set_all()
+                    time.sleep(0.1)
+                    self.on_btn_focus_preset_set_all()
+            else:
+                self.__console.warning("Cannot found nearest preset file")
+
         except Exception as e:
             self.__console.error(f"DK Level2 Data Update Error : {e}")
         
@@ -665,4 +685,25 @@ class AppWindow(QMainWindow):
     def update_total_image_count(self, count:int):
         """ update total image count """
         self.label_total_images.setText(str(count))
+
+    def __parse_filename(filename: str) -> Tuple[int, int]:
+        match = re.match(r"(\d+)_(\d+)\.preset$", filename)
+        if match:
+            height, width = map(int, match.groups())
+            return height, width
+        return None
+    def __find_nearest_preset(self, h:int, b:int, filenames:List[str]) -> str:
+        min_distance = float('inf')
+        nearest_file = None
+
+        for filename in filenames:
+            parsed = self.__parse_filename(filename)
+            if parsed:
+                height, width = parsed
+                distance = (height - h)**2 + (width - b)**2
+                if distance < min_distance:
+                    min_distance = distance
+                    nearest_file = filename
+
+        return nearest_file
 
