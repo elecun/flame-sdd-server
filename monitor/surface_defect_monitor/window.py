@@ -107,8 +107,9 @@ class AppWindow(QMainWindow):
         self.__dmx_status_observer = None                   # dmx status observer 
 
         # variables
-        self.__total_frames = 0
-        self.__last_preset_file = ""
+        self.__total_frames = 0 # total frames
+        self.__last_preset_file = "" # last preset file
+        self.__system_online = False # system is on-line
 
         try:            
             if "gui" in config:
@@ -329,6 +330,9 @@ class AppWindow(QMainWindow):
 
         except Exception as e:
             self.__console.error(f"{e}")
+
+        # for test
+        self.on_update_sdd_result("/home/dk-sdd/nas_storage/20250523/20250523231259/result.csv", 10000)
 
     def clear_defect_plot(self):
         self.__frame_defect_grid_plot.clear()
@@ -619,7 +623,7 @@ class AppWindow(QMainWindow):
                 self.combobox_preset.setCurrentText(near_preset)
                 self.__console.info(f"Selected Nearest Preset : {near_preset}")
                 self.on_btn_preset_load()
-                if (self.__config.get("use_nearest_preset_auto_select",False)):
+                if self.__config.get("use_nearest_preset_auto_select",False) and self.__system_online:
                     if self.__last_preset_file!=near_preset:
                         self.__console.info("Set focus, exposure time and light level by LV2 data")
                         self.on_btn_exposure_time_set_all()
@@ -642,8 +646,10 @@ class AppWindow(QMainWindow):
             # online signal
             if data.get("online_signal_on", False):
                 self.set_status_active("label_line_signal_status")
+                self.__system_online = True
             else:
                 self.set_status_inactive("label_line_signal_status")
+                self.__system_online = False
 
             # HMD signal 1
             if data.get("hmd_signal_1_on", False):
