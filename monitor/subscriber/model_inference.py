@@ -34,6 +34,7 @@ import numpy as np
 import torch
 import cv2
 import os
+import shutil
 
 
 class SDDModelInference(QThread):
@@ -77,6 +78,18 @@ class SDDModelInference(QThread):
 
         self.start()
         self.__console.info("* Start SDD Model Inference")
+
+    
+    def __delete_directory_background(self, path: str):
+        def worker():
+            if os.path.exists(path) and os.path.isdir(path):
+                shutil.rmtree(path)
+                self.__console.info(f"Deleted {path}")
+            else:
+                self.__console.error(f"{path} does not exist or is not a directory")
+
+        thread = threading.Thread(target=worker)
+        thread.start()
 
     def get_connection_info(self) -> str: # return connection address
         return self.__connection
@@ -137,6 +150,7 @@ class SDDModelInference(QThread):
 
                 self.update_status_signal.emit({"working":False})
                 self.processing_result_signal.emit({"done":True})
+                self.__delete_directory_background(job_description["sdd_in_path"])
                 
     def __inference_all(self, model_root, in_path:str, out_path:str):
         # 카메라 ID 그룹별로 사용하는 ONNX 모델 경로 정의
@@ -171,7 +185,7 @@ class SDDModelInference(QThread):
             if self.__inference_stop_event.is_set():
                 break
 
-            
+
             # 해당 카메라에 대응되는 ONNX 모델 찾기
             model_path = None
             for cams, path in camera_to_model.items():
