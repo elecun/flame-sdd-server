@@ -5,7 +5,7 @@
     "parameters":{
         "target_path":[
             {"path":"/home/dk-sdd/nas_storage", "backup_only":true},
-            {"path":"/home/dk-sdd/tmp_storage", "backup_only":false}
+            {"path":"/home/dk-sdd/local_storage", "backup_only":false}
         ],
         "use_level2_interface":true,
         "image_streams" : [

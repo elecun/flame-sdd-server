@@ -77,7 +77,7 @@ class TemperatureMonitorSubscriber(QThread):
                             today = datetime.datetime.today().strftime('%Y-%m-%d') # get today 
                             today_datetime = datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S') # get today (with time)
                             fullpath = os.path.join(dir_path, f"{today}.csv") # full path
-                            self.__console.info(f"Temperature log path : {fullpath}")
+                            #self.__console.info(f"Temperature log path : {fullpath}")
 
                             # create directory if not exist
                             os.makedirs(dir_path, exist_ok=True) # create directory if not exist

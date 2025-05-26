@@ -123,9 +123,6 @@ void general_file_stacker::_image_stacker_task(int stream_id, json stream_param)
                         cv::imwrite(fmt::format("{}/{}",path.string(), filename), decoded);
                     }
                 }
-                else{
-                    logger::warn("[{}] Stream #{} : Receive failed!", get_name(), stream_id);
-                }
             }
             catch(const zmq::error_t& e){
                 break;

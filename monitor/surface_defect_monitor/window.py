@@ -213,7 +213,6 @@ class AppWindow(QMainWindow):
                 use_dk_level2_interface = self.__config.get("use_dk_level2_interface", False)
                 if use_dk_level2_interface:
                     if "dk_level2_interface_source" in config and "dk_level2_interface_sub_topic" in config:
-                        self.__dk_level2_preset_file = self.__auto_select_preset()
                         self.__dk_level2_data_subscriber = DKLevel2DataSubscriber(self.__pipeline_context, 
                                                                                   connection=config["dk_level2_interface_source"], 
                                                                                   topic=config["dk_level2_interface_sub_topic"])
@@ -405,7 +404,7 @@ class AppWindow(QMainWindow):
                 brightness.append(int(light_value))
             else:
                 brightness.append(0)
-        self.__light_set(ids=self.__config["light_ids"], value=brightness)
+        self.__light_set(ids=self.__config["light_ids"], values=brightness)
 
     def __light_set(self, ids:list, values:list):
         self.__light_control_subscriber.set_control_multi(self.__config["dmx_ip"], self.__config["dmx_port"], ids, brightness=values)

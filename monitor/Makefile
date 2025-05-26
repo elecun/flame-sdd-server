@@ -1,4 +1,4 @@
-VENV_DIR := /home/dev/dev/flame-sdd-server/venv
+VENV_DIR := /home/dk-sdd/dev/flame-sdd-server/venv
 PYTHON := $(VENV_DIR)/bin/python3
 
 monitor:

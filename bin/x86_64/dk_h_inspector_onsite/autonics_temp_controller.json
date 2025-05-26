@@ -1,9 +1,10 @@
 {
-    "rt_cycle_ns" : 1000000000,
+    "rt_cycle_ns" : 3000000000,
     "verbose" : 1,
 
     "parameters":{
-        "simulation_mode":true,
+        "simulation_mode":false,
+        "show_debug":true,
         "device" : "/dev/ttyS5",
         "baudrate" : 9600,
         "parity" : "N",

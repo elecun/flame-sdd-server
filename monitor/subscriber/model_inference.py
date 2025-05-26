@@ -79,6 +79,13 @@ class SDDModelInference(QThread):
         self.start()
         self.__console.info("* Start SDD Model Inference")
 
+        # for test
+        data = {}
+        data["sdd_in_path"] = self.__images_root_path / "20250523" / "20250523231259"
+        data["sdd_out_path"] = self.__out_root_path / "20250523" / "20250523231259"
+        self.__job_queue.put(data)
+
+
     
     def __delete_directory_background(self, path: str):
         def worker():
