@@ -6,6 +6,7 @@ import torch
 import cv2
 from multiprocessing import Process, Queue
 import onnxruntime as ort
+import pathlib
 
 # OpenCV를 사용하여 이미지를 고속으로 불러오고 전처리하는 함수
 # 흑백으로 로딩하고, 필요 시 좌우 반전, 리사이즈, 정규화 수행

@@ -108,6 +108,7 @@ class AppWindow(QMainWindow):
 
         # variables
         self.__total_frames = 0
+        self.__last_preset_file = ""
 
         try:            
             if "gui" in config:
@@ -222,7 +223,7 @@ class AppWindow(QMainWindow):
                         self.__dk_level2_data_subscriber.start()
 
                         self.__dk_level2_status_subscriber = DKLevel2StatusSubscriber(self.__pipeline_context,
-                                                                                      connection=config["dk_level2_interface_source"],
+                                                                                      connection=config["dk_level2_status_source"],
                                                                                       topic=config["dk_level2_status_sub_topic"])
                         self.__dk_level2_status_subscriber.level2_status_update_signal.connect(self.on_update_dk_level2_status)
                         self.__dk_level2_status_subscriber.start()
@@ -619,12 +620,16 @@ class AppWindow(QMainWindow):
                 self.__console.info(f"Selected Nearest Preset : {near_preset}")
                 self.on_btn_preset_load()
                 if (self.__config.get("use_nearest_preset_auto_select",False)):
-                    self.__console.info("Set focus, exposure time and light level by LV2 data")
-                    self.on_btn_exposure_time_set_all()
-                    time.sleep(0.1)
-                    self.on_btn_light_level_set_all()
-                    time.sleep(0.1)
-                    self.on_btn_focus_preset_set_all()
+                    if self.__last_preset_file!=near_preset:
+                        self.__console.info("Set focus, exposure time and light level by LV2 data")
+                        self.on_btn_exposure_time_set_all()
+                        time.sleep(0.1)
+                        self.on_btn_light_level_set_all()
+                        time.sleep(0.1)
+                        self.on_btn_focus_preset_set_all()
+                    else:
+                        self.__console.info(f"Preset file that was previously applied is currently in use {self.__last_preset_file}")
+                self.__last_preset_file = near_preset
             else:
                 self.__console.warning("Cannot found nearest preset file")
 
@@ -731,7 +736,7 @@ class AppWindow(QMainWindow):
         """ update total image count """
         self.label_total_images.setText(str(count))
 
-    def __parse_filename(filename: str) -> Tuple[int, int]:
+    def __parse_filename(self, filename: str) -> Tuple[int, int]:
         match = re.match(r"(\d+)_(\d+)\.preset$", filename)
         if match:
             height, width = map(int, match.groups())
