@@ -29,15 +29,10 @@ bool computar_vlmpz_controller::on_init(){
                 logger::warn("[{}] Lens #{} cannot be opened", get_name(), it->second->get_camera_id());
             }
         }
-        /* read parameters */
-        if(get_profile()->parameters().contains("preset_path")){
-            _preset_path = get_profile()->parameters()["preset_path"].get<string>();
-            logger::info("[{}] Preset path : {}", get_name(), _preset_path);
-        }
 
         /* worker */
         _lens_control_worker = thread(&computar_vlmpz_controller::_lens_control_subscribe, this, get_profile()->parameters());
-        _level2_dispatch_worker = thread(&computar_vlmpz_controller::_level2_dispatch_subscribe, this, get_profile()->parameters());
+        // _level2_dispatch_worker = thread(&computar_vlmpz_controller::_level2_dispatch_subscribe, this, get_profile()->parameters());
     }
     catch(json::exception& e){
         logger::error("[{}] Profile Error : {}", get_name(), e.what());
@@ -58,8 +53,8 @@ void computar_vlmpz_controller::on_close(){
     /* wait for thread termination */
     if(_lens_control_worker.joinable())
         _lens_control_worker.join();
-    if(_level2_dispatch_worker.joinable())
-    _level2_dispatch_worker.join();
+    // if(_level2_dispatch_worker.joinable())
+    // _level2_dispatch_worker.join();
 
     /* device close */
     for(map<int, controlImpl*>::iterator it=_lens_controller_map.begin(); it!=_lens_controller_map.end(); ++it){
