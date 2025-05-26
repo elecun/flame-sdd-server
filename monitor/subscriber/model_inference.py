@@ -38,7 +38,7 @@ import shutil
 
 
 class SDDModelInference(QThread):
-    processing_result_signal = pyqtSignal(dict) #
+    processing_result_signal = pyqtSignal(str, int) #result file path, fm_length
     update_status_signal = pyqtSignal(dict) # signal for connection status message
     '''
     models = [{cam_ids":[1,2], "model_path:"/path/mode.onnx"}, ...}]
@@ -156,10 +156,9 @@ class SDDModelInference(QThread):
                     self.__inference_all(model_root, job_description["sdd_in_path"], job_description["sdd_out_path"])
 
                 self.update_status_signal.emit({"working":False})
-                self.processing_result_signal.emit({"done":True})
                 self.__delete_directory_background(job_description["sdd_in_path"])
                 
-    def __inference_all(self, model_root, in_path:str, out_path:str):
+    def __inference_all(self, model_root, in_path:str, out_path:str, job_desc:dict):
         # 카메라 ID 그룹별로 사용하는 ONNX 모델 경로 정의
         camera_to_model = {
             (1, 5, 6, 10): f"{model_root}/vae_group_1_10_5_6.onnx",
@@ -292,6 +291,7 @@ class SDDModelInference(QThread):
             writer.writerows(result_rows)
 
         self.__console.info(f"<SDD Model Inference> Inference results saved to: {output_csv}")
+        self.processing_result_signal.emit(output_csv, job_desc.get("fm_length",0))
 
     # 평균 절대 오차
     def __compute_mae(self, orig, recon):

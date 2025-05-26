@@ -23,6 +23,8 @@ import platform
 from collections import deque
 import re
 from typing import List, Tuple
+import csv
+import re
 
 try:
     # using PyQt5
@@ -129,7 +131,7 @@ class AppWindow(QMainWindow):
                 self.__frame_defect_grid.setLayout(self.__frame_defect_grid_layout)
                 styles = {"color": "#000", "font-size": "15px"}
                 self.__frame_defect_grid_plot.setLabel("left", "Camera IDs", **styles)
-                self.__frame_defect_grid_plot.setLabel("bottom", "Frame Counts", **styles)
+                self.__frame_defect_grid_plot.setLabel("bottom", "Length", **styles)
                 self.__frame_defect_grid_plot.addLegend()
 
                 # temperature graphic view frame
@@ -322,8 +324,7 @@ class AppWindow(QMainWindow):
                                                                         in_path_root=config["sdd_in_root"],
                                                                         out_path_root=config["sdd_out_root"])
                     self.__sdd_inference_subscriber.update_status_signal.connect(self.on_update_sdd_status)
-
-                
+                    self.__sdd_inference_subscriber.processing_result_signal.connect(self.on_update_sdd_result)
 
         except Exception as e:
             self.__console.error(f"{e}")
@@ -445,6 +446,51 @@ class AppWindow(QMainWindow):
                 self.set_status_inactive("label_sdd_processing_status")
         except Exception as e:
             self.__console.error(f"SDD Status Update Error : {e}")
+
+    def on_update_sdd_result(self, sdd_result_file_path:str, fm_length:int):
+        # show only boolean(defect or not) result
+        self.__frame_defect_grid_plot.clear()
+        self.__frame_defect_grid_plot.setXRange(0, fm_length)
+
+        # read csv file
+        try:
+            with open(sdd_result_file_path, 'r') as csvfile:
+                reader = csv.reader(csvfile)
+                next(reader)  # skip header
+                row_count = sum(1 for row in reader)
+                csvfile.seek(0)  # reset reader to the beginning
+
+                reader = csv.reader(csvfile)  # regenerate reader
+                next(reader)
+                points = []
+                for row in reader:
+                    match = re.match(r"(\d+)_(\d+)\.jpg", row[0])
+                    if not match:
+                        continue
+                    y = int(match.group(1))
+                    x = int(match.group(2))*fm_length/int(row_count//10)
+                    try:
+                        defect = int(row[6])
+                        if defect==1: # defect found
+                            points.append({'pos': (x, y), 'brush': 'r', 'size': 5, 'symbol':'s'})
+                    except ValueError:
+                        self.__console.error(f"Invalid defect value in row {row}")
+                        continue
+
+            scatter = graph.ScatterPlotItem()
+            scatter.addPoints(points)
+            self.__frame_defect_grid_plot.addItem(scatter)
+            self.__frame_defect_grid_plot.enableAutoRange(axis=graph.ViewBox.XAxis)
+            self.__frame_defect_grid_plot.show()
+        except ValueError as e:
+            self.__console.error(f"Error reading CSV file {sdd_result_file_path}: {e}")
+        except FileNotFoundError as e:
+            self.__console.error(f"File not found: {sdd_result_file_path}")
+
+                
+                
+
+           
                 
     def closeEvent(self, event:QCloseEvent) -> None: 
 
