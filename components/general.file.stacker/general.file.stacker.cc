@@ -94,7 +94,6 @@ void general_file_stacker::_image_stacker_task(int stream_id, json stream_param)
         string portname = fmt::format("image_stream_{}", stream_id);
         string working_dirname = stream_param.value("dirname", fmt::format("tmp_{}", stream_id));
 
-        fs::path camera_working_dir = "";
         while(!_worker_stop.load()){
             try{
 
@@ -105,18 +104,6 @@ void general_file_stacker::_image_stacker_task(int stream_id, json stream_param)
                 /* received success */
                 if(success){
 
-                    // vector<fs::path> image_path;
-
-                    /* create directory for each camera */
-                    for(const auto path:_job_full_path_map){
-                        fs::path camera_working_dir = path.second / working_dirname;
-                        if(!fs::exists(camera_working_dir)){
-                            fs::create_directories(camera_working_dir);
-                            // image_path.emplace_back(camera_working_dir);
-                            logger::info("[{}] Stream #{} data saves into {}", get_name(), stream_id, camera_working_dir.string());
-                        }
-                    }
-
                     /* pop 2 data chunk from message */
                     string camera_id = msg_multipart.popstr();
                     zmq::message_t msg_image = msg_multipart.pop();
@@ -126,11 +113,16 @@ void general_file_stacker::_image_stacker_task(int stream_id, json stream_param)
                     cv::Mat decoded = cv::imdecode(image, cv::IMREAD_UNCHANGED);                        
                     string filename = fmt::format("{}_{}.jpg", camera_id, ++_stream_counter[stream_id]);
 
-                    /* save into multiple directories*/
-                    cv::imwrite(fmt::format("{}/{}",camera_working_dir.string(), filename), decoded);
-                    // for(const auto path:image_path){
-                    //     cv::imwrite(fmt::format("{}/{}/{}",camera_working_dir.string(), path.string(), filename), decoded);
-                    // }
+                    /* save into multiple directories (camera_*)*/
+                    for(auto& path:_backup_dir_path){
+                        fs::path camera_working_dir = path / working_dirname;
+                        if(!fs::exists(camera_working_dir)){
+                            fs::create_directories(camera_working_dir);
+                            logger::info("[{}] Stream #{} data saves into {}", get_name(), stream_id, camera_working_dir.string());
+                        }
+
+                        cv::imwrite(fmt::format("{}/{}",camera_working_dir.string(), filename), decoded);
+                    }
                 }
             }
             catch(const zmq::error_t& e){
@@ -159,50 +151,49 @@ void general_file_stacker::_level2_dispatch_task(json target_path){
                 zmq::multipart_t msg_multipart;
                 bool success = msg_multipart.recv(*get_port("lv2_dispatch"));
 
-                logger::info("--{}", success);
-
                 /* if level2 data comes from level2 */
                 if(success){
+                    _backup_dir_path.clear(); // clear previous backup dir path
+
                     string topic = msg_multipart.popstr();
                     string data = msg_multipart.popstr();
                     auto json_data = json::parse(data);
-
-                    logger::info("[{}]{}",get_name(), data);
 
                     /* generate target dir & name */
                     if(json_data.contains("date") && json_data.contains("mt_stand_height") and json_data.contains("mt_stand_width")){
                         string date = json_data["date"].get<string>().substr(0, 8);
                         target_dirname = fmt::format("{}_{}x{}",json_data["date"].get<string>(),
-                                                                json_data["mt_stand_height"].get<int>(),
-                                                                json_data["mt_stand_width"].get<int>());
-                        logger::debug("{}", target_dirname);
+                                                                int(json_data["mt_stand_height"].get<int>()/10),
+                                                                int(json_data["mt_stand_width"].get<int>()/10));
 
                         /* create directory & save level2 info (if backup only)*/
                         for(const auto& target:target_path){
                             try{
                                 fs::path dest = fs::path(target.value("path", "/tmp")) / date / target_dirname;
-                                if(!fs::exists(dest)){
-                                    fs::create_directories(dest);
-                                    _job_full_path_map[target.value("path", "/tmp")] = dest;
-                                    logger::info("[{}] Created destination directory : {}", get_name(), dest.string());
+                                if(target.get("use",false)){
+                                    if(!fs::exists(dest)){
+                                        fs::create_directories(dest);
+                                        _backup_dir_path.push_back(dest);
+                                        logger::info("[{}] Created destination directory : {}", get_name(), dest.string());
 
-                                    /* save level2 info */
-                                    if(target.value("backup_only", false)){
-                                        string lv2_path = fmt::format("{}/level2.txt", dest.string());
-                                        ofstream lv2_file(lv2_path);
-                                        if(lv2_file.is_open()){
-                                            lv2_file << "date : " << json_data["date"].get<string>() << endl;
-                                            lv2_file << "lot_no : " << json_data["lot_no"].get<string>() << endl;
-                                            lv2_file << "mt_no : " << json_data["mt_no"].get<string>() << endl;
-                                            lv2_file << "mt_stand : " << json_data["mt_stand"].get<string>() << endl;
-                                            lv2_file << "mt_stand_height : " << json_data["mt_stand_height"].get<int>() << endl;
-                                            lv2_file << "mt_stand_width : " << json_data["mt_stand_width"].get<int>() << endl;
-                                            lv2_file << "mt_stand_t1 : " << json_data["mt_stand_t1"].get<int>() << endl;
-                                            lv2_file << "mt_stand_t2 : " << json_data["mt_stand_t2"].get<int>() << endl;
-                                            lv2_file << "fm_length : " << json_data["fm_length"].get<long>() << endl;
-                                            lv2_file.flush();
-                                            lv2_file.close();
-                                            logger::info("[{}] Saved level2 info file : {}", get_name(), lv2_path);
+                                        /* save level2 info */
+                                        if(!target.value("image_only", false)){
+                                            string lv2_path = fmt::format("{}/level2.txt", dest.string());
+                                            ofstream lv2_file(lv2_path);
+                                            if(lv2_file.is_open()){
+                                                lv2_file << "date : " << json_data["date"].get<string>() << endl;
+                                                lv2_file << "lot_no : " << json_data["lot_no"].get<string>() << endl;
+                                                lv2_file << "mt_no : " << json_data["mt_no"].get<string>() << endl;
+                                                lv2_file << "mt_stand : " << json_data["mt_stand"].get<string>() << endl;
+                                                lv2_file << "mt_stand_height : " << json_data["mt_stand_height"].get<int>() << endl;
+                                                lv2_file << "mt_stand_width : " << json_data["mt_stand_width"].get<int>() << endl;
+                                                lv2_file << "mt_stand_t1 : " << json_data["mt_stand_t1"].get<int>() << endl;
+                                                lv2_file << "mt_stand_t2 : " << json_data["mt_stand_t2"].get<int>() << endl;
+                                                lv2_file << "fm_length : " << json_data["fm_length"].get<long>() << endl;
+                                                lv2_file.flush();
+                                                lv2_file.close();
+                                                logger::info("[{}] Saved level2 info file : {}", get_name(), lv2_path);
+                                            }
                                         }
                                     }
                                 }
@@ -219,6 +210,7 @@ void general_file_stacker::_level2_dispatch_task(json target_path){
                         /* stream counter reset */
                         for(auto it=_stream_counter.begin(); it!=_stream_counter.end(); ++it){
                             it->second = 0;
+                            logger::debug("[{}] Stream #{} counter reset to 0", get_name(), it->first);
                         }
                     }
                     else{

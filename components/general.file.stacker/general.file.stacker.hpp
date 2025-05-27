@@ -45,9 +45,8 @@ class general_file_stacker : public flame::component::object {
         thread _level2_dispatch_worker; //level2 data interface
 
         /* working(save) directory name (by lv2 interface) */
-        // string _target_dirname {""}; //date + dimension
-        string _mount_path {""}; //mount abs. path
-        unordered_map<string, fs::path> _job_full_path_map; //target full path (with stream id)
+        vector<fs::path> _backup_dir_path; // image path for each stream
+        
 
     private:
         /* subtasks */
