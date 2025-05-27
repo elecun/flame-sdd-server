@@ -622,7 +622,7 @@ class AppWindow(QMainWindow):
                 self.combobox_preset.setCurrentText(near_preset)
                 self.__console.info(f"Selected Nearest Preset : {near_preset}")
                 self.on_btn_preset_load()
-                if self.__config.get("use_nearest_preset_auto_select",False) and self.__system_online:
+                if self.__config.get("use_nearest_preset_auto_select",False):
                     if self.__last_preset_file!=near_preset:
                         self.__console.info("Set focus, exposure time and light level by LV2 data")
                         self.on_btn_exposure_time_set_all()
