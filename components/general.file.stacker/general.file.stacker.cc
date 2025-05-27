@@ -37,7 +37,6 @@ bool general_file_stacker::on_init(){
     }
 
     /* level2 interface worker */
-    logger::info("-");
     if(parameters.contains("use_level2_interface")){
         bool enable = parameters.value("use_level2_interface", false);
         if(enable){
@@ -170,7 +169,7 @@ void general_file_stacker::_level2_dispatch_task(json target_path){
                         for(const auto& target:target_path){
                             try{
                                 fs::path dest = fs::path(target.value("path", "/tmp")) / date / target_dirname;
-                                if(target.get("use",false)){
+                                if(target.value("use",false)){
                                     if(!fs::exists(dest)){
                                         fs::create_directories(dest);
                                         _backup_dir_path.push_back(dest);

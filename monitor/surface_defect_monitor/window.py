@@ -47,6 +47,7 @@ from publisher.lens_control import LensControlPublisher
 from observer.network_storage import NASStatusObserver
 from monitor.observer.network_device import NetworkDeviceObserver
 from publisher.camera_control import CameraControlPublisher
+from subscriber.camera_status import CameraStatusMonitorSubscriber
 from subscriber.line_signal import LineSignalSubscriber
 from subscriber.dmx_light_control import DMXLightControlSubscriber
 from subscriber.camera import CameraMonitorSubscriber
@@ -94,6 +95,7 @@ class AppWindow(QMainWindow):
 
         ### device/service control interfaces
         self.__temperature_monitor_subscriber = None        # temperature monitor subscriber
+        self.__camera_status_monitor_subscriber = None      # camera status monitor subscriber
         self.__line_signal_monitor_subscriber = None        # line signal status monitor subscriber
         self.__light_control_subscriber = None              # light control subscriber
         self.__dk_level2_data_subscriber = None             # level2 data subscriber
@@ -211,6 +213,13 @@ class AppWindow(QMainWindow):
                             self.__console.warning(f"Temperature Monitor has problem : {e}")
                 else:
                     self.__console.warning("Temperature Monitor is not enabled")
+                
+                # camera status monitoring subscriber
+                if "use_camera_status_monitor" in config and config["use_camera_status_monitor"]:
+                    if "camera_status_monitor_source" in config and "camera_status_monitor_topic" in config:
+                        self.__console.info("+ Create Camera Status Monitoring Subscriber...")
+                        self.__camera_status_monitor_subscriber = CameraStatusMonitorSubscriber(self.__pipeline_context, connection=config["camera_status_monitor_source"], topic=config["camera_status_monitor_topic"])
+                        self.__camera_status_monitor_subscriber.status_update_signal.connect(self.on_update_camera_status)
 
                 # dk level2 data monitoring subscriber
                 use_dk_level2_interface = self.__config.get("use_dk_level2_interface", False)
@@ -585,7 +594,7 @@ class AppWindow(QMainWindow):
             for camera_id in self.__config["camera_ids"]:
                 if str(camera_id) in status:
                     sum = sum + status[str(camera_id)]["frames"]
-            
+            self.__console.debug(f"{sum}")
             self.label_total_images.setText(str(sum))
 
         except json.JSONDecodeError as e:
