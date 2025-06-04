@@ -1,5 +1,5 @@
 """
-Surface Defect Model Inference Subscru
+Surface Defect Model Inference Subscriber
 @author Byunghun Hwang <bh.hwang@iae.re.kr>
 """
 
@@ -21,19 +21,16 @@ import torch
 import onnxruntime as ort #cpu verson
 import numpy as np
 import os
-from PIL import Image
+import cv2
 import queue
 import pathlib
+from multiprocessing import Process, Queue, Value, cpu_count
+from concurrent.futures import ThreadPoolExecutor
 
 from torchvision import transforms
 from tqdm import tqdm
-import onnxruntime as ort
 import csv
 import glob
-import numpy as np
-import torch
-import cv2
-import os
 import shutil
 
 
@@ -152,136 +149,75 @@ class SDDModelInference(QThread):
                 self.__delete_directory_background(job_description["sdd_in_path"])
                 
     def __inference_all(self, model_root, in_path:str, out_path:str, job_desc:dict):
-        # 카메라 ID 그룹별로 사용하는 ONNX 모델 경로 정의
-        camera_to_model = {
-            (1, 5, 6, 10): f"{model_root}/vae_group_1_10_5_6.onnx",
-            (2, 4, 7, 9): f"{model_root}/vae_group_2_9_4_7.onnx",
-            (3, 8): f"{model_root}/vae_group_3_8.onnx"
+        camera_groups = {
+            "vae_group_1_10_5_6.onnx_part1": {"model": f"{model_root}/vae_group_1_10_5_6.onnx", "cams": [1, 5], "gpu": 0},
+            "vae_group_1_10_5_6.onnx_part2": {"model": f"{model_root}/vae_group_1_10_5_6.onnx", "cams": [6, 10], "gpu": 0},
+            "vae_group_2_9_4_7.onnx_part1": {"model": f"{model_root}/vae_group_2_9_4_7.onnx", "cams": [2, 4], "gpu": 1},
+            "vae_group_2_9_4_7.onnx_part2": {"model": f"{model_root}/vae_group_2_9_4_7.onnx", "cams": [7, 9], "gpu": 1},
+            "vae_group_3_8.onnx": {"model": f"{model_root}/vae_group_3_8.onnx", "cams": [3, 8], "gpu": 0}
         }
 
-        # PIL 이미지를 텐서로 변환 (크기 고정)
-        transform = transforms.Compose([
-            transforms.Resize((300, 480)),
-            transforms.ToTensor()
-        ])
-
-        # 결과 CSV 저장용 배열
-        result_rows = [['filename', 'MAE', 'SSIM', 'Grad_MAE', 'Laplacian_Diff', 'Pixel_Sum', 'result']]
-        model_cache = {}  # ONNX 세션 캐싱
-
-        # 이미지 파일 전체 수집 (camera_* 폴더 기준)
-        all_image_info = []
-        for cam_folder in glob.glob(os.path.join(in_path, 'camera_*')):
-            cam_id = int(cam_folder.split('_')[-1])
-            for ext in ('*.jpg', '*.jpeg', '*.JPG', '*.JPEG'):
-                for img_path in glob.glob(os.path.join(cam_folder, ext)):
-                    all_image_info.append((cam_id, img_path))
-
-        SAVE_IMAGE = False  # ← 결과 이미지 저장 여부 토글 (True 시 저장됨)
-
-        for cam_id, img_path in tqdm(all_image_info, desc="Inference Progress", unit="img"):
-            # break processing
-            if self.__inference_stop_event.is_set():
-                break
-
-
-            # 해당 카메라에 대응되는 ONNX 모델 찾기
-            model_path = None
-            for cams, path in camera_to_model.items():
-                if cam_id in cams:
-                    model_path = path
-                    break
-            if model_path is None or not os.path.exists(model_path):
-                continue
-
-            # ONNX 세션 캐싱 또는 생성
-            if model_path not in model_cache:
-                session = ort.InferenceSession(model_path, providers=['CUDAExecutionProvider'])
-                model_cache[model_path] = session
-            else:
-                session = model_cache[model_path]
-
-            # 이미지 전처리
-            img = Image.open(img_path).convert('L')
-            if cam_id in [6, 7, 8, 9, 10]:
-                img = img.transpose(Image.FLIP_LEFT_RIGHT)
-            img_tensor = transform(img).unsqueeze(0).numpy()  # shape: (1, 1, 300, 480)
-
-            # 모델 추론 수행
+        def infer_worker(cams, model_path, gpu_id, input_root, result_queue, output_csv, progress):
+            session = ort.InferenceSession(model_path, providers=[("CUDAExecutionProvider", {"device_id": gpu_id})])
             input_name = session.get_inputs()[0].name
-            output = session.run(None, {input_name: img_tensor})[0]
-            recon = output[0, 0]
-            orig = img_tensor[0, 0]
+            image_tasks = []
+            for cam_id in cams:
+                cam_folder = os.path.join(input_root, f"camera_{cam_id}")
+                for ext in ('*.jpg', '*.jpeg', '*.JPG', '*.JPEG'):
+                    image_tasks.extend([(cam_id, img) for img in glob.glob(os.path.join(cam_folder, ext))])
+            
+            def process_image(cam_id, img_path):
+                img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+                if cam_id in [6,7,8,9,10]:
+                    img = cv2.flip(img, 1)
+                img = cv2.resize(img, (480, 300)).astype(np.float32) / 255.0
+                tensor = torch.tensor(img).unsqueeze(0).unsqueeze(0).to('cuda')
+                output = session.run(None, {input_name: tensor.cpu().numpy()})[0]
+                recon = torch.tensor(output[0, 0]).to('cuda')
+                orig = tensor[0, 0].to('cuda')
 
-            # 지표 계산
-            mae = self.__compute_mae(orig, recon)
-            ssim = self.__compute_ssim(orig, recon)
-            grad_mae = self.__compute_grad_mae(orig, recon)
-            lap_diff = self.__compute_laplacian_variance_diff(orig, recon)
-            pix_sum = self.__compute_pixel_sum(orig, recon)
-            result = self.__logistic_score([mae, ssim, grad_mae, lap_diff, pix_sum])
+                mae = torch.mean(torch.abs(orig - recon)).item()
+                ssim = pytorch_ssim.ssim(orig.unsqueeze(0).unsqueeze(0), recon.unsqueeze(0).unsqueeze(0)).item()
+                grad_mae = torch.mean(torch.abs(torch.gradient(orig)[0] - torch.gradient(recon)[0])).item()
+                lap_diff = abs(np.var(cv2.Laplacian(orig.cpu().numpy(), cv2.CV_64F)) - np.var(cv2.Laplacian(recon.cpu().numpy(), cv2.CV_64F)))
+                pix_sum = torch.sum(torch.abs(orig - recon) * 255 > 30).item()
+                result = 1 if 1 / (1 + np.exp(-(318.42 * mae + 21.60 * ssim - 26.70 * grad_mae + 357.83 * lap_diff - 0.000003 * pix_sum - 24.37))) > 0.5 else 0
 
-            # CSV 결과 저장
-            result_rows.append([
-                os.path.basename(img_path),
-                mae,
-                ssim,
-                grad_mae,
-                lap_diff,
-                pix_sum,
-                result
-            ])
+                result_queue.put([os.path.basename(img_path), mae, ssim, grad_mae, lap_diff, pix_sum, result])
+                with progress.get_lock():
+                    progress.value += 1
 
-            # 시각화 이미지 저장
-            if SAVE_IMAGE:
-                orig_img = (orig * 255).astype(np.uint8)
-                recon_img = (recon * 255).astype(np.uint8)
-                diff_img = np.abs(orig_img.astype(np.int16) - recon_img.astype(np.int16)).astype(np.uint8)
-                _, binary_diff = cv2.threshold(diff_img, 30, 255, cv2.THRESH_BINARY)
+            with ThreadPoolExecutor(max_workers=cpu_count()) as executor:
+                for cam_id, img_path in image_tasks:
+                    executor.submit(process_image, cam_id, img_path)
+            result_queue.put(None)
 
-                # 이미지 회전 및 색상 변환
-                orig_img = cv2.rotate(orig_img, cv2.ROTATE_90_CLOCKWISE)
-                recon_img = cv2.rotate(recon_img, cv2.ROTATE_90_CLOCKWISE)
-                binary_diff = cv2.rotate(binary_diff, cv2.ROTATE_90_CLOCKWISE)
-
-                orig_color = cv2.cvtColor(orig_img, cv2.COLOR_GRAY2BGR)
-                recon_color = cv2.cvtColor(recon_img, cv2.COLOR_GRAY2BGR)
-                diff_color = cv2.cvtColor(binary_diff, cv2.COLOR_GRAY2BGR)
-
-                # 이미지 상단 텍스트 박스 작성
-                metrics_text = [
-                    f"MAE: {mae:.4f}",
-                    f"SSIM: {ssim:.4f}",
-                    f"Grad_MAE: {grad_mae:.4f}",
-                    f"Laplacian_Diff: {lap_diff:.4f}",
-                    f"Pixel_Sum: {pix_sum}",
-                    f"Result: {'Defect' if result else 'OK'}"
-                ]
-                font = cv2.FONT_HERSHEY_SIMPLEX
-                font_scale = 0.5
-                thickness = 1
-                line_height = 20
-                header_h = line_height * len(metrics_text) + 10
-                header = np.ones((header_h, orig_color.shape[1] * 3, 3), dtype=np.uint8) * 255
-
-                for i, line in enumerate(metrics_text):
-                    y = 10 + (i + 1) * line_height
-                    cv2.putText(header, line, (10, y), font, font_scale, (0, 0, 0), thickness)
-
-                combined = cv2.hconcat([orig_color, recon_color, diff_color])
-                final_img = cv2.vconcat([header, combined])
-
-                output_vis_dir = os.path.join(os.path.dirname(output_csv), "visual")
-                os.makedirs(output_vis_dir, exist_ok=True)
-                save_path = os.path.join(output_vis_dir, f"combined_{os.path.basename(img_path)}")
-                cv2.imwrite(save_path, final_img)
-
-        # CSV 결과 파일 저장
         output_csv = os.path.join(out_path, "result.csv")
-        # os.makedirs(os.path.dirname(output_csv, exist_ok=True))
+        os.makedirs(os.path.dirname(output_csv), exist_ok=True)
+        result_queue = Queue()
+        progress = Value('i', 0)
+
+        processes = []
+        for config in camera_groups.values():
+            p = Process(target=infer_worker, args=(config['cams'], config['model'], config['gpu'], str(in_path), result_queue, output_csv, progress))
+            p.start()
+            processes.append(p)
+
+        results = [['filename', 'MAE', 'SSIM', 'Grad_MAE', 'Laplacian_Diff', 'Pixel_Sum', 'result']]
+        finished = 0
+        while finished < len(processes):
+            item = result_queue.get()
+            if item is None:
+                finished += 1
+            else:
+                results.append(item)
+
+        for p in processes:
+            p.join()
+
         with open(output_csv, 'w', newline='') as f:
             writer = csv.writer(f)
-            writer.writerows(result_rows)
+            writer.writerows(results)
 
         self.__console.info(f"<SDD Model Inference> Inference results saved to: {output_csv}")
         self.processing_result_signal.emit(output_csv, job_desc.get("fm_length",0))

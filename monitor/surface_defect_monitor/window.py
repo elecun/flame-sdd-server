@@ -334,13 +334,13 @@ class AppWindow(QMainWindow):
                                                                         in_path_root=config["sdd_in_root"],
                                                                         out_path_root=config["sdd_out_root"])
                     self.__sdd_inference_subscriber.update_status_signal.connect(self.on_update_sdd_status)
-                    self.__sdd_inference_subscriber.processing_result_signal.connect(self.on_update_sdd_result)
+                    self.__sdd_inference_subscriber.processing_result_signal.connect(self.on_update_sdd_result_binary)
 
         except Exception as e:
             self.__console.error(f"{e}")
 
         # for test
-        self.on_update_sdd_result("/home/dk-sdd/nas_storage/20250523/20250523231259/result.csv", 10000)
+        #self.on_update_sdd_result("/home/dk-sdd/nas_storage/20250523/20250523231259/result.csv", 10000)
 
     def clear_defect_plot(self):
         self.__frame_defect_grid_plot.clear()
@@ -460,7 +460,10 @@ class AppWindow(QMainWindow):
         except Exception as e:
             self.__console.error(f"SDD Status Update Error : {e}")
 
-    def on_update_sdd_result(self, sdd_result_file_path:str, fm_length:int):
+    def on_update_sdd_result_multiclass(self, sdd_result_file_path:str, fm_length:int):
+        pass
+
+    def on_update_sdd_result_binary(self, sdd_result_file_path:str, fm_length:int):
         # show only boolean(defect or not) result
         self.__frame_defect_grid_plot.clear()
         self.__frame_defect_grid_plot.setXRange(0, fm_length)
