@@ -332,15 +332,13 @@ class AppWindow(QMainWindow):
                                                                         topic=config["line_signal_monitor_topic"],
                                                                         model_config=config["sdd_model_config"],
                                                                         in_path_root=config["sdd_in_root"],
-                                                                        out_path_root=config["sdd_out_root"])
+                                                                        out_path_root=config["sdd_out_root"],
+                                                                        save_visual=config.get("sdd_inference_save_result_images", False))
                     self.__sdd_inference_subscriber.update_status_signal.connect(self.on_update_sdd_status)
                     self.__sdd_inference_subscriber.processing_result_signal.connect(self.on_update_sdd_result_binary)
 
         except Exception as e:
             self.__console.error(f"{e}")
-
-        # for test
-        #self.on_update_sdd_result("/home/dk-sdd/nas_storage/20250523/20250523231259/result.csv", 10000)
 
     def clear_defect_plot(self):
         self.__frame_defect_grid_plot.clear()
@@ -555,10 +553,20 @@ class AppWindow(QMainWindow):
             self.__light_control_subscriber.close()
             self.__console.info("Close Light Control Subscriber")
 
+        # close sdd inference subscriber
+        if self.__sdd_inference_subscriber:
+            self.__sdd_inference_subscriber.close()
+            self.__console.info("Close SDD Inference Subscriber")
+
         # close camera stream monitoring subscriber
         if len(self.__camera_image_subscriber_map.keys())>0:
             with ThreadPoolExecutor(max_workers=10) as executor:
-                executor.map(lambda subscriber: subscriber.close(), self.__camera_image_subscriber_map.values())       
+                executor.map(lambda subscriber: subscriber.close(), self.__camera_image_subscriber_map.values())   
+
+        # close cmaera status subscriber
+        if self.__camera_status_monitor_subscriber:  
+            self.__camera_status_monitor_subscriber.close()
+            self.__console.info("Close Camera Status Subscriber")  
 
         # close echo requester
         for requester in self.__system_echo_requester_map.values():

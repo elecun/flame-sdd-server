@@ -32,6 +32,7 @@ from tqdm import tqdm
 import csv
 import glob
 import shutil
+import pytorch_ssim
 
 
 class SDDModelInference(QThread):
@@ -41,7 +42,7 @@ class SDDModelInference(QThread):
     models = [{cam_ids":[1,2], "model_path:"/path/mode.onnx"}, ...}]
     '''
 
-    def __init__(self, context:zmq.Context, connection:str, topic:str, model_config:dict, in_path_root:str, out_path_root:str):
+    def __init__(self, context:zmq.Context, connection:str, topic:str, model_config:dict, in_path_root:str, out_path_root:str, save_visual:bool):
         super().__init__()
 
         self.__console = ConsoleLogger.get_logger()   # console logger
@@ -56,6 +57,7 @@ class SDDModelInference(QThread):
         # store parameters
         self.__connection = connection
         self.__topic = topic
+        self.__save_visual = save_visual
 
         # initialize zmq
         self.__socket = context.socket(zmq.SUB)
@@ -72,16 +74,16 @@ class SDDModelInference(QThread):
         self.__inference_job_worker = threading.Thread(target=self.__inference, daemon=True)
         self.__inference_job_worker.start()
 
-
         self.start()
         self.__console.info("* Start SDD Model Inference")
 
-        # for test
-        test_data = {
-            "sdd_in_path":"/home/dev/local_storage/20250401/20250401182801_350x350",
-            "sdd_out_path":"/home/dev/local_storage/20250401/20250401182801_350x350"
-        }
-        self.__job_queue.put(test_data)
+        # for test in local
+        # test_data = {
+        #     "sdd_in_path":"/home/dev/local_storage/20250401/20250401182801_350x350",
+        #     "sdd_out_path":"/home/dev/local_storage/20250401/20250401182801_350x350",
+        #     "save_visual" : self.__save_visual
+        # }
+        # self.__job_queue.put(test_data)
 
 
     
@@ -108,24 +110,21 @@ class SDDModelInference(QThread):
             try:
                 events = dict(self.__poller.poll(1000)) # wait 1 sec
                 if self.__socket in events:
-                    if events[self.__socket] == zmq.POLLERR:
-                        self.__console.error(f"<SDD Model Inference> Error: {self.__socket.getsockopt(zmq.LAST_ENDPOINT)}")
+                    topic, data = self.__socket.recv_multipart()
+                    if topic.decode() == self.__topic:
+                        data = json.loads(data.decode('utf8').replace("'", '"'))
 
-                    elif events[self.__socket] == zmq.POLLIN:
-                        topic, data = self.__socket.recv_multipart()
-                        if topic.decode() == self.__topic:
-                            data = json.loads(data.decode('utf8').replace("'", '"'))
+                        if "date" in data and "mt_stand_height" in data and "mt_stand_width" in data:
+                            lv2_date = data["date"][0:8]  # YYYYMMDD
+                            lv2_mt_h = data["mt_stand_height"]
+                            lv2_mt_w = data["mt_stand_width"]
+                            target_dir = pathlib.Path(lv2_date) / f"{data['date']}_{lv2_mt_h}x{lv2_mt_w}"
+                            data["sdd_in_path"] = self.__images_root_path / target_dir
+                            data["sdd_out_path"] = self.__out_root_path / target_dir
+                            data["save_visual"] = self.__save_visual
+                            self.__job_queue.put(data)
 
-                            if "date" in data and "mt_stand_height" in data and "mt_stand_width" in data:
-                                lv2_date = data["date"][0:8]  # YYYYMMDD
-                                lv2_mt_h = data["mt_stand_height"]
-                                lv2_mt_w = data["mt_stand_width"]
-                                target_dir = pathlib.Path(lv2_date) / f"{data['date']}_{lv2_mt_h}x{lv2_mt_w}"
-                                data["sdd_in_path"] = self.__images_root_path / target_dir
-                                data["sdd_out_path"] = self.__out_root_path / target_dir
-                                self.__job_queue.put(data)
-
-                                self.__console.info(f"<SDD Model Inference> Adding job to queue... (Remaining {self.__job_queue.qsize()})")
+                            self.__console.info(f"<SDD Model Inference> Adding job to queue... (Remaining {self.__job_queue.qsize()})")
 
             
             except json.JSONDecodeError as e:
@@ -149,15 +148,87 @@ class SDDModelInference(QThread):
 
                 # update status signal
                 self.update_status_signal.emit({"working":True})
-                #model_root = self.__model_config.get("model_root", "/home/dk-sdd/dev/flame-sdd-server/bin/model")
-                model_root = self.__model_config.get("model_root", "/home/dev/dev/flame-sdd-server/bin/model")
+                model_root = self.__model_config.get("model_root", "/home/dk-sdd/dev/flame-sdd-server/bin/model")
                 if "sdd_in_path" in job_description and "sdd_out_path" in job_description:
-                    self.__inference_all(model_root, job_description["sdd_in_path"], job_description["sdd_out_path"], job_desc=job_description)
+                    self.__run_parallel_inference(model_root, job_description["sdd_in_path"], job_description["sdd_out_path"], job_desc=job_description)
 
                 self.update_status_signal.emit({"working":False})
                 #self.__delete_directory_background(job_description["sdd_in_path"])
-                
-    def __inference_all(self, model_root, in_path:str, out_path:str, job_desc:dict):
+
+    def __create_session(self, model_path, gpu_id):
+        so = ort.SessionOptions()
+        so.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+        return ort.InferenceSession(model_path, sess_options=so, providers=[("CUDAExecutionProvider", {"device_id": gpu_id})])
+    
+    def __process_image(self, session, input_name, cam_id, img_path, result_queue, output_csv, save_visual, progress):
+        img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+        if cam_id in [6, 7, 8, 9, 10]:
+            img = cv2.flip(img, 1)
+        img = cv2.resize(img, (480, 300)).astype(np.float32) / 255.0
+        img_tensor = torch.tensor(img).unsqueeze(0).unsqueeze(0).to('cuda')  # GPU 텐서로 올림
+
+        # ONNX는 numpy만 받으므로 다시 CPU 텐서로 전송
+        output = session.run(None, {input_name: img_tensor.cpu().numpy()})[0]
+        recon = torch.tensor(output[0, 0]).to('cuda')
+        orig = img_tensor[0, 0].to(recon.device)
+
+        # 각종 메트릭 계산. GPU에서 가능하면 다 실행
+        mae = self.__compute_mae(orig, recon)
+        ssim = self.__compute_ssim(orig.unsqueeze(0).unsqueeze(0), recon.unsqueeze(0).unsqueeze(0))
+        grad_mae = self.__compute_grad_mae(orig.unsqueeze(0).unsqueeze(0), recon.unsqueeze(0).unsqueeze(0))
+        lap_diff = self.__compute_laplacian_variance_diff(orig, recon)
+        pix_sum = self.__compute_pixel_sum(orig, recon)
+        result = self.__logistic_score([mae, ssim, grad_mae, lap_diff, pix_sum])
+
+        result_queue.put([
+            os.path.basename(img_path),
+            mae, ssim, grad_mae, lap_diff, pix_sum, result
+        ])
+
+        with progress.get_lock():
+            progress.value += 1
+
+        if save_visual:
+            # 시각화 저장
+            orig_img = (orig.cpu().numpy() * 255).astype(np.uint8)
+            recon_img = (recon.cpu().numpy() * 255).astype(np.uint8)
+            diff_img = np.abs(orig_img.astype(np.int16) - recon_img.astype(np.int16)).astype(np.uint8)
+            _, binary_diff = cv2.threshold(diff_img, 30, 255, cv2.THRESH_BINARY)
+            orig_img = cv2.rotate(orig_img, cv2.ROTATE_90_CLOCKWISE)
+            recon_img = cv2.rotate(recon_img, cv2.ROTATE_90_CLOCKWISE)
+            binary_diff = cv2.rotate(binary_diff, cv2.ROTATE_90_CLOCKWISE)
+            combined = cv2.hconcat([
+                cv2.cvtColor(orig_img, cv2.COLOR_GRAY2BGR),
+                cv2.cvtColor(recon_img, cv2.COLOR_GRAY2BGR),
+                cv2.cvtColor(binary_diff, cv2.COLOR_GRAY2BGR)
+            ])
+            vis_out_dir = os.path.join(os.path.dirname(output_csv), f"visual/camera_{cam_id}")
+            os.makedirs(vis_out_dir, exist_ok=True)
+            cv2.imwrite(os.path.join(vis_out_dir, os.path.basename(img_path)), combined)
+
+
+    def __infer_worker(self, cams, model_path, gpu_id, input_root, result_queue, output_csv, save_visual, progress, total):
+        session = self.__create_session(model_path, gpu_id)
+        input_name = session.get_inputs()[0].name
+
+        # 이미지 경로 수집
+        image_tasks = []
+        for cam_id in cams:
+            cam_folder = os.path.join(input_root, f"camera_{cam_id}")
+            for ext in ('*.jpg', '*.jpeg', '*.JPG', '*.JPEG'):
+                image_tasks.extend([(cam_id, img_path) for img_path in glob.glob(os.path.join(cam_folder, ext))])
+
+        # 이 프로세스 안에서 멀티스레드 돌려서 이미지 개별 처리
+        with ThreadPoolExecutor(max_workers=min(cpu_count(), 8)) as executor:
+            futures = []
+            for cam_id, img_path in image_tasks:
+                futures.append(executor.submit(self.__process_image, session, input_name, cam_id, img_path, result_queue, output_csv, save_visual, progress))
+            for f in futures:
+                f.result()
+
+        result_queue.put(None)  # 처리 끝났다고 알림
+
+    def __run_parallel_inference(self, model_root:str, in_path:str, out_path:str, job_desc:dict):
         camera_groups = {
             "vae_group_1_10_5_6.onnx_part1": {"model": f"{model_root}/vae_group_1_10_5_6.onnx", "cams": [1, 5], "gpu": 0},
             "vae_group_1_10_5_6.onnx_part2": {"model": f"{model_root}/vae_group_1_10_5_6.onnx", "cams": [6, 10], "gpu": 0},
@@ -165,106 +236,93 @@ class SDDModelInference(QThread):
             "vae_group_2_9_4_7.onnx_part2": {"model": f"{model_root}/vae_group_2_9_4_7.onnx", "cams": [7, 9], "gpu": 1},
             "vae_group_3_8.onnx": {"model": f"{model_root}/vae_group_3_8.onnx", "cams": [3, 8], "gpu": 0}
         }
-
-        def infer_worker(cams, model_path, gpu_id, input_root, result_queue, output_csv, progress):
-            session = ort.InferenceSession(model_path, providers=[("CUDAExecutionProvider", {"device_id": gpu_id})])
-            input_name = session.get_inputs()[0].name
-            image_tasks = []
-            for cam_id in cams:
-                cam_folder = os.path.join(input_root, f"camera_{cam_id}")
-                for ext in ('*.jpg', '*.jpeg', '*.JPG', '*.JPEG'):
-                    image_tasks.extend([(cam_id, img) for img in glob.glob(os.path.join(cam_folder, ext))])
-            
-            def process_image(cam_id, img_path):
-                img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-                if cam_id in [6,7,8,9,10]:
-                    img = cv2.flip(img, 1)
-                img = cv2.resize(img, (480, 300)).astype(np.float32) / 255.0
-                tensor = torch.tensor(img).unsqueeze(0).unsqueeze(0).to('cuda')
-                output = session.run(None, {input_name: tensor.cpu().numpy()})[0]
-                recon = torch.tensor(output[0, 0]).to('cuda')
-                orig = tensor[0, 0].to('cuda')
-
-                mae = torch.mean(torch.abs(orig - recon)).item()
-                ssim = pytorch_ssim.ssim(orig.unsqueeze(0).unsqueeze(0), recon.unsqueeze(0).unsqueeze(0)).item()
-                grad_mae = torch.mean(torch.abs(torch.gradient(orig)[0] - torch.gradient(recon)[0])).item()
-                lap_diff = abs(np.var(cv2.Laplacian(orig.cpu().numpy(), cv2.CV_64F)) - np.var(cv2.Laplacian(recon.cpu().numpy(), cv2.CV_64F)))
-                pix_sum = torch.sum(torch.abs(orig - recon) * 255 > 30).item()
-                result = 1 if 1 / (1 + np.exp(-(318.42 * mae + 21.60 * ssim - 26.70 * grad_mae + 357.83 * lap_diff - 0.000003 * pix_sum - 24.37))) > 0.5 else 0
-
-                result_queue.put([os.path.basename(img_path), mae, ssim, grad_mae, lap_diff, pix_sum, result])
-                with progress.get_lock():
-                    progress.value += 1
-
-            with ThreadPoolExecutor(max_workers=cpu_count()) as executor:
-                for cam_id, img_path in image_tasks:
-                    executor.submit(process_image, cam_id, img_path)
-            result_queue.put(None)
-
-        output_csv = os.path.join(out_path, "result.csv")
-        os.makedirs(os.path.dirname(output_csv), exist_ok=True)
-        result_queue = Queue()
-        progress = Value('i', 0)
+        
+        start_time = time.time()
 
         processes = []
-        for config in camera_groups.values():
-            p = Process(target=infer_worker, args=(config['cams'], config['model'], config['gpu'], str(in_path), result_queue, output_csv, progress))
-            p.start()
-            processes.append(p)
+        result_queue = Queue()
+        total_images = 0
 
+        # 총 이미지 수 미리 세서 tqdm에 사용
+        for config in camera_groups.values():
+            for cam_id in config['cams']:
+                cam_folder = os.path.join(in_path, f"camera_{cam_id}")
+                for ext in ('*.jpg', '*.jpeg', '*.JPG', '*.JPEG'):
+                    total_images += len(glob.glob(os.path.join(cam_folder, ext)))
+
+        progress = Value('i', 0)
+        pbar = tqdm(total=total_images, desc="Total Progress", position=0)
+
+        # 카메라 그룹별로 프로세스 생성
+        output_csv = os.path.join(out_path, "result.csv")
+        save_visual = job_desc.get("save_visual", False)
+        for config in camera_groups.values():
+            p = Process(
+                target=self.__infer_worker,
+                args=(config['cams'], config['model'], config['gpu'], in_path, result_queue, output_csv, save_visual, progress, total_images)
+            )
+            processes.append(p)
+            p.start()
+
+        end_signals = 0
         results = [['filename', 'MAE', 'SSIM', 'Grad_MAE', 'Laplacian_Diff', 'Pixel_Sum', 'result']]
-        finished = 0
-        while finished < len(processes):
+        while end_signals < len(processes):
             item = result_queue.get()
             if item is None:
-                finished += 1
+                end_signals += 1
             else:
                 results.append(item)
+                pbar.n = progress.value
+                pbar.refresh()
 
         for p in processes:
             p.join()
 
+        result_queue.close()
+        result_queue.join_thread()
+
+        pbar.close()
+
+        os.makedirs(os.path.dirname(output_csv), exist_ok=True)
         with open(output_csv, 'w', newline='') as f:
             writer = csv.writer(f)
             writer.writerows(results)
 
-        self.__console.info(f"<SDD Model Inference> Inference results saved to: {output_csv}")
-        self.processing_result_signal.emit(output_csv, job_desc.get("fm_length",0))
+        elapsed = time.time() - start_time
+        print(f"\nTotal Inference Time: {elapsed:.2f} seconds")
 
-    # MAE 계산. 텐서 간 절대값 평균. GPU에서 실행됨
-    def __compute_mae(orig, recon):
+        self.__console.info(f"<SDD Model Inference> Inference results saved to: {output_csv}")
+        self.processing_result_signal.emit(output_csv, job_desc.get("fm_length",100))
+
+    def __compute_mae(self, orig, recon):
         return torch.mean(torch.abs(orig - recon)).item()
 
-    # SSIM 계산. pytorch_ssim 사용해서 GPU에서 처리되게 되어 있음
-    # 시각 품질 평가에서 중요, GPU에게 노역 부여
-
-    def __compute_ssim(orig, recon):
+    def __compute_ssim(self, orig, recon):
         return pytorch_ssim.ssim(orig, recon).item()
-
-
-    # Gradient 기반 평균 절대 오차
+    
     def __compute_grad_mae(self, orig, recon):
-        grad_orig = np.sqrt(cv2.Sobel(orig, cv2.CV_64F, 1, 0, ksize=3)**2 + cv2.Sobel(orig, cv2.CV_64F, 0, 1, ksize=3)**2)
-        grad_recon = np.sqrt(cv2.Sobel(recon, cv2.CV_64F, 1, 0, ksize=3)**2 + cv2.Sobel(recon, cv2.CV_64F, 0, 1, ksize=3)**2)
-        return np.mean(np.abs(grad_orig - grad_recon))
+        sobel_x = torch.tensor([[[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]], dtype=torch.float32, device=orig.device).unsqueeze(0)
+        sobel_y = torch.tensor([[[-1, -2, -1], [0, 0, 0], [1, 2, 1]]], dtype=torch.float32, device=orig.device).unsqueeze(0)
+        grad_orig = torch.sqrt(
+            torch.nn.functional.conv2d(orig, sobel_x, padding=1)**2 +
+            torch.nn.functional.conv2d(orig, sobel_y, padding=1)**2
+        )
+        grad_recon = torch.sqrt(
+            torch.nn.functional.conv2d(recon, sobel_x, padding=1)**2 +
+            torch.nn.functional.conv2d(recon, sobel_y, padding=1)**2
+        )
+        return torch.mean(torch.abs(grad_orig - grad_recon)).item()
 
-    # 라플라시안 기반 경계 선명도 차이
     def __compute_laplacian_variance_diff(self, orig, recon):
-        orig = orig.astype(np.float64)
-        recon = recon.astype(np.float64)
-        var_orig = np.var(cv2.Laplacian(orig, cv2.CV_64F))
-        var_recon = np.var(cv2.Laplacian(recon, cv2.CV_64F))
+        var_orig = np.var(cv2.Laplacian(orig.cpu().numpy().astype(np.float64), cv2.CV_64F))
+        var_recon = np.var(cv2.Laplacian(recon.cpu().numpy().astype(np.float64), cv2.CV_64F))
         return abs(var_orig - var_recon)
 
-    # 차영상 기반 임계 픽셀 개수
     def __compute_pixel_sum(self, orig, recon):
-        diff = np.abs((orig * 255).astype(np.uint8) - (recon * 255).astype(np.uint8))
-        _, binary = cv2.threshold(diff, 30, 255, cv2.THRESH_BINARY)
-        return np.sum(binary > 0)
-
-    # ----------------------------
-    # 로지스틱 회귀 기반 결함 판정 함수
-    # ----------------------------
+        diff = torch.abs(orig - recon) * 255
+        binary = (diff > 30).int()
+        return binary.sum().item()
+    
     def __logistic_score(self, metrics):
         mae, ssim, grad_mae, lap_diff, pix_sum = metrics
         score = (
@@ -273,25 +331,10 @@ class SDDModelInference(QThread):
             -26.708228 * grad_mae +
             357.830399 * lap_diff +
             -0.000003 * pix_sum +
-            -24.372392  # 바이어스 항
+            -24.372392
         )
         prob = 1 / (1 + np.exp(-score))
         return 1 if prob > 0.5 else 0
-
-    def __get_all_jpg_files(self, root_dir):
-        jpg_files = []
-        for dirpath, _, filenames in os.walk(root_dir):
-            for file in filenames:
-                if file.lower().endswith('.jpg'):
-                    jpg_files.append(os.path.abspath(os.path.join(dirpath, file)))
-        return jpg_files
-    
-    def __preprocess_image(self, img):
-        img = img.resize((224, 224))
-        img = np.array(img).astype(np.float32) / 255.0
-        img = np.transpose(img, (2, 0, 1))  # HWC -> CHW
-        img = np.expand_dims(img, axis=0)  # Add batch dim
-        return torch.from_numpy(img) if self.model_path.endswith(".pt") else img
 
     def close(self):
         """ close the socket and context """
@@ -300,16 +343,16 @@ class SDDModelInference(QThread):
         self.quit()
         self.wait()
 
-        # clear job queue
-        while not self.__job_queue.empty():
-            self.__job_queue.get()
-        self.__inference_stop_event.set()
-        self.__console.info(f"<SDD Model Inference> Waiting for job done...")
-        self.__inference_job_worker.join()
-
         try:
             self.__socket.setsockopt(zmq.LINGER, 0)
             self.__poller.unregister(self.__socket)
             self.__socket.close()
         except zmq.ZMQError as e:
             self.__console.error(f"<SDD Model Inference> {e}")
+
+        # clear job queue
+        while not self.__job_queue.empty():
+            self.__job_queue.get()
+        self.__inference_stop_event.set()
+        self.__console.info(f"<SDD Model Inference> Waiting for job done...")
+        self.__inference_job_worker.join()
