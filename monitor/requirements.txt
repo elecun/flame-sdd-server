@@ -6,8 +6,8 @@ pyzmq
 nidaqmx
 pyqtgraph
 pillow
-onnxruntime
 onnxruntime-gpu
 torch
 torchvision
 tqdm
+nvitop

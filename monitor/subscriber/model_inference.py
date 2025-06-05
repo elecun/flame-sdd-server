@@ -76,6 +76,14 @@ class SDDModelInference(QThread):
         self.start()
         self.__console.info("* Start SDD Model Inference")
 
+        # for test
+        test_data = {
+            "sdd_in_path":"/home/dev/local_storage/20250401/20250401182801_350x350",
+            "sdd_out_path":"/home/dev/local_storage/20250401/20250401182801_350x350"
+        }
+        self.__job_queue.put(test_data)
+
+
     
     def __delete_directory_background(self, path: str):
         def worker():
@@ -141,12 +149,13 @@ class SDDModelInference(QThread):
 
                 # update status signal
                 self.update_status_signal.emit({"working":True})
-                model_root = self.__model_config.get("model_root", "/home/dk-sdd/dev/flame-sdd-server/bin/model")
+                #model_root = self.__model_config.get("model_root", "/home/dk-sdd/dev/flame-sdd-server/bin/model")
+                model_root = self.__model_config.get("model_root", "/home/dev/dev/flame-sdd-server/bin/model")
                 if "sdd_in_path" in job_description and "sdd_out_path" in job_description:
-                    self.__inference_all(model_root, job_description["sdd_in_path"], job_description["sdd_out_path"])
+                    self.__inference_all(model_root, job_description["sdd_in_path"], job_description["sdd_out_path"], job_desc=job_description)
 
                 self.update_status_signal.emit({"working":False})
-                self.__delete_directory_background(job_description["sdd_in_path"])
+                #self.__delete_directory_background(job_description["sdd_in_path"])
                 
     def __inference_all(self, model_root, in_path:str, out_path:str, job_desc:dict):
         camera_groups = {
@@ -222,21 +231,15 @@ class SDDModelInference(QThread):
         self.__console.info(f"<SDD Model Inference> Inference results saved to: {output_csv}")
         self.processing_result_signal.emit(output_csv, job_desc.get("fm_length",0))
 
-    # 평균 절대 오차
-    def __compute_mae(self, orig, recon):
-        return np.mean(np.abs(orig - recon))
+    # MAE 계산. 텐서 간 절대값 평균. GPU에서 실행됨
+    def __compute_mae(orig, recon):
+        return torch.mean(torch.abs(orig - recon)).item()
 
-    # 구조적 유사도(SSIM)
-    # 구조적 유사도(SSIM)
-    def __compute_ssim(self, orig, recon):
-        import pytorch_ssim
-        import torch
-        orig_tensor = torch.tensor(orig).unsqueeze(0).unsqueeze(0).float()
-        recon_tensor = torch.tensor(recon).unsqueeze(0).unsqueeze(0).float()
-        
-        # 패딩 오류 방지를 위해 window_size를 명시적으로 지정
-        ssim_func = pytorch_ssim.SSIM(window_size=11)  # 기본값과 같지만 명시함
-        return ssim_func(orig_tensor, recon_tensor).item()
+    # SSIM 계산. pytorch_ssim 사용해서 GPU에서 처리되게 되어 있음
+    # 시각 품질 평가에서 중요, GPU에게 노역 부여
+
+    def __compute_ssim(orig, recon):
+        return pytorch_ssim.ssim(orig, recon).item()
 
 
     # Gradient 기반 평균 절대 오차
