@@ -5,23 +5,25 @@ import json
 
 context = zmq.Context()
 socket = context.socket(zmq.PUB)
+socket.setsockopt(zmq.RCVBUF .RCVHWM, 1000)
+socket.setsockopt(zmq.LINGER, 0)
 socket.bind("tcp://*:5401")
-# socket.setsockopt_string(zmq.PUBLISH, "focus_control")
 
-time.sleep(3)
+time.sleep(10)
 
 topic = "ni_daq_controller/line_signal"  # 구독 주제
 msg = {
-    "hmd_signal_on":True,
-    "online_signal_on":True,
-    "offline_signal_on":False
+    "date":"20250401182801",
+    "mt_stand_height":350,
+    "mt_stand_width":350,
+    "sdd_in_path":"/home/dev/local_storage/20250401/20250401182801_350x350",
+    "sdd_out_path":"/home/dev/nas_storage/20250401/20250401182801_350x350"
 }
 j_string = json.dumps(msg)
-
-multipart_data = [topic.encode('utf-8'), j_string.encode('utf-8')]
-
+multipart_data = [topic.encode(), j_string.encode()]
 socket.send_multipart(multipart_data)  # 멀티파트 데이터 전송
-print(f"Published")
+print("try 1")
+
     
 
 
