@@ -79,9 +79,11 @@ class SDDModelInference(QThread):
 
         # for test in local
         # test_data = {
-        #     "sdd_in_path":"/home/dev/local_storage/20250401/20250401182801_350x350",
-        #     "sdd_out_path":"/home/dev/local_storage/20250401/20250401182801_350x350",
-        #     "save_visual" : self.__save_visual
+        # "date":"20250401182801",
+        # "mt_stand_height":350,
+        # "mt_stand_width":350,
+        # "sdd_in_path":"/home/dev/local_storage/20250401/20250401182801_350x350",
+        # "sdd_out_path":"/home/dev/nas_storage/20250401/20250401182801_350x350"
         # }
         # self.__job_queue.put(test_data)
 
@@ -153,7 +155,7 @@ class SDDModelInference(QThread):
                     self.__run_parallel_inference(model_root, job_description["sdd_in_path"], job_description["sdd_out_path"], job_desc=job_description)
 
                 self.update_status_signal.emit({"working":False})
-                #self.__delete_directory_background(job_description["sdd_in_path"])
+                self.__delete_directory_background(job_description["sdd_in_path"])
 
     def __create_session(self, model_path, gpu_id):
         so = ort.SessionOptions()
