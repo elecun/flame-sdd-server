@@ -123,7 +123,7 @@ class SDDModelInference(QThread):
 
                         if "hmd_signal_1_on" in data and "hmd_signal_2_on" in data and "online_signal_on" in data:
                             self.__console.info(f"<SDD Model Inference> ready : {data}")
-                            if data["online_signal_on"] and not data["hmd_signal_1_on"] and not data["hmd_signal_2_on"]:
+                            if not data["hmd_signal_1_on"] and not data["hmd_signal_2_on"] and data["online_signal_on"]:
                                 if "date" in self.__job_lv2_info and "mt_stand_height" in self.__job_lv2_info:
                                     lv2_date = self.__job_lv2_info["date"][0:8]  # YYYYMMDD
                                     lv2_mt_h = self.__job_lv2_info["mt_stand_height"]

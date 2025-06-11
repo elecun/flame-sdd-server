@@ -620,8 +620,10 @@ class AppWindow(QMainWindow):
             self.__console.error(f"DK Level2 Status Update Error : {e}")
 
     def __extract_mt_stand(self, preset_file_name:str):
+        self.__console.info(f"apply preset : {preset_file_name}")
         num = re.findall(r'\d+', preset_file_name)
-        if len(num)>2:
+        print(num)
+        if len(num)==2:
             return int(num[0]), int(num[1])
         else:
             self.__console.error("it must have 2 numbers in preset filename")
@@ -649,7 +651,10 @@ class AppWindow(QMainWindow):
             # update level2 info for model inference
             mt_h, mt_w = self.__extract_mt_stand(near_preset)
             if self.__sdd_inference_subscriber:
-                self.__sdd_inference_subscriber.add_job_lv2_info(data["date"],mt_h, mt_w)
+                self.__console.info("push level2 data into model inference")
+                self.__sdd_inference_subscriber.add_job_lv2_info(data["date"],
+                                                                 int(data.get("mt_stand_height", 0)/10),
+                                                                 int(data.get("mt_stand_width", 0)/10))
 
             # apply preset
             if near_preset:
