@@ -58,6 +58,7 @@ class SDDModelInference(QThread):
         self.__connection = connection
         self.__topic = topic
         self.__save_visual = save_visual
+        self.__job_lv2_info = {}
 
         # initialize zmq
         self.__socket = context.socket(zmq.SUB)
@@ -79,15 +80,19 @@ class SDDModelInference(QThread):
 
         # for test in local
         # test_data = {
-        # "date":"20250401182801",
-        # "mt_stand_height":350,
-        # "mt_stand_width":350,
-        # "sdd_in_path":"/home/dev/local_storage/20250401/20250401182801_350x350",
-        # "sdd_out_path":"/home/dev/nas_storage/20250401/20250401182801_350x350"
+        # "date":"20250527123558",
+        # "mt_stand_height":200,
+        # "mt_stand_width":200,
+        # "sdd_in_path":"/home/dk-sdd/local_storage/20250527/20250527123558_200x200",
+        # "sdd_out_path":"/home/dk-sdd/nas_storage/20250527/20250527123558_200x200"
         # }
         # self.__job_queue.put(test_data)
 
-
+    def add_job_lv2_info(self, date:str, mt_stand_height:int, mt_stand_width:int):
+        self.__job_lv2_info["date"] = date
+        self.__job_lv2_info["mt_stand_height"] = mt_stand_height
+        self.__job_lv2_info["mt_stand_width"] = mt_stand_width
+        self.__console.info(f"Updated the job desc to process the SDD (waiting for start)")
     
     def __delete_directory_background(self, path: str):
         def worker():
@@ -116,17 +121,20 @@ class SDDModelInference(QThread):
                     if topic.decode() == self.__topic:
                         data = json.loads(data.decode('utf8').replace("'", '"'))
 
-                        if "date" in data and "mt_stand_height" in data and "mt_stand_width" in data:
-                            lv2_date = data["date"][0:8]  # YYYYMMDD
-                            lv2_mt_h = data["mt_stand_height"]
-                            lv2_mt_w = data["mt_stand_width"]
-                            target_dir = pathlib.Path(lv2_date) / f"{data['date']}_{lv2_mt_h}x{lv2_mt_w}"
-                            data["sdd_in_path"] = self.__images_root_path / target_dir
-                            data["sdd_out_path"] = self.__out_root_path / target_dir
-                            data["save_visual"] = self.__save_visual
-                            self.__job_queue.put(data)
+                        if "hmd_signal_1_on" in data and "hmd_signal_2_on" in data and "online_signal_on" in data:
+                            self.__console.info(f"<SDD Model Inference> ready : {data}")
+                            if data["online_signal_on"] and not data["hmd_signal_1_on"] and not data["hmd_signal_2_on"]:
+                                if "date" in self.__job_lv2_info and "mt_stand_height" in self.__job_lv2_info:
+                                    lv2_date = self.__job_lv2_info["date"][0:8]  # YYYYMMDD
+                                    lv2_mt_h = self.__job_lv2_info["mt_stand_height"]
+                                    lv2_mt_w = self.__job_lv2_info["mt_stand_width"]
+                                    target_dir = pathlib.Path(lv2_date) / f"{self.__job_lv2_info['date']}_{lv2_mt_h}x{lv2_mt_w}"
+                                    data["sdd_in_path"] = self.__images_root_path / target_dir
+                                    data["sdd_out_path"] = self.__out_root_path / target_dir
+                                    data["save_visual"] = self.__save_visual
+                                    self.__job_queue.put(data)
 
-                            self.__console.info(f"<SDD Model Inference> Adding job to queue... (Remaining {self.__job_queue.qsize()})")
+                                self.__console.info(f"<SDD Model Inference> Adding job to queue... (Remaining {self.__job_queue.qsize()})")
 
             
             except json.JSONDecodeError as e:

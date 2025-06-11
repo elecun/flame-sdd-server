@@ -605,7 +605,6 @@ class AppWindow(QMainWindow):
             for camera_id in self.__config["camera_ids"]:
                 if str(camera_id) in status:
                     sum = sum + status[str(camera_id)]["frames"]
-            self.__console.debug(f"{sum}")
             self.label_total_images.setText(str(sum))
 
         except json.JSONDecodeError as e:
@@ -619,6 +618,14 @@ class AppWindow(QMainWindow):
                 self.set_status_inactive("label_level2_status")
         except Exception as e:
             self.__console.error(f"DK Level2 Status Update Error : {e}")
+
+    def __extract_mt_stand(self, preset_file_name:str):
+        num = re.findall(r'\d+', preset_file_name)
+        if len(num)>2:
+            return int(num[0]), int(num[1])
+        else:
+            self.__console.error("it must have 2 numbers in preset filename")
+        return int(0), int(0)
 
 
     def on_update_dk_level2_data(self, data:dict):
@@ -638,6 +645,13 @@ class AppWindow(QMainWindow):
             near_preset = self.__find_nearest_preset(h=int(data.get("mt_stand_height", 0)/10),
                                                      b=int(data.get("mt_stand_width", 0)/10),
                                                      filenames=self.__preset_files)
+            
+            # update level2 info for model inference
+            mt_h, mt_w = self.__extract_mt_stand(near_preset)
+            if self.__sdd_inference_subscriber:
+                self.__sdd_inference_subscriber.add_job_lv2_info(data["date"],mt_h, mt_w)
+
+            # apply preset
             if near_preset:
                 self.combobox_preset.setCurrentText(near_preset)
                 self.__console.info(f"Selected Nearest Preset : {near_preset}")
@@ -782,4 +796,7 @@ class AppWindow(QMainWindow):
                     nearest_file = filename
 
         return nearest_file
+    
+    def __push_inference_job(self, job_desc):
+        pass
 
