@@ -90,8 +90,8 @@ class SDDModelInference(QThread):
 
     def add_job_lv2_info(self, date:str, mt_stand_height:int, mt_stand_width:int):
         self.__job_lv2_info["date"] = date
-        self.__job_lv2_info["mt_stand_height"] = mt_stand_height
         self.__job_lv2_info["mt_stand_width"] = mt_stand_width
+        self.__job_lv2_info["mt_stand_height"] = mt_stand_height
         self.__console.info(f"Updated the job desc to process the SDD (waiting for start)")
     
     def __delete_directory_background(self, path: str):
@@ -128,7 +128,7 @@ class SDDModelInference(QThread):
                                     lv2_date = self.__job_lv2_info["date"][0:8]  # YYYYMMDD
                                     lv2_mt_h = self.__job_lv2_info["mt_stand_height"]
                                     lv2_mt_w = self.__job_lv2_info["mt_stand_width"]
-                                    target_dir = pathlib.Path(lv2_date) / f"{self.__job_lv2_info['date']}_{lv2_mt_h}x{lv2_mt_w}"
+                                    target_dir = pathlib.Path(lv2_date) / f"{self.__job_lv2_info['date']}_{lv2_mt_w}x{lv2_mt_h}"
                                     data["sdd_in_path"] = self.__images_root_path / target_dir
                                     data["sdd_out_path"] = self.__out_root_path / target_dir
                                     data["save_visual"] = self.__save_visual

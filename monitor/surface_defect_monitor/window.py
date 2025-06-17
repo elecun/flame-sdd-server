@@ -644,8 +644,8 @@ class AppWindow(QMainWindow):
             self.label_fm_length.setText(str(data.get("fm_length", 0)))
 
             # load nearest preset file
-            near_preset = self.__find_nearest_preset(h=int(data.get("mt_stand_height", 0)/10),
-                                                     b=int(data.get("mt_stand_width", 0)/10),
+            near_preset = self.__find_nearest_preset(h=int(data.get("mt_stand_width", 0)/10),
+                                                     b=int(data.get("mt_stand_height", 0)/10),
                                                      filenames=self.__preset_files)
             
             # update level2 info for model inference
@@ -653,8 +653,8 @@ class AppWindow(QMainWindow):
             if self.__sdd_inference_subscriber:
                 self.__console.info("push level2 data into model inference")
                 self.__sdd_inference_subscriber.add_job_lv2_info(data["date"],
-                                                                 int(data.get("mt_stand_height", 0)/10),
-                                                                 int(data.get("mt_stand_width", 0)/10))
+                                                                 int(data.get("mt_stand_width", 0)/10),
+                                                                 int(data.get("mt_stand_height", 0)/10))
 
             # apply preset
             if near_preset:
@@ -784,9 +784,10 @@ class AppWindow(QMainWindow):
     def __parse_filename(self, filename: str) -> Tuple[int, int]:
         match = re.match(r"(\d+)_(\d+)\.preset$", filename)
         if match:
-            height, width = map(int, match.groups())
-            return height, width
+            width, height = map(int, match.groups())
+            return width, height
         return None
+    
     def __find_nearest_preset(self, h:int, b:int, filenames:List[str]) -> str:
         min_distance = float('inf')
         nearest_file = None
@@ -794,8 +795,8 @@ class AppWindow(QMainWindow):
         for filename in filenames:
             parsed = self.__parse_filename(filename)
             if parsed:
-                height, width = parsed
-                distance = (height - h)**2 + (width - b)**2
+                width, height = parsed
+                distance = (width - h)**2 + (height - b)**2
                 if distance < min_distance:
                     min_distance = distance
                     nearest_file = filename
