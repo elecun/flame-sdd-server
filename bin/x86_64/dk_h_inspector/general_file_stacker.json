@@ -9,7 +9,7 @@
         ],
         "target_path":[
             {"use":true, "path":"/home/dk-sdd/nas_storage", "image_only":false},
-            {"use":false, "path":"/home/dk-sdd/local_storage", "image_only":true}
+            {"use":true, "path":"/home/dk-sdd/local_storage", "image_only":true}
         ],
         "use_level2_interface":true,
         "image_streams" : [

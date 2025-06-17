@@ -162,8 +162,8 @@ void general_file_stacker::_level2_dispatch_task(json target_path){
                     if(json_data.contains("date") && json_data.contains("mt_stand_height") and json_data.contains("mt_stand_width")){
                         string date = json_data["date"].get<string>().substr(0, 8);
                         target_dirname = fmt::format("{}_{}x{}",json_data["date"].get<string>(),
-                                                                int(json_data["mt_stand_height"].get<int>()/10),
-                                                                int(json_data["mt_stand_width"].get<int>()/10));
+                                                                int(json_data["mt_stand_width"].get<int>()/10),
+                                                                int(json_data["mt_stand_height"].get<int>()/10));
 
                         /* create directory & save level2 info (if backup only)*/
                         for(const auto& target:target_path){
