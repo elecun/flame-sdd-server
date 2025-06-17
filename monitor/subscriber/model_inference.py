@@ -96,13 +96,16 @@ class SDDModelInference(QThread):
     
     def __delete_directory_background(self, path: str):
         def worker():
-            if os.path.exists(path) and os.path.isdir(path):
-                shutil.rmtree(path)
-                self.__console.info(f"Deleted {path}")
-            else:
-                self.__console.error(f"{path} does not exist or is not a directory")
+            try:
+                if os.path.exists(path) and os.path.isdir(path):
+                    shutil.rmtree(path)
+                    self.__console.info(f"Deleted {path}")
+                else:
+                    self.__console.error(f"{path} does not exist or is not a directory")
+            except Exception as e:
+                self.__console.error(f"Failed to remove {path} : {e}")
 
-        thread = threading.Thread(target=worker)
+        thread = threading.Thread(target=worker, daemon=True)
         thread.start()
 
     def get_connection_info(self) -> str: # return connection address
