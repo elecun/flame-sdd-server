@@ -348,6 +348,7 @@ class AppWindow(QMainWindow):
 
     def on_btn_preset_load(self):
         selected_preset = self.combobox_preset.currentText()
+        self.__last_preset_file = selected_preset # update last preset
 
         if selected_preset:
             absolute_path = pathlib.Path(self.__config["preset_path"])/selected_preset
@@ -659,10 +660,10 @@ class AppWindow(QMainWindow):
             # apply preset
             if near_preset:
                 self.combobox_preset.setCurrentText(near_preset)
-                self.__console.info(f"Selected Nearest Preset : {near_preset}")
-                self.on_btn_preset_load()
                 if self.__config.get("use_nearest_preset_auto_select",False):
+                    self.__console.info(f"Auto Selected Nearest Preset : {near_preset}")
                     if self.__last_preset_file!=near_preset and self.__system_online: # set all if system is online
+                        self.on_btn_preset_load()
                         self.__console.info("Set focus, exposure time and light level by LV2 data")
                         self.on_btn_exposure_time_set_all()
                         time.sleep(0.1)
