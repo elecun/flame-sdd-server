@@ -33,6 +33,7 @@ import csv
 import glob
 import shutil
 import pytorch_ssim
+import stat
 
 
 class SDDModelInference(QThread):
