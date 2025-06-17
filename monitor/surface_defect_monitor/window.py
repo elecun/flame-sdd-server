@@ -653,8 +653,8 @@ class AppWindow(QMainWindow):
             if self.__sdd_inference_subscriber:
                 self.__console.info("push level2 data into model inference")
                 self.__sdd_inference_subscriber.add_job_lv2_info(data["date"],
-                                                                 int(data.get("mt_stand_width", 0)/10),
-                                                                 int(data.get("mt_stand_height", 0)/10))
+                                                                 mt_stand_height=int(data.get("mt_stand_height", 0)/10),
+                                                                 mt_stand_width=int(data.get("mt_stand_width", 0)/10))
 
             # apply preset
             if near_preset:
