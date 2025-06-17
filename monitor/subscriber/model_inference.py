@@ -94,11 +94,15 @@ class SDDModelInference(QThread):
         self.__job_lv2_info["mt_stand_height"] = mt_stand_height
         self.__console.info(f"Updated the job desc to process the SDD (waiting for start)")
     
+    def __remove_readonly(self, func, path, exc_info):
+        os.chmod(path, stat.S_IWRITE)
+        func(path)
+
     def __delete_directory_background(self, path: str):
         def worker():
             try:
                 if os.path.exists(path) and os.path.isdir(path):
-                    shutil.rmtree(path)
+                    shutil.rmtree(path, onerror=self.__remove_readonly)
                     self.__console.info(f"Deleted {path}")
                 else:
                     self.__console.error(f"{path} does not exist or is not a directory")
