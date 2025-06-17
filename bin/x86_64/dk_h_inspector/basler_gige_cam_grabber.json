@@ -4,7 +4,7 @@
 
     "parameters":{
         "realtime_monitoring":true,
-        "use_level2_interface":true,
+        "use_level2_interface":false,
         "preset_path":"/home/dk-sdd/dev/flame-sdd-server/bin/preset",
         "acquisition_mode":"Continuous",
         "trigger_selector":"FrameStart",

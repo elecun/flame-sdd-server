@@ -58,13 +58,13 @@ bool basler_gige_cam_grabber::on_init(){
         _image_stream_control_worker = thread(&basler_gige_cam_grabber::_image_stream_control_task, this);
 
         /* level2 interface worker */
-        if(parameters.contains("use_level2_interface")){
-            bool enable = parameters.value("use_level2_interface", false);
-            if(enable){
-                _level2_dispatch_worker = thread(&basler_gige_cam_grabber::_level2_dispatch_task, this);
-                logger::info("[{}] Level2 Data interface is running...", get_name());
-            }
-        }
+        // if(parameters.contains("use_level2_interface")){
+        //     bool enable = parameters.value("use_level2_interface", false);
+        //     if(enable){
+        //         _level2_dispatch_worker = thread(&basler_gige_cam_grabber::_level2_dispatch_task, this);
+        //         logger::info("[{}] Level2 Data interface is running...", get_name());
+        //     }
+        // }
 
     }
     catch(const GenericException& e){
