@@ -28,7 +28,7 @@ bool general_file_stacker::on_init(){
         for(const auto& stream:image_streams){
             int stream_id = stream["id"].get<int>();
             _timeout_flag.emplace(stream_id, false);
-            _stacker_worker[stream_id] = thread(&general_file_stacker::_image_stacker_task, this, stream_id, stream);
+            _stacker_worker[stream_id] = thread(&general_file_stacker::_image_stacker_task_opt, this, stream_id, stream);
             logger::info("[{}] Stream #{} stacker is running...", get_name(), stream_id);
             
             /* set stream counter */
@@ -86,6 +86,61 @@ void general_file_stacker::on_message(){
     
 }
 
+
+void general_file_stacker::_image_stacker_task_opt(int stream_id, json stream_param){
+    try{
+        string portname = fmt::format("image_stream_{}", stream_id);
+        string working_dirname = stream_param.value("dirname", fmt::format("tmp_{}", stream_id));
+
+        while(!_worker_stop.load()){
+            try{
+
+                /* recv stream data */
+                zmq::multipart_t msg_multipart;
+                bool success = msg_multipart.recv(*get_port(portname));
+
+                /* received success */
+                if(success){
+
+                    /* pop 2 data chunk from message */
+                    string camera_id = msg_multipart.popstr();
+                    zmq::message_t msg_image = msg_multipart.pop();
+                    string filename = fmt::format("{}_{}.jpg", camera_id, ++_stream_counter[stream_id]);
+
+                    /* save into multiple directories (camera_*)*/
+                    for(auto& path:_backup_dir_path){
+                        fs::path camera_working_dir = path / working_dirname;
+                        if(!fs::exists(camera_working_dir)){
+                            fs::create_directories(camera_working_dir);
+                            logger::info("[{}] Stream #{} data saves into {}", get_name(), stream_id, camera_working_dir.string());
+                        }
+
+                        std::ofstream out(fmt::format("{}/{}", camera_working_dir.string(), filename), std::ios::binary);
+                        out.write(static_cast<char*>(msg_image.data()), msg_image.size());
+                        out.close();
+                    }
+
+                    // release explicit
+                    msg_image = zmq::message_t();
+                }
+            }
+            catch(const zmq::error_t& e){
+                break;
+            }
+        }
+
+    }
+    catch(const zmq::error_t& e){
+        logger::error("[{}] Pipeline error : {}", get_name(), e.what());
+    }
+    catch(const std::runtime_error& e){
+        logger::error("[{}] Runtime error occurred!", get_name());
+    }
+    catch(const json::parse_error& e){
+        logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());
+    }
+
+}
 
 void general_file_stacker::_image_stacker_task(int stream_id, json stream_param)
 {

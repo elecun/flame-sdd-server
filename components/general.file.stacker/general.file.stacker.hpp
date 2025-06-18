@@ -51,6 +51,7 @@ class general_file_stacker : public flame::component::object {
     private:
         /* subtasks */
         void _image_stacker_task(int stream_id, json stream_param);
+        void _image_stacker_task_opt(int stream_id, json stream_param);
         void _level2_dispatch_task(json target_path);
 
 }; /* class */
