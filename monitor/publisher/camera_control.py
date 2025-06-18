@@ -39,7 +39,7 @@ class CameraControlPublisher(QObject):
 
         # create context for zmq requester
         self.__socket = context.socket(zmq.PUB)
-        self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 1000)
+        self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 100)
         self.__socket.setsockopt(zmq.LINGER, 0)
         self.__socket.bind(connection)
 

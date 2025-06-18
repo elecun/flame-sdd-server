@@ -93,6 +93,13 @@ $(BUILDDIR)driver.o: $(INCLUDES)/flame/component/driver.cc
 $(BUILDDIR)config.o: $(INCLUDES)/flame/config.cc
 						$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
 
+# for test
+
+test_image_pusher.comp:	$(BUILDDIR)test.image.pusher.o
+							$(CC) $(LDFLAGS) $(LD_LIBRARY_PATH) -shared -o $(BUILDDIR)/$@ $^ $(LDFLAGS) $(LDLIBS) -lopencv_core -lopencv_imgcodecs -lopencv_highgui -lopencv_imgproc
+$(BUILDDIR)test.image.pusher.o:	$(CURRENT_DIR)/components/test.image.pusher/test.image.pusher.cc
+									$(CC) $(CXXFLAGS) $(INCLUDE_DIR) -c $^ -o $@
+
 # for dk project
 
 basler_gige_cam_grabber.comp:	$(BUILDDIR)basler.gige.cam.grabber.o

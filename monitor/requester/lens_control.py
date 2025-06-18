@@ -45,7 +45,7 @@ class LensControlRequester(QObject):
 
         # create context for zmq requester
         self.__socket = context.socket(zmq.PUB)
-        self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 1000)
+        self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 100)
         self.__socket.connect(connection)
         #self.__lens_control_loop = asyncio.get_event_loop()
 

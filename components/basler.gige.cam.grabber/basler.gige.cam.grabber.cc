@@ -365,31 +365,35 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                                 /* camera grab status update */
                                 _camera_grab_counter[camera_id].store(++camera_grab_counter);
     
-                                pipe_data msg_id(id_str.data(), id_str.size());
-                                pipe_data msg_image(serialized_image.data(), serialized_image.size());
+                                // pipe_data msg_id(id_str.data(), id_str.size());
+                                // pipe_data msg_image(serialized_image.data(), serialized_image.size());
     
                                 string image_stream_port = fmt::format("image_stream_{}", camera_id);
                                 if(get_port(image_stream_port)->handle()!=nullptr){
                                     zmq::multipart_t msg_multipart_image;
                                     msg_multipart_image.addstr(id_str);
                                     msg_multipart_image.addmem(serialized_image.data(), serialized_image.size());
-                                    msg_multipart_image.send(*get_port(image_stream_port), ZMQ_DONTWAIT);
+                                    bool sent = msg_multipart_image.send(*get_port(image_stream_port), ZMQ_DONTWAIT);
+                                    if(!sent){
+                                        logger::warn("[{}] Failed to send image for camera {}", get_name(), camera_id);
+                                    }
+                                    msg_multipart_image.clear();
                                 }
                                 else{
                                     logger::warn("[{}] {} socket handle is not valid ", get_name(), camera_id);
                                 }
                             }
+                            serialized_image.clear();
     
     
                             /* publish for monitoring (size reduction for performance)*/
                             if(_prof_realtime_monitoring.load()){
                                 string topic_str = fmt::format("image_stream_monitor_{}", camera_id);
-                                pipe_data msg_topic(topic_str.data(), topic_str.size());
                                 cv::Mat monitor_image;
                                 cv::resize(image, monitor_image, cv::Size(image.cols/6, image.rows/6));
                                 std::vector<unsigned char> serialized_monitor_image;
                                 cv::imencode(".jpg", monitor_image, serialized_monitor_image);
-                                pipe_data msg_monitor_image(serialized_monitor_image.data(), serialized_monitor_image.size());
+                                // pipe_data msg_monitor_image(serialized_monitor_image.data(), serialized_monitor_image.size());
     
                                 zmq::multipart_t msg_multipart;
                                 msg_multipart.addstr(topic_str);
@@ -397,9 +401,14 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                                 msg_multipart.addmem(serialized_monitor_image.data(), serialized_monitor_image.size());
     
                                 string camera_port = fmt::format("image_stream_monitor_{}", camera_id); //portname = topic
-                                msg_multipart.send(*get_port(camera_port), ZMQ_DONTWAIT);
+                                bool sent = msg_multipart.send(*get_port(camera_port), ZMQ_DONTWAIT);
+                                if(!sent){
+                                    logger::warn("[{}] Failed to send monitoring image for camera {}", get_name(), camera_id);
+                                }
+                                msg_multipart.clear();
+                                serialized_monitor_image.clear();
     
-                                auto end = std::chrono::system_clock::now();
+                                // auto end = std::chrono::system_clock::now();
                                 //spdlog::info("Processing Time : {} sec", std::chrono::duration<double, std::chrono::seconds::period>(end - start).count());
                                 //logger::info("[{}] {} sent monitor image", get_name(), camera_id);
                             }

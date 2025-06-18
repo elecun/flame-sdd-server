@@ -21,6 +21,7 @@ bool general_file_stacker::on_init(){
 
     json target_path = parameters["target_path"];
 
+
     /* image stacker worker */
     if(parameters.contains("image_streams") && parameters["image_streams"].is_array()){
         json image_streams = parameters["image_streams"];
@@ -102,6 +103,8 @@ void general_file_stacker::_image_stacker_task_opt(int stream_id, json stream_pa
                 /* received success */
                 if(success){
 
+                    logger::info("get a message from {}", stream_id);
+
                     /* pop 2 data chunk from message */
                     string camera_id = msg_multipart.popstr();
                     zmq::message_t msg_image = msg_multipart.pop();
@@ -122,6 +125,7 @@ void general_file_stacker::_image_stacker_task_opt(int stream_id, json stream_pa
 
                     // release explicit
                     msg_image = zmq::message_t();
+                    msg_multipart.clear();
                 }
             }
             catch(const zmq::error_t& e){

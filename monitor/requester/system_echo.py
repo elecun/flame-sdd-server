@@ -45,7 +45,7 @@ class SystemEchoRequester(QThread):
 
         # intialize zmq
         self.__socket = context.socket(zmq.REQ)
-        self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 5000)
+        self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 100)
         self.__socket.setsockopt(zmq.RCVTIMEO, 500)
         self.__socket.setsockopt(zmq.LINGER, 0)
         self.__socket.connect(connection)

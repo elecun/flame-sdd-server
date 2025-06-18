@@ -3,13 +3,9 @@
     "verbose" : 1,
 
     "parameters":{
-        "target_path_backup":[
-            {"path":"/home/dk-sdd/nas_storage", "backup_only":true},
-            {"path":"/home/dk-sdd/local_storage", "backup_only":false}
-        ],
         "target_path":[
-            {"use":true, "path":"/home/dk-sdd/nas_storage", "image_only":false},
-            {"use":true, "path":"/home/dk-sdd/local_storage", "image_only":true}
+            {"use":true, "path":"/home/dev/nas_storage", "image_only":false},
+            {"use":true, "path":"/home/dev/local_storage", "image_only":true}
         ],
         "use_level2_interface":true,
         "image_streams" : [
@@ -38,61 +34,61 @@
             "transport" : "inproc",
             "socket_type" : "pull",
             "queue_size" : 100,
-            "timeout_ms":300
+            "timeout_ms":100
         },
         "image_stream_2" : {
             "transport" : "inproc",
             "socket_type" : "pull",
             "queue_size" : 100,
-            "timeout_ms":300
+            "timeout_ms":100
         },
         "image_stream_3" : {
             "transport" : "inproc",
             "socket_type" : "pull",
             "queue_size" : 100,
-            "timeout_ms":300
+            "timeout_ms":100
         },
         "image_stream_4" : {
             "transport" : "inproc",
             "socket_type" : "pull",
             "queue_size" : 100,
-            "timeout_ms":300
+            "timeout_ms":100
         },
         "image_stream_5" : {
             "transport" : "inproc",
             "socket_type" : "pull",
             "queue_size" : 100,
-            "timeout_ms":300
+            "timeout_ms":100
         },
         "image_stream_6" : {
             "transport" : "inproc",
             "socket_type" : "pull",
             "queue_size" : 100,
-            "timeout_ms":300
+            "timeout_ms":100
         },
         "image_stream_7" : {
             "transport" : "inproc",
             "socket_type" : "pull",
             "queue_size" : 100,
-            "timeout_ms":300
+            "timeout_ms":100
         },
         "image_stream_8" : {
             "transport" : "inproc",
             "socket_type" : "pull",
             "queue_size" : 100,
-            "timeout_ms":300
+            "timeout_ms":100
         },
         "image_stream_9" : {
             "transport" : "inproc",
             "socket_type" : "pull",
             "queue_size" : 100,
-            "timeout_ms":300
+            "timeout_ms":100
         },
         "image_stream_10" : {
             "transport" : "inproc",
             "socket_type" : "pull",
             "queue_size" : 100,
-            "timeout_ms":300
+            "timeout_ms":100
         },
         "lv2_dispatch" : {
             "transport" : "tcp",

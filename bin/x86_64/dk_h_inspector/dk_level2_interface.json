@@ -19,7 +19,7 @@
             "host" : "*",
             "port" : 5008,
             "socket_type" : "pub",
-            "queue_size" : 1000
+            "queue_size" : 100
         },
         "lv2_dispatch" : {
             "transport" : "tcp",
