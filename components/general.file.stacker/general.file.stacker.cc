@@ -103,8 +103,6 @@ void general_file_stacker::_image_stacker_task_opt(int stream_id, json stream_pa
                 /* received success */
                 if(success){
 
-                    logger::info("get a message from {}", stream_id);
-
                     /* pop 2 data chunk from message */
                     string camera_id = msg_multipart.popstr();
                     zmq::message_t msg_image = msg_multipart.pop();

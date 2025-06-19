@@ -25,7 +25,7 @@ class LensController(QThread):
 
         # initialize zmq
         self.__socket = context.socket(zmq.SUB)
-        self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 1000)
+        self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 100)
         self.__socket.connect(connection)
         self.__socket.setsockopt_string(zmq.SUBSCRIBE, topic)
 
