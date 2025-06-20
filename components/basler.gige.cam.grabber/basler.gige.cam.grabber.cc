@@ -337,8 +337,7 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                 
                 bool success = camera->RetrieveResult(5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException); //trigger mode makes it blocked
                 if(!success){
-                    logger::warn("[{}] Camera #{} will be terminated by force.", get_name(), camera_id);
-                    break;
+                    logger::error("[{}] Camera #{} grab failed", get_name(), camera_id);
                 }
                 else { // no timeout, success
                     if(ptrGrabResult.IsValid()){
@@ -414,8 +413,12 @@ void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversal
                             }
                         }
                         else{
-                            logger::warn("[{}] Error-code({}) : {}", get_name(), ptrGrabResult->GetErrorCode(), ptrGrabResult->GetErrorDescription().c_str());
+                            logger::error("[{}] Grab success, but Camera #{} raises Error (code({}) : {}", get_name(), camera_id, ptrGrabResult->GetErrorCode(), ptrGrabResult->GetErrorDescription().c_str());
                         }
+                        
+                    }
+                    else{
+                        logger::error("[{}] Camera #{} Grab result is invalid", get_name(), camera_id);
                     }
                 }
                 
