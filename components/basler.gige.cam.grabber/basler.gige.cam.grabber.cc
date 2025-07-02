@@ -33,7 +33,7 @@ bool basler_gige_cam_grabber::on_init(){
 
         /* pylon initialize */
         PylonInitialize();
-
+device
         /* find GigE cameras in same netwrok */
         CTlFactory& tlFactory = CTlFactory::GetInstance();
         DeviceInfoList_t devices;
