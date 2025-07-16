@@ -35,6 +35,8 @@ import shutil
 import pytorch_ssim
 import stat
 
+from xgboost import XGBClassifier
+
 
 class SDDModelInference(QThread):
     processing_result_signal = pyqtSignal(str, int) #result file path, fm_length
@@ -54,6 +56,10 @@ class SDDModelInference(QThread):
         self.__images_root_path = pathlib.Path(in_path_root)
         self.__out_root_path = pathlib.Path(out_path_root)
         self.__job_queue = queue.Queue()
+
+        # add xgboost (25.07.17)
+        self.__xgb_model = XGBClassifier()
+        self.__xgb_model.load_model(f"{self.__model_config['model_root']}/'xgboost_model.json'")
 
         # store parameters
         self.__connection = connection
@@ -196,7 +202,13 @@ class SDDModelInference(QThread):
         grad_mae = self.__compute_grad_mae(orig.unsqueeze(0).unsqueeze(0), recon.unsqueeze(0).unsqueeze(0))
         lap_diff = self.__compute_laplacian_variance_diff(orig, recon)
         pix_sum = self.__compute_pixel_sum(orig, recon)
-        result = self.__logistic_score([mae, ssim, grad_mae, lap_diff, pix_sum])
+
+        # 1. logistic score method
+        #result = self.__logistic_score([mae, ssim, grad_mae, lap_diff, pix_sum])
+
+        # 2. XGBoost method
+        xgb_input = np.array([[mae, ssim, grad_mae, lap_diff, pix_sum]])
+        result = int(xgb_model.predict(xgb_input)[0])
 
         result_queue.put([
             os.path.basename(img_path),
