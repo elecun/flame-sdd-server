@@ -70,6 +70,7 @@ class basler_gige_cam_grabber : public flame::component::object {
         unordered_map<int, atomic<unsigned long long>> _camera_grab_counter; // (camera id, counter)
         unordered_map<string, json> _camera_status; // (camera id(string), status)
         unordered_map<int, atomic<int>> _camera_exposure_time; // (camera id, exposure time)
+        unordered_map<int, atomic<double>> _camera_coreboard_temperature; // (camera id, coreboard temperature)
 
         /* for profiles */
         atomic<bool> _prof_realtime_monitoring {false};

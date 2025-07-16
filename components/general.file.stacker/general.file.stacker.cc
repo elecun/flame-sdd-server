@@ -127,7 +127,10 @@ void general_file_stacker::_image_stacker_task_opt(int stream_id, json stream_pa
                 }
             }
             catch(const zmq::error_t& e){
-                break;
+                logger::error("[{}] stacking pipeline error {}", get_name(), e.what());
+            }
+            catch(std::exception& e){
+                logger::error("[{}] stacking general error {}", get_name(), e.what());
             }
         }
 
