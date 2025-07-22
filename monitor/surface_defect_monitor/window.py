@@ -110,7 +110,7 @@ class AppWindow(QMainWindow):
 
         # variables
         self.__last_preset_file = "" # last preset file
-        self.__system_online = False # system is on-line
+        self.__system_online = True # system is on-line (default)
 
         try:            
             if "gui" in config:
@@ -182,7 +182,7 @@ class AppWindow(QMainWindow):
                 self.set_status_inactive("label_level2_status")
                 self.set_status_inactive("label_dmx_status")
                 self.set_status_inactive("label_nas_status")
-                self.set_status_inactive("label_line_signal_status")
+                self.set_status_active("label_line_signal_status")
                 self.set_status_inactive("label_hmd_signal_1_status")
                 self.set_status_inactive("label_hmd_signal_2_status")
                 self.set_status_inactive("label_sdd_processing_status")               

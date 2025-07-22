@@ -503,7 +503,10 @@ void basler_gige_cam_grabber::_level2_dispatch_task(){
 
             }
             catch(const zmq::error_t& e){
-                break;
+                logger::error("[{}] Pipeline error : {}", get_name(), e.what());
+            }
+            catch(const std::exception& e){
+                logger::error("[{}] Standard system error : {}", get_name(), e.what());
             }
         }
     }
