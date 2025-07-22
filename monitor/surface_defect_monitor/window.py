@@ -413,6 +413,7 @@ class AppWindow(QMainWindow):
         brightness = []
         for idx, id in enumerate(self.__config["light_ids"]):
             light_value = self.findChild(QLineEdit, name=f"edit_light_level_value_{idx+1}").text()
+            self.__console.info(f"Light Value edit_light_level_value__{idx+1} : {light_value}") # !!! brightness 값에 loss가 발생하는 경우가 있는데, LOG를 찍으면 없어짐.
             if light_value is not None:
                 brightness.append(int(light_value))
             else:

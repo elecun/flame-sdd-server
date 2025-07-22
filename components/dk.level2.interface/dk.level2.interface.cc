@@ -228,7 +228,7 @@ void dk_level2_interface::_do_server_work(json parameters){
                                 msg_multipart.addstr(topic);
                                 msg_multipart.addstr(data);
                                 msg_multipart.send(*get_port("lv2_dispatch"), ZMQ_DONTWAIT);
-                                logger::info("[{}] Publish to lv2_dispatch : {}", get_name(), data);
+                                logger::info("[{}] Publish to lv2_dispatch", get_name());
                                 
                             }
                             else {
