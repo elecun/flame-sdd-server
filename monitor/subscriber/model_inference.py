@@ -208,7 +208,7 @@ class SDDModelInference(QThread):
 
         # 2. XGBoost method
         xgb_input = np.array([[mae, ssim, grad_mae, lap_diff, pix_sum]])
-        result = int(xgb_model.predict(xgb_input)[0])
+        result = int(self.__xgb_model.predict(xgb_input)[0])
 
         result_queue.put([
             os.path.basename(img_path),
