@@ -59,7 +59,7 @@ class SDDModelInference(QThread):
 
         # add xgboost (25.07.17)
         self.__xgb_model = XGBClassifier()
-        self.__xgb_model.load_model(f"{self.__model_config['model_root']}/'xgboost_model.json'")
+        self.__xgb_model.load_model(f"{self.__model_config['model_root']}/xgboost_model.json")
 
         # store parameters
         self.__connection = connection
