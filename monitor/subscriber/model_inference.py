@@ -37,7 +37,6 @@ import stat
 
 from xgboost import XGBClassifier
 
-
 class SDDModelInference(QThread):
     processing_result_signal = pyqtSignal(str, int) #result file path, fm_length
     update_status_signal = pyqtSignal(dict) # signal for connection status message
@@ -57,9 +56,8 @@ class SDDModelInference(QThread):
         self.__out_root_path = pathlib.Path(out_path_root)
         self.__job_queue = queue.Queue()
 
-        # add xgboost (25.07.17)
-        self.__xgb_model = XGBClassifier()
-        self.__xgb_model.load_model(f"{self.__model_config['model_root']}/xgboost_model.json")
+        # # add xgboost (25.07.17)
+        self.xgb_model = None
 
         # store parameters
         self.__connection = connection
@@ -87,11 +85,11 @@ class SDDModelInference(QThread):
 
         # for test in local
         # test_data = {
-        # "date":"20250527123558",
-        # "mt_stand_height":200,
+        # "date":"20250401194744",
+        # "mt_stand_height":500,
         # "mt_stand_width":200,
-        # "sdd_in_path":"/home/dk-sdd/local_storage/20250527/20250527123558_200x200",
-        # "sdd_out_path":"/home/dk-sdd/nas_storage/20250527/20250527123558_200x200"
+        # "sdd_in_path":"/home/dev/local_storage/20250401194744_500x200",
+        # "sdd_out_path":"/home/dev/local_storage/20250401194744_500x200"
         # }
         # self.__job_queue.put(test_data)
 
@@ -177,7 +175,7 @@ class SDDModelInference(QThread):
                     self.__run_parallel_inference(model_root, job_description["sdd_in_path"], job_description["sdd_out_path"], job_desc=job_description)
 
                 self.update_status_signal.emit({"working":False})
-                self.__delete_directory_background(job_description["sdd_in_path"])
+                # self.__delete_directory_background(job_description["sdd_in_path"])
 
     def __create_session(self, model_path, gpu_id):
         so = ort.SessionOptions()
@@ -204,11 +202,11 @@ class SDDModelInference(QThread):
         pix_sum = self.__compute_pixel_sum(orig, recon)
 
         # 1. logistic score method
-        #result = self.__logistic_score([mae, ssim, grad_mae, lap_diff, pix_sum])
+        # result = self.__logistic_score([mae, ssim, grad_mae, lap_diff, pix_sum])
 
         # 2. XGBoost method
         xgb_input = np.array([[mae, ssim, grad_mae, lap_diff, pix_sum]])
-        result = int(self.__xgb_model.predict(xgb_input)[0])
+        result = int(self.xgb_model.predict(xgb_input)[0])
 
         result_queue.put([
             os.path.basename(img_path),
@@ -238,6 +236,11 @@ class SDDModelInference(QThread):
 
 
     def __infer_worker(self, cams, model_path, gpu_id, input_root, result_queue, output_csv, save_visual, progress, total):
+
+        # # add xgboost model (25/07/24)
+        self.xgb_model = XGBClassifier(tree_method='gpu_hist', predictor="gpu_predictor")
+        self.xgb_model.load_model(f"{self.__model_config['model_root']}/xgboost_model.json")
+        
         session = self.__create_session(model_path, gpu_id)
         input_name = session.get_inputs()[0].name
 
@@ -259,6 +262,7 @@ class SDDModelInference(QThread):
         result_queue.put(None)  # 처리 끝났다고 알림
 
     def __run_parallel_inference(self, model_root:str, in_path:str, out_path:str, job_desc:dict):
+        
         camera_groups = {
             "vae_group_1_10_5_6.onnx_part1": {"model": f"{model_root}/vae_group_1_10_5_6.onnx", "cams": [1, 5], "gpu": 0},
             "vae_group_1_10_5_6.onnx_part2": {"model": f"{model_root}/vae_group_1_10_5_6.onnx", "cams": [6, 10], "gpu": 0},
@@ -266,6 +270,7 @@ class SDDModelInference(QThread):
             "vae_group_2_9_4_7.onnx_part2": {"model": f"{model_root}/vae_group_2_9_4_7.onnx", "cams": [7, 9], "gpu": 1},
             "vae_group_3_8.onnx": {"model": f"{model_root}/vae_group_3_8.onnx", "cams": [3, 8], "gpu": 0}
         }
+
         
         start_time = time.time()
 

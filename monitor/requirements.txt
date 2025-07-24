@@ -11,3 +11,5 @@ torch
 torchvision
 tqdm
 nvitop
+scikit-learn
+xgboost
