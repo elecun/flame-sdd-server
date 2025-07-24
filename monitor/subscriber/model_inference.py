@@ -100,19 +100,30 @@ class SDDModelInference(QThread):
         self.__console.info(f"Updated the job desc to process the SDD (waiting for start)")
     
     def __remove_readonly(self, func, path, exc_info):
-        os.chmod(path, stat.S_IWRITE)
-        func(path)
+        import stat
+        excvalue = exc_info[1]
+        if isinstance(excvalue, PermissionError):
+            os.chmod(path, stat.S_IWRITE)
+            func(path)
+        else:
+            raise
 
     def __delete_directory_background(self, path: str):
         def worker():
-            try:
-                if os.path.exists(path) and os.path.isdir(path):
-                    shutil.rmtree(path, onerror=self.__remove_readonly)
-                    self.__console.info(f"Deleted {path}")
-                else:
-                    self.__console.error(f"{path} does not exist or is not a directory")
-            except Exception as e:
-                self.__console.error(f"Failed to remove {path} : {e}")
+            max_attempts = 3
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    if os.path.exists(path) and os.path.isdir(path):
+                        shutil.rmtree(path, onerror=self.__remove_readonly)
+                        self.__console.info(f"Deleted {path}")
+                        return
+                    else:
+                        self.__console.error(f"{path} does not exist or is not a directory")
+                        return
+                except Exception as e:
+                    self.__console.error(f"Attempt {attempt}: Failed to remove {path} : {e}")
+                    time.sleep(0.1) 
+            self.__console.error(f"Failed to remove {path} after {max_attempts} attempts.")
 
         thread = threading.Thread(target=worker, daemon=True)
         thread.start()
@@ -175,7 +186,7 @@ class SDDModelInference(QThread):
                     self.__run_parallel_inference(model_root, job_description["sdd_in_path"], job_description["sdd_out_path"], job_desc=job_description)
 
                 self.update_status_signal.emit({"working":False})
-                # self.__delete_directory_background(job_description["sdd_in_path"])
+                self.__delete_directory_background(job_description["sdd_in_path"])
 
     def __create_session(self, model_path, gpu_id):
         so = ort.SessionOptions()
