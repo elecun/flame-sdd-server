@@ -72,8 +72,8 @@ void system_echo::_echo_worker_task(){
             logger::error("[{}] Pipeline error : {}", get_name(), e.what());
             break;
         }
-        catch(const std::runtime_error& e){
-            logger::error("[{}] Runtime error occurred!", get_name());
+        catch(const std::exception& e){
+            logger::error("[{}] Standard Exception : {}", get_name(), e.what());
         }
         catch(const json::parse_error& e){
             logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());

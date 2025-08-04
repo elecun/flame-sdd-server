@@ -503,20 +503,20 @@ void basler_gige_cam_grabber::_level2_dispatch_task(){
 
             }
             catch(const zmq::error_t& e){
-                logger::error("[{}] Pipeline error : {}", get_name(), e.what());
+                logger::error("[{}] Pipeline Exception : {}", get_name(), e.what());
             }
             catch(const std::exception& e){
-                logger::error("[{}] Standard system error : {}", get_name(), e.what());
+                logger::error("[{}] Standard Exception : {}", get_name(), e.what());
             }
         }
     }
     catch(const zmq::error_t& e){
-        logger::error("[{}] Pipeline error : {}", get_name(), e.what());
+        logger::error("[{}] Pipeline Exception : {}", get_name(), e.what());
     }
-    catch(const std::runtime_error& e){
-        logger::error("[{}] Runtime error occurred!", get_name());
+    catch(const std::exception& e){
+        logger::error("[{}] Standard Exception : {}", get_name(), e.what());
     }
     catch(const json::parse_error& e){
-        logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());
+        logger::error("[{}] JSON Parse Exception : {}", get_name(), e.what());
     }
 }

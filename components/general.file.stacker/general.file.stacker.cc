@@ -259,6 +259,9 @@ void general_file_stacker::_level2_dispatch_task(json target_path){
                                 }
 
                             }
+                            catch(const std::exception& e){
+                                logger::error("[{}] Standard Exception : {}", get_name(), e.what());
+                            }
                             catch(const fs::filesystem_error& e){
                                 logger::error("[{}] Create directory error : {}", get_name(), e.what());
                             }

@@ -150,8 +150,8 @@ void ni_daq_controller::_daq_control_task(){
     catch(const zmq::error_t& e){
         logger::error("[{}] Pipeline error : {}", get_name(), e.what());
     }
-    catch(const std::runtime_error& e){
-        logger::error("[{}] Runtime error occurred!", get_name());
+    catch(const std::exception& e){
+        logger::error("[{}] Standard Exception : {}", get_name(), e.what());
     }
     catch(const json::parse_error& e){
         logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());
@@ -179,8 +179,8 @@ void ni_daq_controller::_daq_pulse_gen_task(){
     catch(const zmq::error_t& e){
         logger::error("[{}] Pipeline error : {}", get_name(), e.what());
     }
-    catch(const std::runtime_error& e){
-        logger::error("[{}] Runtime error occurred!", get_name());
+    catch(const std::exception& e){
+        logger::error("[{}] Standard Exception : {}", get_name(), e.what());
     }
     catch(const json::parse_error& e){
         logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());
@@ -228,8 +228,8 @@ void ni_daq_controller::_daq_dio_read_task(){
     catch(const zmq::error_t& e){
         logger::error("[{}] Pipeline error : {}", get_name(), e.what());
     }
-    catch(const std::runtime_error& e){
-        logger::error("[{}] Runtime error occurred!", get_name());
+    catch(const std::exception& e){
+        logger::error("[{}] Standard Exception : {}", get_name(), e.what());
     }
     catch(const json::parse_error& e){
         logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());

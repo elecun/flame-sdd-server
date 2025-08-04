@@ -259,18 +259,13 @@ void dk_level2_interface::_do_server_work(json parameters){
                 });
 
             }
-            else{
-                
-            }
         }
         catch(const zmq::error_t& e){
+            logger::error("[{}] Pipeline Exception : {}", get_name(), e.what());
             break;
         }
         catch(const std::exception& e){
-            logger::error("[{}] extraction error : {}", get_name(), e.what());
-        }
-        catch(const std::bad_alloc& e){
-            logger::error("[{}] memory allocation error : {}", get_name(), e.what());
+            logger::error("[{}] Standard Exception : {}", get_name(), e.what());
         }
 
         this_thread::sleep_for(chrono::milliseconds(100));

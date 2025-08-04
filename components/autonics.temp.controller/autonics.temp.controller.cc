@@ -122,11 +122,11 @@ void autonics_temp_controller::on_loop(){
             msg_multipart.send(*get_port("temp_stream"), ZMQ_DONTWAIT);
         }
     }
-    catch(std::runtime_error& e){
-        logger::error("[{}] {}", get_name(), e.what());
+    catch(std::exception& e){
+        logger::error("[{}] Stardard Exception : {}", get_name(), e.what());
     }
     catch(const zmq::error_t& e){
-        logger::error("[{}] {}", get_name(), e.what());
+        logger::error("[{}] Pipeline Exception : {}", get_name(), e.what());
     }
 }
 
