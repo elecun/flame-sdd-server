@@ -213,6 +213,7 @@ void dk_level2_interface::_do_server_work(json parameters){
                                 data_pack["mt_stand_t1"] = stoi(remove_space(packet.cStandSize3, sizeof(packet.cStandSize3))); //t1
                                 data_pack["mt_stand_t2"] = stoi(remove_space(packet.cStandSize4, sizeof(packet.cStandSize4))); //t2
                                 data_pack["fm_length"] = stol(remove_space(packet.cFMLength, sizeof(packet.cFMLength))); //fm length
+                                data_pack["fm_speed"] = stoi(remove_space(packet.cFMSpeed, sizeof(packet.cFMSpeed))); //fm_speed
 
                                 logger::info("Level2 Info : {}x{}x{}/{}, ({})", 
                                                                     data_pack["mt_stand_height"].get<int>(),
@@ -267,6 +268,9 @@ void dk_level2_interface::_do_server_work(json parameters){
         }
         catch(const std::exception& e){
             logger::error("[{}] extraction error : {}", get_name(), e.what());
+        }
+        catch(const std::bad_alloc& e){
+            logger::error("[{}] memory allocation error : {}", get_name(), e.what());
         }
 
         this_thread::sleep_for(chrono::milliseconds(100));

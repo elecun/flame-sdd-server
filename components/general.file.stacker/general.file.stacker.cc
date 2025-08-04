@@ -249,6 +249,7 @@ void general_file_stacker::_level2_dispatch_task(json target_path){
                                                 lv2_file << "mt_stand_t1 : " << json_data["mt_stand_t1"].get<int>() << endl;
                                                 lv2_file << "mt_stand_t2 : " << json_data["mt_stand_t2"].get<int>() << endl;
                                                 lv2_file << "fm_length : " << json_data["fm_length"].get<long>() << endl;
+                                                lv2_file << "fm_speed : " << json_data["fm_speed"].get<int>() << endl;
                                                 lv2_file.flush();
                                                 lv2_file.close();
                                                 logger::info("[{}] Saved level2 info file : {}", get_name(), lv2_path);
