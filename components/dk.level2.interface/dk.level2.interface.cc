@@ -31,12 +31,52 @@ bool dk_level2_interface::on_init(){
             _client_worker = thread(&dk_level2_interface::_do_client_work, this, get_profile()->parameters());
         if(get_profile()->parameters().value("enable_sdd_host", true))
             _server_worker = thread(&dk_level2_interface::_do_server_work, this, get_profile()->parameters());
+        if(get_profile()->parameters().value("enable_line_check", true))
+            _line_check_worker = thread(&dk_level2_interface::_line_check_work, this, get_profile()->parameters());
     }
     catch(std::exception& e) {
         logger::error("[{}] Create client exception : {}", get_name(), e.what());
     }
 
     return true;
+}
+
+void dk_level2_interface::_line_check_work(json paramters){
+
+    while(!_worker_stop.load()){
+        try{
+
+            zmq::multipart_t msg_multipart;
+            bool success = msg_multipart.recv(*get_port("ni_daq_controller/line_signal"));
+            if(success){
+                string topic = msg_multipart.popstr();
+                string data = msg_multipart.popstr();
+                auto json_data = json::parse(data);
+
+                if(json_data.contains("hmd_signal_1_on") && json_data.contains("hmd_signal_2_on") && json_data.contains("online_signal_on")){
+                    bool hmd_signal_1_on = json_data["hmd_signal_1_on"].get<bool>();
+                    bool hmd_signal_2_on = json_data["hmd_signal_2_on"].get<bool>();
+                    bool online_signal_on = json_data["online_signal_on"].get<bool>();
+
+                    if(hmd_signal_1_on || hmd_signal_2_on){
+                        logger::info("[{}] Level2 Data usage will be discontinued", get_name());
+                        _ignore.store(true);
+                    }
+                    else {
+                        logger::info("[{}] Level2 Data will resume", get_name());
+                        _ignore.store(false);
+                    }
+                }
+            }
+        }
+        catch(const zmq::error_t& e){
+            logger::error("[{}] Pipeline Exception : {}", get_name(), e.what());
+        }
+        catch(const std::exception& e){
+            logger::error("[{}] Standard Exception : {}", get_name(), e.what());
+        }
+    }
+
 }
 
 void dk_level2_interface::_do_client_work(json parameters){
@@ -215,21 +255,23 @@ void dk_level2_interface::_do_server_work(json parameters){
                                 data_pack["fm_length"] = stol(remove_space(packet.cFMLength, sizeof(packet.cFMLength))); //fm length
                                 data_pack["fm_speed"] = stoi(remove_space(packet.cFMSpeed, sizeof(packet.cFMSpeed))); //fm_speed
 
-                                logger::info("Level2 Info : {}x{}x{}/{}, ({})", 
-                                                                    data_pack["mt_stand_height"].get<int>(),
-                                                                    data_pack["mt_stand_width"].get<int>(),
-                                                                    data_pack["mt_stand_t1"].get<int>(),
-                                                                    data_pack["mt_stand_t2"].get<int>(),
-                                                                    data_pack["fm_length"].get<long>());
+                                if(!_ignore.load()){
+                                    logger::info("Level2 Info : {}x{}x{}/{}, ({})", 
+                                                                        data_pack["mt_stand_height"].get<int>(),
+                                                                        data_pack["mt_stand_width"].get<int>(),
+                                                                        data_pack["mt_stand_t1"].get<int>(),
+                                                                        data_pack["mt_stand_t2"].get<int>(),
+                                                                        data_pack["fm_length"].get<long>());
 
-                                /* publish the level2 data via lv2_dispatch port */
-                                string topic = fmt::format("lv2_dispatch", get_name());
-                                string data = data_pack.dump();
-                                zmq::multipart_t msg_multipart;
-                                msg_multipart.addstr(topic);
-                                msg_multipart.addstr(data);
-                                msg_multipart.send(*get_port("lv2_dispatch"), ZMQ_DONTWAIT);
-                                logger::info("[{}] Publish to lv2_dispatch", get_name());
+                                    /* publish the level2 data via lv2_dispatch port */
+                                    string topic = fmt::format("lv2_dispatch", get_name());
+                                    string data = data_pack.dump();
+                                    zmq::multipart_t msg_multipart;
+                                    msg_multipart.addstr(topic);
+                                    msg_multipart.addstr(data);
+                                    msg_multipart.send(*get_port("lv2_dispatch"), ZMQ_DONTWAIT);
+                                    logger::info("[{}] Publish to lv2_dispatch", get_name());
+                                }
                                 
                             }
                             else {
@@ -295,6 +337,10 @@ void dk_level2_interface::on_close(){
     if(_server_worker.joinable()){
         logger::info("[{}] waiting for stopping server...", get_name());
         _server_worker.join();
+    }
+    if(_line_check_worker.joinable()){
+        logger::info("[{}] waiting for line check...", get_name());
+        _line_check_worker.join();
     }
 
     logger::info("[{}] Level2 Interface is now closed", get_name());

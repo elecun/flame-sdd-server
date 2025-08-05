@@ -43,13 +43,16 @@ class dk_level2_interface : public flame::component::object {
         /* worker */
         thread _client_worker;
         thread _server_worker;
+        thread _line_check_worker;
         atomic<bool> _worker_stop {false};
+        atomic<bool> _ignore { false }; // set true if MD signals on
         concurrent_queue<dk_sdd_alarm> _sdd_alarm_queue;
         concurrent_queue<dk_sdd_job_result> _sdd_job_result_queue;
 
         /* worker callback functions */
         void _do_client_work(json parameters);
         void _do_server_work(json parameters);
+        void _line_check_work(json paramters);
 
     private:
         /* useful functions */
