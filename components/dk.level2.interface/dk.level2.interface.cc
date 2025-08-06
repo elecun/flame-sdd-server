@@ -261,7 +261,8 @@ void dk_level2_interface::_do_server_work(json parameters){
                                                                         data_pack["mt_stand_width"].get<int>(),
                                                                         data_pack["mt_stand_t1"].get<int>(),
                                                                         data_pack["mt_stand_t2"].get<int>(),
-                                                                        data_pack["fm_length"].get<long>());
+                                                                        data_pack["fm_length"].get<long>(),
+                                                                        data_pack["fm_speed"].get<int>());
 
                                     /* publish the level2 data via lv2_dispatch port */
                                     string topic = fmt::format("lv2_dispatch", get_name());
