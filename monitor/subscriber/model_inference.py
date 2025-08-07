@@ -163,8 +163,8 @@ class SDDModelInference(QThread):
             except json.JSONDecodeError as e:
                 self.__console.critical(f"<SDD Model Inference>[DecodeError] {e}")
                 continue
-            except zmq.error.ZMQError as e:
                 self.__console.critical(f"<SDD Model Inference>[ZMQError] {e}")
+            except zmq.error.ZMQError as e:
                 break
             except Exception as e:
                 self.__console.critical(f"<SDD Model Inference>[Exception] {e}")
@@ -338,7 +338,49 @@ class SDDModelInference(QThread):
         print(f"\nTotal Inference Time: {elapsed:.2f} seconds")
 
         self.__console.info(f"<SDD Model Inference> Inference results saved to: {output_csv}")
-        self.processing_result_signal.emit(output_csv, job_desc.get("fm_length",100))
+        self.processing_result_signal.emit(output_csv, job_desc.get("fm_length",100)) # fm 길이로 변경해야 함
+
+        # 결함 파일 구분 (renaming filename)
+        rows = []
+        with open(output_csv, 'r', newline='') as f:
+            reader = csv.reader(f)
+            header = next(reader) # skip header (first list)
+            rows = [row for row in reader]
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            results = list(executor.map(lambda row: self.rename_file(row, out_path), rows))
+        renamed = [r for r in results if r==True]
+        self.__console.info(f"{len(renamed)}/{len(results)} file(s) are renamed for self-explanatory")
+
+    def rename_file(self, row, base_dir):
+        """ rename the filename by SDD result"""
+        filename = row[0].strip()
+        defect = row[-1].strip() # last column is defect flag
+
+        if defect != '1':
+            return False
+
+        if '_' not in filename:
+            return False
+
+        prefix = filename.split('_')[0]
+        subdir = f"camera_{prefix}"
+        src_path = os.path.join(base_dir, subdir, filename)
+
+        if not os.path.isfile(src_path):
+            return False
+
+        name, ext = os.path.splitext(filename)
+        dst_path = os.path.join(base_dir, subdir, f"{name}_x{ext}")
+
+        if os.path.exists(dst_path):
+            return False
+
+        try:
+            os.rename(src_path, dst_path)
+            return True
+        except Exception as e:
+            return False
+
 
     def __compute_mae(self, orig, recon):
         return torch.mean(torch.abs(orig - recon)).item()
