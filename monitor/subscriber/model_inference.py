@@ -18,7 +18,6 @@ import threading
 import time
 from typing import Any, Dict
 import torch
-import onnxruntime as ort #cpu verson
 import numpy as np
 import os
 import cv2
@@ -35,7 +34,36 @@ import shutil
 import pytorch_ssim
 import stat
 
+import re
+import torch.nn as nn
 from xgboost import XGBClassifier
+
+# ===== NEW: onnxruntime =====
+try:
+    import onnxruntime as ort
+except Exception as e:
+    ort = None
+
+# =========================
+# Index range per camera (inclusive)
+# =========================
+# IDX_FROM = 0
+# IDX_TO   = 9999
+
+# =========================
+# Global config (diff ¡æ mask ÀÏ°ü·ÎÁ÷)
+# =========================
+DIFF_THRESHOLD    = 70
+MIN_AREA          = 100
+USE_OPENING       = True
+OPEN_KERNEL_SIZE  = (100, 1)
+USE_PERCENTILE    = False
+PERCENTILE_P      = 95
+MIN_THRESH_FLOOR  = 50
+
+USE_HIGHPASS      = False
+HP_SIGMA          = 21
+
 
 class SDDModelInference(QThread):
     processing_result_signal = pyqtSignal(str, int) #result file path, fm_length
@@ -85,11 +113,11 @@ class SDDModelInference(QThread):
 
         # for test in local
         # test_data = {
-        # "date":"20250401194744",
-        # "mt_stand_height":500,
+        # "date":"20250804095316",
+        # "mt_stand_height":200,
         # "mt_stand_width":200,
-        # "sdd_in_path":"/home/dev/local_storage/20250401194744_500x200",
-        # "sdd_out_path":"/home/dev/local_storage/20250401194744_500x200"
+        # "sdd_in_path":"/home/dk-sdd/local_storage/20250804/20250804095316_200x200",
+        # "sdd_out_path":"/home/dk-sdd/nas_storage/20250804/20250804095316_200x200"
         # }
         # self.__job_queue.put(test_data)
 
@@ -100,13 +128,8 @@ class SDDModelInference(QThread):
         self.__console.info(f"Updated the job desc to process the SDD (waiting for start)")
     
     def __remove_readonly(self, func, path, exc_info):
-        import stat
-        excvalue = exc_info[1]
-        if isinstance(excvalue, PermissionError):
-            os.chmod(path, stat.S_IWRITE)
-            func(path)
-        else:
-            raise
+        os.chmod(path, stat.S_IWRITE)
+        func(path)
 
     def __delete_directory_background(self, path: str):
         def worker():
@@ -163,8 +186,8 @@ class SDDModelInference(QThread):
             except json.JSONDecodeError as e:
                 self.__console.critical(f"<SDD Model Inference>[DecodeError] {e}")
                 continue
-                self.__console.critical(f"<SDD Model Inference>[ZMQError] {e}")
             except zmq.error.ZMQError as e:
+                self.__console.critical(f"<SDD Model Inference>[ZMQError] {e}")
                 break
             except Exception as e:
                 self.__console.critical(f"<SDD Model Inference>[Exception] {e}")
@@ -174,7 +197,7 @@ class SDDModelInference(QThread):
         while not self.__inference_stop_event.is_set():
             time.sleep(0.5)
 
-            # checl if there is a job in the queue
+            # check if there is a job in the queue
             if not self.__job_queue.empty():
                 job_description = self.__job_queue.get()
                 self.__console.debug(f"<SDD Model Inference> Do Inference... (Remaining {self.__job_queue.qsize()})")
@@ -185,95 +208,12 @@ class SDDModelInference(QThread):
                 if "sdd_in_path" in job_description and "sdd_out_path" in job_description:
                     self.__run_parallel_inference(model_root, job_description["sdd_in_path"], job_description["sdd_out_path"], job_desc=job_description)
 
+                # status update & remove processed images
                 self.update_status_signal.emit({"working":False})
                 self.__delete_directory_background(job_description["sdd_in_path"])
 
-    def __create_session(self, model_path, gpu_id):
-        so = ort.SessionOptions()
-        so.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
-        return ort.InferenceSession(model_path, sess_options=so, providers=[("CUDAExecutionProvider", {"device_id": gpu_id})])
     
-    def __process_image(self, session, input_name, cam_id, img_path, result_queue, output_csv, save_visual, progress):
-        img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-        if cam_id in [6, 7, 8, 9, 10]:
-            img = cv2.flip(img, 1)
-        img = cv2.resize(img, (480, 300)).astype(np.float32) / 255.0
-        img_tensor = torch.tensor(img).unsqueeze(0).unsqueeze(0).to('cuda')  # GPU 텐서로 올림
-
-        # ONNX는 numpy만 받으므로 다시 CPU 텐서로 전송
-        output = session.run(None, {input_name: img_tensor.cpu().numpy()})[0]
-        recon = torch.tensor(output[0, 0]).to('cuda')
-        orig = img_tensor[0, 0].to(recon.device)
-
-        # 각종 메트릭 계산. GPU에서 가능하면 다 실행
-        mae = self.__compute_mae(orig, recon)
-        ssim = self.__compute_ssim(orig.unsqueeze(0).unsqueeze(0), recon.unsqueeze(0).unsqueeze(0))
-        grad_mae = self.__compute_grad_mae(orig.unsqueeze(0).unsqueeze(0), recon.unsqueeze(0).unsqueeze(0))
-        lap_diff = self.__compute_laplacian_variance_diff(orig, recon)
-        pix_sum = self.__compute_pixel_sum(orig, recon)
-
-        # 1. logistic score method
-        # result = self.__logistic_score([mae, ssim, grad_mae, lap_diff, pix_sum])
-
-        # 2. XGBoost method
-        xgb_input = np.array([[mae, ssim, grad_mae, lap_diff, pix_sum]])
-        result = int(self.xgb_model.predict(xgb_input)[0])
-
-        result_queue.put([
-            os.path.basename(img_path),
-            mae, ssim, grad_mae, lap_diff, pix_sum, result
-        ])
-
-        with progress.get_lock():
-            progress.value += 1
-
-        if save_visual:
-            # 시각화 저장
-            orig_img = (orig.cpu().numpy() * 255).astype(np.uint8)
-            recon_img = (recon.cpu().numpy() * 255).astype(np.uint8)
-            diff_img = np.abs(orig_img.astype(np.int16) - recon_img.astype(np.int16)).astype(np.uint8)
-            _, binary_diff = cv2.threshold(diff_img, 30, 255, cv2.THRESH_BINARY)
-            orig_img = cv2.rotate(orig_img, cv2.ROTATE_90_CLOCKWISE)
-            recon_img = cv2.rotate(recon_img, cv2.ROTATE_90_CLOCKWISE)
-            binary_diff = cv2.rotate(binary_diff, cv2.ROTATE_90_CLOCKWISE)
-            combined = cv2.hconcat([
-                cv2.cvtColor(orig_img, cv2.COLOR_GRAY2BGR),
-                cv2.cvtColor(recon_img, cv2.COLOR_GRAY2BGR),
-                cv2.cvtColor(binary_diff, cv2.COLOR_GRAY2BGR)
-            ])
-            vis_out_dir = os.path.join(os.path.dirname(output_csv), f"visual/camera_{cam_id}")
-            os.makedirs(vis_out_dir, exist_ok=True)
-            cv2.imwrite(os.path.join(vis_out_dir, os.path.basename(img_path)), combined)
-
-
-    def __infer_worker(self, cams, model_path, gpu_id, input_root, result_queue, output_csv, save_visual, progress, total):
-
-        # # add xgboost model (25/07/24)
-        self.xgb_model = XGBClassifier(tree_method='gpu_hist', predictor="gpu_predictor")
-        self.xgb_model.load_model(f"{self.__model_config['model_root']}/xgboost_model.json")
-        
-        session = self.__create_session(model_path, gpu_id)
-        input_name = session.get_inputs()[0].name
-
-        # 이미지 경로 수집
-        image_tasks = []
-        for cam_id in cams:
-            cam_folder = os.path.join(input_root, f"camera_{cam_id}")
-            for ext in ('*.jpg', '*.jpeg', '*.JPG', '*.JPEG'):
-                image_tasks.extend([(cam_id, img_path) for img_path in glob.glob(os.path.join(cam_folder, ext))])
-
-        # 이 프로세스 안에서 멀티스레드 돌려서 이미지 개별 처리
-        with ThreadPoolExecutor(max_workers=min(cpu_count(), 8)) as executor:
-            futures = []
-            for cam_id, img_path in image_tasks:
-                futures.append(executor.submit(self.__process_image, session, input_name, cam_id, img_path, result_queue, output_csv, save_visual, progress))
-            for f in futures:
-                f.result()
-
-        result_queue.put(None)  # 처리 끝났다고 알림
-
     def __run_parallel_inference(self, model_root:str, in_path:str, out_path:str, job_desc:dict):
-        
         camera_groups = {
             "vae_group_1_10_5_6.onnx_part1": {"model": f"{model_root}/vae_group_1_10_5_6.onnx", "cams": [1, 5], "gpu": 0},
             "vae_group_1_10_5_6.onnx_part2": {"model": f"{model_root}/vae_group_1_10_5_6.onnx", "cams": [6, 10], "gpu": 0},
@@ -281,7 +221,6 @@ class SDDModelInference(QThread):
             "vae_group_2_9_4_7.onnx_part2": {"model": f"{model_root}/vae_group_2_9_4_7.onnx", "cams": [7, 9], "gpu": 1},
             "vae_group_3_8.onnx": {"model": f"{model_root}/vae_group_3_8.onnx", "cams": [3, 8], "gpu": 0}
         }
-
         
         start_time = time.time()
 
@@ -326,7 +265,6 @@ class SDDModelInference(QThread):
 
         result_queue.close()
         result_queue.join_thread()
-
         pbar.close()
 
         os.makedirs(os.path.dirname(output_csv), exist_ok=True)
@@ -337,10 +275,11 @@ class SDDModelInference(QThread):
         elapsed = time.time() - start_time
         print(f"\nTotal Inference Time: {elapsed:.2f} seconds")
 
+        # end of inference & emit signal
         self.__console.info(f"<SDD Model Inference> Inference results saved to: {output_csv}")
-        self.processing_result_signal.emit(output_csv, job_desc.get("fm_length",100)) # fm 길이로 변경해야 함
+        self.processing_result_signal.emit(output_csv, job_desc.get("fm_length",100))
 
-        # 결함 파일 구분 (renaming filename)
+        # rename the detected defect image from result.csv file
         rows = []
         with open(output_csv, 'r', newline='') as f:
             reader = csv.reader(f)
@@ -350,6 +289,193 @@ class SDDModelInference(QThread):
             results = list(executor.map(lambda row: self.rename_file(row, out_path), rows))
         renamed = [r for r in results if r==True]
         self.__console.info(f"{len(renamed)}/{len(results)} file(s) are renamed for self-explanatory")
+
+
+    def __infer_worker(self, cams, model_path, gpu_id, input_root, result_queue, output_csv, save_visual, progress, total):
+
+        # # add xgboost model (25/07/24)
+        self.xgb_model = XGBClassifier(tree_method='gpu_hist', predictor="gpu_predictor")
+        self.xgb_model.load_model(f"{self.__model_config['model_root']}/xgboost_model.json")
+        print(f"{self.__model_config['model_root']}/xgboost_model.json")
+
+        if torch.cuda.is_available():
+            torch.cuda.set_device(gpu_id)
+        (sess, in_name, out_name), device, in_h, in_w = self.create_session_pth(model_path, gpu_id, in_h=300, in_w=480)
+        sobel_x, sobel_y = self._make_sobel(device)
+
+        # gather all images
+        image_tasks = []
+        for cam_id in cams:
+            cam_folder = os.path.join(input_root, f"camera_{cam_id}")
+            for ext in ('*.jpg', '*.jpeg', '*.JPG', '*.JPEG'):
+                image_tasks.extend([(cam_id, img_path) for img_path in glob.glob(os.path.join(cam_folder, ext))])
+
+        with ThreadPoolExecutor(max_workers=min(cpu_count(), 8)) as executor:
+            futures = []
+            for cam_id, img_path in image_tasks:
+                futures.append(executor.submit(
+                    self.process_image,
+                    (sess, in_name, out_name), device, cam_id, img_path, result_queue, output_csv, save_visual,
+                    sobel_x, sobel_y, in_h, in_w, progress
+                ))
+            for f in futures:
+                f.result()
+
+        result_queue.put(None)
+
+
+    def process_image(self, sess_pack, device, cam_id, img_path, result_queue, output_csv, save_visual,
+                  sobel_x, sobel_y, in_h, in_w, progress):
+        try:
+            sess, in_name, out_name = sess_pack
+            img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+            if img is None:
+                raise RuntimeError("Failed to read image")
+
+            if cam_id in [6, 7, 8, 9, 10]:
+                img = cv2.flip(img, 1)
+
+            img = cv2.resize(img, (in_w, in_h)).astype(np.float32) / 255.0
+
+            # ===== ONNX Ãß·Ð =====
+            onnx_in = img[np.newaxis, np.newaxis, :, :]  # (1,1,H,W), float32
+            onnx_out = sess.run([out_name], {in_name: onnx_in})[0]  # (1,1,H,W)
+
+            # torch ÅÙ¼­·Î º¯È¯(¸ÞÆ®¸¯ °è»ê¿ë)
+            recon = torch.from_numpy(onnx_out).to(device=device, dtype=torch.float32)  # (1,1,H,W)
+            recon2d = recon[0, 0]
+            orig_t = torch.from_numpy(img).to(device=device, dtype=torch.float32)      # (H,W)
+
+            # Metrics
+            mae = self.compute_mae(orig_t, recon2d)
+            ssim = self.compute_ssim(orig_t[None, None], recon2d[None, None])
+            grad_mae = self.compute_grad_mae(orig_t[None, None], recon2d[None, None], sobel_x, sobel_y)
+            lap_diff = self.compute_laplacian_variance_diff_torch(orig_t, recon2d)
+
+            orig_u8  = (orig_t.detach().cpu().numpy()  * 255).astype(np.uint8)
+            recon_u8 = (recon2d.detach().cpu().numpy() * 255).astype(np.uint8)
+            pix_sum = self.compute_pixel_sum(orig_u8, recon_u8)
+
+            # XGBoost ¿¹Ãø (+ ÇÈ¼¿ÇÕ 0ÀÌ¸é ¹«Á¶°Ç ¾çÇ°)
+            xgb_input = np.array([[mae, ssim, grad_mae, lap_diff, pix_sum]], dtype=np.float32)
+            result = int(self.xgb_model.predict(xgb_input)[0])
+            if pix_sum == 0:
+                result = 0
+
+            result_queue.put([
+                os.path.basename(img_path),
+                mae, ssim, grad_mae, lap_diff, pix_sum, result
+            ])
+
+        except Exception:
+            result_queue.put([
+                os.path.basename(img_path) if img_path else "unknown",
+                np.nan, np.nan, np.nan, np.nan, np.nan, -1
+            ])
+        finally:
+            with progress.get_lock():
+                progress.value += 1
+
+            if save_visual and 'orig_u8' in locals() and 'recon_u8' in locals():
+                try:
+                    mask255 = self.diff_to_mask(orig_u8, recon_u8, min_area=None, out_255=True)
+                    orig_v   = cv2.rotate(orig_u8,  cv2.ROTATE_90_CLOCKWISE)
+                    recon_v  = cv2.rotate(recon_u8, cv2.ROTATE_90_CLOCKWISE)
+                    binary_v = cv2.rotate(mask255,  cv2.ROTATE_90_CLOCKWISE)
+                    combined = cv2.hconcat([
+                        cv2.cvtColor(orig_v,  cv2.COLOR_GRAY2BGR),
+                        cv2.cvtColor(recon_v, cv2.COLOR_GRAY2BGR),
+                        cv2.cvtColor(binary_v, cv2.COLOR_GRAY2BGR),
+                    ])
+                    vis_out_dir = os.path.join(os.path.dirname(output_csv), f"visual/camera_{cam_id}")
+                    os.makedirs(vis_out_dir, exist_ok=True)
+                    cv2.imwrite(os.path.join(vis_out_dir, os.path.basename(img_path)), combined)
+                except Exception:
+                    pass
+
+    def create_session_pth(self, onnx_path, gpu_id, in_h=300, in_w=480):
+        device = torch.device(f"cuda:{gpu_id}" if torch.cuda.is_available() else "cpu")
+        sess, in_name, out_name = self.load_vae_from_onnx(onnx_path, gpu_id)
+        return (sess, in_name, out_name), device, in_h, in_w
+    
+    def load_vae_from_onnx(self, onnx_path: str, gpu_id: int):
+        assert ort is not None, "onnxruntime°¡ ¼³Ä¡µÇ¾î ÀÖÁö ¾Ê½À´Ï´Ù. (pip install onnxruntime-gpu ¶Ç´Â onnxruntime)"
+        providers = []
+        
+        if torch.cuda.is_available():
+            providers.append(('CUDAExecutionProvider', {'device_id': gpu_id}))
+        providers.append('CPUExecutionProvider')
+        sess = ort.InferenceSession(onnx_path, providers=providers)
+        in_name = sess.get_inputs()[0].name
+        out_name = sess.get_outputs()[0].name
+        return sess, in_name, out_name
+    
+    def compute_mae(self, orig, recon):
+        return torch.mean(torch.abs(orig - recon)).item()
+    
+    def compute_ssim(self, orig4d, recon4d):
+        return pytorch_ssim.ssim(orig4d, recon4d).item()
+    
+    def compute_grad_mae(self, orig4d, recon4d, sobel_x, sobel_y):
+        gox = torch.nn.functional.conv2d(orig4d, sobel_x, padding=1)
+        goy = torch.nn.functional.conv2d(orig4d, sobel_y, padding=1)
+        grx = torch.nn.functional.conv2d(recon4d, sobel_x, padding=1)
+        gry = torch.nn.functional.conv2d(recon4d, sobel_y, padding=1)
+        grad_orig = torch.sqrt(gox**2 + goy**2 + 1e-12)
+        grad_recon = torch.sqrt(grx**2 + gry**2 + 1e-12)
+        return torch.mean(torch.abs(grad_orig - grad_recon)).item()
+
+    def compute_laplacian_variance_diff_torch(self, orig2d_t: torch.Tensor, recon2d_t: torch.Tensor):
+        device = orig2d_t.device
+        lap_k = torch.tensor([[0, 1, 0],
+                            [1,-4, 1],
+                            [0, 1, 0]], dtype=torch.float32, device=device).view(1,1,3,3)
+        o = torch.nn.functional.conv2d(orig2d_t.view(1,1,*orig2d_t.shape), lap_k, padding=1)
+        r = torch.nn.functional.conv2d(recon2d_t.view(1,1,*recon2d_t.shape), lap_k, padding=1)
+        var_o = torch.var(o)
+        var_r = torch.var(r)
+        return float(torch.abs(var_o - var_r).item())
+
+    def compute_pixel_sum(self, orig2d_u8, recon2d_u8):
+        mask01 = self.diff_to_mask(orig2d_u8, recon2d_u8, min_area=MIN_AREA, out_255=False)
+        return int(mask01.sum())
+    
+    def diff_to_mask(self, orig_u8, recon_u8, *,
+                 use_percentile=USE_PERCENTILE, percentile_p=PERCENTILE_P,
+                 fixed_thr=DIFF_THRESHOLD, opening=USE_OPENING, open_kernel_size=OPEN_KERNEL_SIZE,
+                 min_area=None, out_255=True,
+                 highpass=USE_HIGHPASS, hp_sigma=HP_SIGMA):
+        img_o = orig_u8.astype(np.float32)
+        img_r = recon_u8.astype(np.float32)
+
+        if highpass:
+            blur_o = cv2.GaussianBlur(img_o, (0, 0), hp_sigma)
+            blur_r = cv2.GaussianBlur(img_r, (0, 0), hp_sigma)
+            img_o = cv2.addWeighted(img_o, 1.0, blur_o, -1.0, 0)
+            img_r = cv2.addWeighted(img_r, 1.0, blur_r, -1.0, 0)
+
+        diff = np.abs(img_o - img_r).astype(np.uint8)
+
+        thr = max(int(np.percentile(diff, percentile_p)), MIN_THRESH_FLOOR) if use_percentile else fixed_thr
+        _, mask = cv2.threshold(diff, thr, 255, cv2.THRESH_BINARY)
+
+        if opening:
+            k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, open_kernel_size)
+            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, k, iterations=1)
+
+        if min_area is not None:
+            num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(mask, connectivity=8)
+            clean = np.zeros_like(mask, dtype=np.uint8)
+            for i in range(1, num_labels):
+                if stats[i, cv2.CC_STAT_AREA] >= min_area:
+                    clean[labels == i] = 255
+            mask = clean
+
+        return mask if out_255 else (mask > 0).astype(np.uint8)
+
+    def __diff_to_binary(self, orig_u8, recon_u8):
+        return self.diff_to_mask(orig_u8, recon_u8, min_area=None, out_255=True)
+
 
     def rename_file(self, row, base_dir):
         """ rename the filename by SDD result"""
@@ -381,49 +507,6 @@ class SDDModelInference(QThread):
         except Exception as e:
             return False
 
-
-    def __compute_mae(self, orig, recon):
-        return torch.mean(torch.abs(orig - recon)).item()
-
-    def __compute_ssim(self, orig, recon):
-        return pytorch_ssim.ssim(orig, recon).item()
-    
-    def __compute_grad_mae(self, orig, recon):
-        sobel_x = torch.tensor([[[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]], dtype=torch.float32, device=orig.device).unsqueeze(0)
-        sobel_y = torch.tensor([[[-1, -2, -1], [0, 0, 0], [1, 2, 1]]], dtype=torch.float32, device=orig.device).unsqueeze(0)
-        grad_orig = torch.sqrt(
-            torch.nn.functional.conv2d(orig, sobel_x, padding=1)**2 +
-            torch.nn.functional.conv2d(orig, sobel_y, padding=1)**2
-        )
-        grad_recon = torch.sqrt(
-            torch.nn.functional.conv2d(recon, sobel_x, padding=1)**2 +
-            torch.nn.functional.conv2d(recon, sobel_y, padding=1)**2
-        )
-        return torch.mean(torch.abs(grad_orig - grad_recon)).item()
-
-    def __compute_laplacian_variance_diff(self, orig, recon):
-        var_orig = np.var(cv2.Laplacian(orig.cpu().numpy().astype(np.float64), cv2.CV_64F))
-        var_recon = np.var(cv2.Laplacian(recon.cpu().numpy().astype(np.float64), cv2.CV_64F))
-        return abs(var_orig - var_recon)
-
-    def __compute_pixel_sum(self, orig, recon):
-        diff = torch.abs(orig - recon) * 255
-        binary = (diff > 30).int()
-        return binary.sum().item()
-    
-    def __logistic_score(self, metrics):
-        mae, ssim, grad_mae, lap_diff, pix_sum = metrics
-        score = (
-            318.423821 * mae +
-            21.601394 * ssim +
-            -26.708228 * grad_mae +
-            357.830399 * lap_diff +
-            -0.000003 * pix_sum +
-            -24.372392
-        )
-        prob = 1 / (1 + np.exp(-score))
-        return 1 if prob > 0.5 else 0
-
     def close(self):
         """ close the socket and context """
 
@@ -444,3 +527,12 @@ class SDDModelInference(QThread):
         self.__inference_stop_event.set()
         self.__console.info(f"<SDD Model Inference> Waiting for job done...")
         self.__inference_job_worker.join()
+    
+    def _make_sobel(self, device):
+        sobel_x = torch.tensor([[-1, 0, 1],
+                                [-2, 0, 2],
+                                [-1, 0, 1]], dtype=torch.float32, device=device).view(1,1,3,3)
+        sobel_y = torch.tensor([[-1, -2, -1],
+                                [ 0,  0,  0],
+                                [ 1,  2,  1]], dtype=torch.float32, device=device).view(1,1,3,3)
+        return sobel_x, sobel_y
