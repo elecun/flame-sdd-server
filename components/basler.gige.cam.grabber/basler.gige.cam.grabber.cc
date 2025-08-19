@@ -269,182 +269,187 @@ void basler_gige_cam_grabber::_image_stream_control_task(){
 }
 
 void basler_gige_cam_grabber::_image_stream_task(int camera_id, CBaslerUniversalInstantCamera* camera, json parameters){
-    try{
-        camera->Open();
-        string acquisition_mode = parameters.value("acquisition_mode", "Continuous"); // Continuous, SingleFrame, MultiFrame
-        double acquisition_fps = parameters.value("acquisition_fps", 30.0);
-        string trigger_selector = parameters.value("trigger_selector", "FrameStart");
-        string trigger_mode = parameters.value("trigger_mode", "On");
-        string trigger_source = parameters.value("trigger_source", "Line2");
-        string trigger_activation = parameters.value("trigger_activation", "RisingEdge");
-        int heartbeat_timeout = parameters.value("heartbeat_timeout", 5000);
-        
-        
-        // camera exposure time set (initial)
-        for(auto& param:parameters["cameras"]){
-            int id = param["id"].get<int>();
-            if(id==camera_id){
-                double exposure_time = param.value("exposure_time", 5000.0);
-                CEnumerationPtr(camera->GetNodeMap().GetNode("ExposureAuto"))->FromString("Off");
-                CFloatParameter exposureTime(camera->GetNodeMap(), "ExposureTime");
-                if(exposureTime.IsWritable()) {
-                    exposureTime.SetValue(exposure_time);
-                    logger::info("[{}] Camera #{} Exposure Time set : {}", get_name(), camera_id, exposure_time);
-                }
+
+    camera->Open();
+    string acquisition_mode = parameters.value("acquisition_mode", "Continuous"); // Continuous, SingleFrame, MultiFrame
+    double acquisition_fps = parameters.value("acquisition_fps", 30.0);
+    string trigger_selector = parameters.value("trigger_selector", "FrameStart");
+    string trigger_mode = parameters.value("trigger_mode", "On");
+    string trigger_source = parameters.value("trigger_source", "Line2");
+    string trigger_activation = parameters.value("trigger_activation", "RisingEdge");
+    int heartbeat_timeout = parameters.value("heartbeat_timeout", 5000);
+    
+    
+    // camera exposure time set (initial)
+    for(auto& param:parameters["cameras"]){
+        int id = param["id"].get<int>();
+        if(id==camera_id){
+            double exposure_time = param.value("exposure_time", 5000.0);
+            CEnumerationPtr(camera->GetNodeMap().GetNode("ExposureAuto"))->FromString("Off");
+            CFloatParameter exposureTime(camera->GetNodeMap(), "ExposureTime");
+            if(exposureTime.IsWritable()) {
+                exposureTime.SetValue(exposure_time);
+                logger::info("[{}] Camera #{} Exposure Time set : {}", get_name(), camera_id, exposure_time);
             }
         }
+    }
 
-        /* camera setting parameters notification */
-        logger::info("[{}]* Camera Acquisition Mode : {} (Continuous|SingleFrame)", get_name(), acquisition_mode);
-        logger::info("[{}]* Camera Acqusition Framerate : {}", get_name(), acquisition_fps);
-        logger::info("[{}]* Camera Trigger Mode : {}", get_name(), trigger_mode);
-        logger::info("[{}]* Camera Trigger Selector : {}", get_name(), trigger_selector);
-        logger::info("[{}]* Camera Trigger Activation : {}", get_name(), trigger_activation);
-        
-        /* set camera parameters */
-        camera->AcquisitionMode.SetValue(acquisition_mode.c_str());
-        camera->AcquisitionFrameRate.SetValue(acquisition_fps);
-        camera->AcquisitionFrameRateEnable.SetValue(false);
-        camera->TriggerSelector.SetValue(trigger_selector.c_str());
-        camera->TriggerMode.SetValue(trigger_mode.c_str());
-        camera->TriggerSource.SetValue(trigger_source.c_str());
-        camera->TriggerActivation.SetValue(trigger_activation.c_str());
-        camera->GevHeartbeatTimeout.SetValue(heartbeat_timeout);
+    /* camera setting parameters notification */
+    logger::info("[{}]* Camera Acquisition Mode : {} (Continuous|SingleFrame)", get_name(), acquisition_mode);
+    logger::info("[{}]* Camera Acqusition Framerate : {}", get_name(), acquisition_fps);
+    logger::info("[{}]* Camera Trigger Mode : {}", get_name(), trigger_mode);
+    logger::info("[{}]* Camera Trigger Selector : {}", get_name(), trigger_selector);
+    logger::info("[{}]* Camera Trigger Activation : {}", get_name(), trigger_activation);
+    
+    /* set camera parameters */
+    camera->AcquisitionMode.SetValue(acquisition_mode.c_str());
+    camera->AcquisitionFrameRate.SetValue(acquisition_fps);
+    camera->AcquisitionFrameRateEnable.SetValue(false);
+    camera->TriggerSelector.SetValue(trigger_selector.c_str());
+    camera->TriggerMode.SetValue(trigger_mode.c_str());
+    camera->TriggerSource.SetValue(trigger_source.c_str());
+    camera->TriggerActivation.SetValue(trigger_activation.c_str());
+    camera->GevHeartbeatTimeout.SetValue(heartbeat_timeout);
 
-        /* start grabbing */
-        camera->StartGrabbing(Pylon::GrabStrategy_OneByOne, Pylon::GrabLoop_ProvidedByUser);
-        CGrabResultPtr ptrGrabResult;
+    /* start grabbing */
+    camera->StartGrabbing(Pylon::GrabStrategy_OneByOne, Pylon::GrabLoop_ProvidedByUser);
+    CGrabResultPtr ptrGrabResult;
 
-        logger::info("[{}] Camera #{} grabber is now running...",get_name(), camera_id);
-        unsigned long long camera_grab_counter = 0;
-        while(!_worker_stop.load()){
-            try{
-                if(!camera->IsGrabbing())
-                    break;
+    logger::info("[{}] Camera #{} grabber is now running...",get_name(), camera_id);
+    unsigned long long camera_grab_counter = 0;
+    while(!_worker_stop.load()){
+        try{
+            if(!camera->IsGrabbing())
+                break;
 
-                //change camera exposure time value by level2 info.
-                if(_camera_exposure_time.contains(camera_id)){
-                    int extime = _camera_exposure_time[camera_id].load();
-                    if(extime!=0){
-                        CFloatParameter param(camera->GetNodeMap(), "ExposureTime");
-                        if(param.IsWritable()) {
-                            param.SetValue((double)extime);
-                            logger::info("[{}] Camera #{} Exposure Time set : {}", get_name(), camera_id, extime);
-                            _camera_exposure_time[camera_id].store(0);
-                        }
+            //change camera exposure time value by level2 info.
+            if(_camera_exposure_time.contains(camera_id)){
+                int extime = _camera_exposure_time[camera_id].load();
+                if(extime!=0){
+                    CFloatParameter param(camera->GetNodeMap(), "ExposureTime");
+                    if(param.IsWritable()) {
+                        param.SetValue((double)extime);
+                        logger::info("[{}] Camera #{} Exposure Time set : {}", get_name(), camera_id, extime);
+                        _camera_exposure_time[camera_id].store(0);
                     }
                 }
-                
-                bool success = camera->RetrieveResult(5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException); //trigger mode makes it blocked
-                if(!success){
-                    logger::error("[{}] Camera #{} grab failed", get_name(), camera_id);
-                }
-                else { // no timeout, success
-                    if(ptrGrabResult.IsValid()){
-                        if(ptrGrabResult->GrabSucceeded()){
-    
-                            auto start = std::chrono::system_clock::now();
-    
-                            /* grabbed imgae stores into buffer */
-                            const uint8_t* pImageBuffer = (uint8_t*)ptrGrabResult->GetBuffer();
-    
-                            /* get image properties */
-                            size_t size = ptrGrabResult->GetWidth() * ptrGrabResult->GetHeight();
-                            cv::Mat image(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC1, (void*)pImageBuffer);
-    
-                            //jpg encoding
-                            std::vector<unsigned char> serialized_image;
-                            cv::imencode(".jpg", image, serialized_image);
-    
-                            /* common transport parameters */
-                            string id_str = fmt::format("{}",camera_id);
-    
-                            /* push image data */
-                            if(_image_stream_enable.load()){
-                                /* camera grab status update */
-                                _camera_grab_counter[camera_id].store(++camera_grab_counter);
-    
-                                // pipe_data msg_id(id_str.data(), id_str.size());
-                                // pipe_data msg_image(serialized_image.data(), serialized_image.size());
-    
-                                string image_stream_port = fmt::format("image_stream_{}", camera_id);
-                                if(get_port(image_stream_port)->handle()!=nullptr){
-                                    zmq::multipart_t msg_multipart_image;
-                                    msg_multipart_image.addstr(id_str);
-                                    msg_multipart_image.addmem(serialized_image.data(), serialized_image.size());
-                                    bool sent = msg_multipart_image.send(*get_port(image_stream_port), ZMQ_DONTWAIT);
-                                    if(!sent){
-                                        logger::warn("[{}] Failed to send image for camera {}", get_name(), camera_id);
-                                    }
-                                    msg_multipart_image.clear();
-                                }
-                                else{
-                                    logger::warn("[{}] {} socket handle is not valid ", get_name(), camera_id);
-                                }
-                            }
-                            serialized_image.clear();
-    
-    
-                            /* publish for monitoring (size reduction for performance)*/
-                            if(_prof_realtime_monitoring.load()){
-                                string topic_str = fmt::format("image_stream_monitor_{}", camera_id);
-                                cv::Mat monitor_image;
-                                cv::resize(image, monitor_image, cv::Size(image.cols/6, image.rows/6));
-                                std::vector<unsigned char> serialized_monitor_image;
-                                cv::imencode(".jpg", monitor_image, serialized_monitor_image);
-                                // pipe_data msg_monitor_image(serialized_monitor_image.data(), serialized_monitor_image.size());
-    
-                                zmq::multipart_t msg_multipart;
-                                msg_multipart.addstr(topic_str);
-                                msg_multipart.addstr(id_str);
-                                msg_multipart.addmem(serialized_monitor_image.data(), serialized_monitor_image.size());
-    
-                                string camera_port = fmt::format("image_stream_monitor_{}", camera_id); //portname = topic
-                                bool sent = msg_multipart.send(*get_port(camera_port), ZMQ_DONTWAIT);
+            }
+            
+            bool success = camera->RetrieveResult(5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException); //trigger mode makes it blocked
+            if(!success){
+                logger::error("[{}] Camera #{} grab failed", get_name(), camera_id);
+            }
+            else { // no timeout, success
+                if(ptrGrabResult.IsValid()){
+                    if(ptrGrabResult->GrabSucceeded()){
+
+                        auto start = std::chrono::system_clock::now();
+
+                        /* grabbed imgae stores into buffer */
+                        const uint8_t* pImageBuffer = (uint8_t*)ptrGrabResult->GetBuffer();
+
+                        /* get image properties */
+                        size_t size = ptrGrabResult->GetWidth() * ptrGrabResult->GetHeight();
+                        cv::Mat image(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC1, (void*)pImageBuffer);
+
+                        if(image.empty()){
+                            logger::warn("[{}] Camera #{}image buffer appears to be empty.", get_name(), camera_id);
+                            continue;
+                        }
+
+                        //jpg encoding
+                        std::vector<unsigned char> serialized_image;
+                        cv::imencode(".jpg", image, serialized_image);
+
+                        /* common transport parameters */
+                        string id_str = fmt::format("{}",camera_id);
+
+                        /* push image data */
+                        if(_image_stream_enable.load()){
+                            /* camera grab status update */
+                            _camera_grab_counter[camera_id].store(++camera_grab_counter);
+
+                            // pipe_data msg_id(id_str.data(), id_str.size());
+                            // pipe_data msg_image(serialized_image.data(), serialized_image.size());
+
+                            string image_stream_port = fmt::format("image_stream_{}", camera_id);
+                            if(get_port(image_stream_port)->handle()!=nullptr){
+                                zmq::multipart_t msg_multipart_image;
+                                msg_multipart_image.addstr(id_str);
+                                msg_multipart_image.addmem(serialized_image.data(), serialized_image.size());
+                                bool sent = msg_multipart_image.send(*get_port(image_stream_port), ZMQ_DONTWAIT);
                                 if(!sent){
-                                    logger::warn("[{}] Failed to send monitoring image for camera {}", get_name(), camera_id);
+                                    logger::warn("[{}] Failed to send image for camera {}", get_name(), camera_id);
                                 }
-                                msg_multipart.clear();
-                                serialized_monitor_image.clear();
-    
-                                // auto end = std::chrono::system_clock::now();
-                                //spdlog::info("Processing Time : {} sec", std::chrono::duration<double, std::chrono::seconds::period>(end - start).count());
-                                //logger::info("[{}] {} sent monitor image", get_name(), camera_id);
+                                msg_multipart_image.clear();
+                            }
+                            else{
+                                logger::warn("[{}] {} socket handle is not valid ", get_name(), camera_id);
                             }
                         }
-                        else{
-                            logger::error("[{}] Grab success, but Camera #{} raises Error (code({}) : {}", get_name(), camera_id, ptrGrabResult->GetErrorCode(), ptrGrabResult->GetErrorDescription().c_str());
+                        serialized_image.clear();
+
+
+                        /* publish for monitoring (size reduction for performance)*/
+                        if(_prof_realtime_monitoring.load()){
+                            string topic_str = fmt::format("image_stream_monitor_{}", camera_id);
+                            cv::Mat monitor_image;
+                            cv::resize(image, monitor_image, cv::Size(image.cols/6, image.rows/6));
+                            std::vector<unsigned char> serialized_monitor_image;
+                            cv::imencode(".jpg", monitor_image, serialized_monitor_image);
+                            // pipe_data msg_monitor_image(serialized_monitor_image.data(), serialized_monitor_image.size());
+
+                            zmq::multipart_t msg_multipart;
+                            msg_multipart.addstr(topic_str);
+                            msg_multipart.addstr(id_str);
+                            msg_multipart.addmem(serialized_monitor_image.data(), serialized_monitor_image.size());
+
+                            string camera_port = fmt::format("image_stream_monitor_{}", camera_id); //portname = topic
+                            bool sent = msg_multipart.send(*get_port(camera_port), ZMQ_DONTWAIT);
+                            if(!sent){
+                                logger::warn("[{}] Failed to send monitoring image for camera {}", get_name(), camera_id);
+                            }
+                            msg_multipart.clear();
+                            serialized_monitor_image.clear();
+
+                            // auto end = std::chrono::system_clock::now();
+                            //spdlog::info("Processing Time : {} sec", std::chrono::duration<double, std::chrono::seconds::period>(end - start).count());
+                            //logger::info("[{}] {} sent monitor image", get_name(), camera_id);
                         }
-                        
                     }
                     else{
-                        logger::error("[{}] Camera #{} Grab result is invalid", get_name(), camera_id);
+                        logger::error("[{}] Grab success, but Camera #{} raises Error (code({}) : {}", get_name(), camera_id, ptrGrabResult->GetErrorCode(), ptrGrabResult->GetErrorDescription().c_str());
                     }
+                    
                 }
-                
+                else{
+                    logger::error("[{}] Camera #{} Grab result is invalid", get_name(), camera_id);
+                }
             }
-            catch(Pylon::RuntimeException& e){
-                logger::error("[{}] Camera {} Runtime Exception ({})", get_name(), camera_id, e.what());
-                break;
-            }
-            catch(const Pylon::GenericException& e){
-                logger::error("[{}] Camera {} Generic Exception ({})", get_name(), camera_id, e.what());
-                break;
-            }
-            catch(const zmq::error_t& e){
-                logger::error("[{}] {}", get_name(), e.what());
-                break;
-            }
+            
         }
+        catch(Pylon::RuntimeException& e){
+            logger::error("[{}] Camera {} Runtime Exception ({})", get_name(), camera_id, e.what());
+            // break;
+        }
+        catch(Pylon::TimeoutException& e){
+            logger::error("[{}] Camera {} Timeout Exception ({})", get_name(), camera_id, e.what());
+            //break;
+        }
+        catch(const Pylon::GenericException& e){
+            logger::error("[{}] Camera {} Generic Exception ({})", get_name(), camera_id, e.what());
+            // break;
+        }
+        catch(const zmq::error_t& e){
+            logger::error("[{}] Pipe Line Exception : {}", get_name(), e.what());
+            // break;
+        }
+    }
 
-        /* stop grabbing */
-        camera->StopGrabbing();
-        camera->Close();
-        logger::info("[{}] Camera #{} grabber is now closed", get_name(), camera_id);
-    }
-    catch(const GenericException& e){
-        logger::error("[{}] {}", get_name(), e.GetDescription());
-    }
+    /* stop grabbing */
+    camera->StopGrabbing();
+    camera->Close();
+    logger::info("[{}] Camera #{} grabber is now closed", get_name(), camera_id);
 }
 
 
