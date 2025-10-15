@@ -663,17 +663,19 @@ class AppWindow(QMainWindow):
                 self.combobox_preset.setCurrentText(near_preset)
                 if self.__config.get("use_nearest_preset_auto_select",False):
                     self.__console.info(f"Auto Selected Nearest Preset : {near_preset}")
-                    if self.__last_preset_file!=near_preset and self.__system_online: # set all if system is online
-                        self.on_btn_preset_load()
-                        self.__console.info("Set focus, exposure time and light level by LV2 data")
-                        self.on_btn_exposure_time_set_all()
-                        time.sleep(0.1)
-                        self.on_btn_light_level_set_all()
-                        time.sleep(0.1)
-                        self.on_btn_focus_preset_set_all()
-                        self.__last_preset_file = near_preset
-                    else:
-                        self.__console.info(f"Preset file that was previously applied is currently in use {self.__last_preset_file}")
+                    if self.__system_online: # set all if system is online
+                        if self.__last_preset_file!=near_preset:
+                            self.on_btn_preset_load()
+                            self.__console.info("Set focus, exposure time and light level by LV2 data")
+                            self.on_btn_exposure_time_set_all()
+                            time.sleep(0.1)
+                            self.on_btn_light_level_set_all()
+                            time.sleep(0.1)
+                            self.on_btn_focus_preset_set_all()
+                            self.__last_preset_file = near_preset
+                        else:
+                            self.on_btn_light_level_set_all() # turn on
+                            self.__console.info(f"Preset file that was previously applied is currently in use {self.__last_preset_file}")
                 
             else:
                 self.__console.warning("Cannot found nearest preset file")
