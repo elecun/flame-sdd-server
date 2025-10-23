@@ -121,10 +121,11 @@ class SDDModelInference(QThread):
         # }
         # self.__job_queue.put(test_data)
 
-    def add_job_lv2_info(self, date:str, mt_stand_height:int, mt_stand_width:int):
+    def add_job_lv2_info(self, date:str, mt_stand_height:int, mt_stand_width:int, mt_no:str):
         self.__job_lv2_info["date"] = date
         self.__job_lv2_info["mt_stand_width"] = mt_stand_width
         self.__job_lv2_info["mt_stand_height"] = mt_stand_height
+        self.__job_lv2_info["mt_no"] = mt_no
         self.__console.info(f"Updated the job desc to process the SDD (waiting for start)")
     
     def __remove_readonly(self, func, path, exc_info):
@@ -289,6 +290,9 @@ class SDDModelInference(QThread):
             results = list(executor.map(lambda row: self.rename_file(row, out_path), rows))
         renamed = [r for r in results if r==True]
         self.__console.info(f"{len(renamed)}/{len(results)} file(s) are renamed for self-explanatory")
+
+        # (@2025.10.24) copy defect file into defect_images
+        self.copy_defect_images(in_csv=output_csv)
 
 
     def __infer_worker(self, cams, model_path, gpu_id, input_root, result_queue, output_csv, save_visual, progress, total):
@@ -536,3 +540,7 @@ class SDDModelInference(QThread):
                                 [ 0,  0,  0],
                                 [ 1,  2,  1]], dtype=torch.float32, device=device).view(1,1,3,3)
         return sobel_x, sobel_y
+
+    def copy_defect_images(in_csv:str):
+        """ copy defect images to defect_images folder"""
+        pass
