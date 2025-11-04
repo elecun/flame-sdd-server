@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZMQ Connection Editor</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+        
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #229954;
+        }
+        
+        .main-content {
+            display: flex;
+            height: 800px;
+        }
+        
+        .sidebar {
+            width: 350px;
+            border-right: 1px solid #ddd;
+            padding: 20px;
+            overflow-y: auto;
+            background: #fafafa;
+        }
+        
+        .graph-container {
+            flex: 1;
+            position: relative;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .socket-graph {
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .socket-graph-header {
+            background: #f8f9fa;
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .socket-graph-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 0;
+        }
+        
+        .socket-graph-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .socket-graph-svg {
+            width: 100%;
+            height: 300px;
+            display: block;
+        }
+        
+        .file-list {
+            margin-bottom: 30px;
+        }
+        
+        .file-list h3 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+            font-size: 16px;
+        }
+        
+        .file-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .file-item:hover {
+            background: #e8f4f8;
+            border-color: #3498db;
+        }
+        
+        .file-item.selected {
+            background: #3498db;
+            color: white;
+            border-color: #2980b9;
+        }
+        
+        .connection-details {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 20px;
+        }
+        
+        .connection-details h3 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+            font-size: 16px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        .socket-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        
+        .socket-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .socket-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .socket-item.selected {
+            background: #e3f2fd;
+            border-left: 3px solid #2196f3;
+        }
+        
+        .socket-item:last-child {
+            border-bottom: none;
+        }
+        
+        .socket-name {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        
+        .socket-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 2px;
+        }
+        
+        #graph-svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .node {
+            fill: #3498db;
+            stroke: #2980b9;
+            stroke-width: 2px;
+            cursor: pointer;
+        }
+        
+        .node:hover {
+            fill: #5dade2;
+        }
+        
+        .node-label {
+            font-size: 12px;
+            font-weight: bold;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            pointer-events: none;
+            fill: white;
+        }
+        
+        .link {
+            stroke: #7f8c8d;
+            stroke-width: 2px;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+        
+        .link:hover {
+            stroke: #e74c3c;
+            stroke-width: 3px;
+            cursor: pointer;
+        }
+        
+        .link.editable {
+            cursor: pointer;
+        }
+        
+        .link.editable:hover {
+            stroke: #e74c3c;
+            stroke-width: 4px;
+        }
+        
+        .link-label {
+            font-size: 10px;
+            fill: #2c3e50;
+            text-anchor: middle;
+            pointer-events: none;
+        }
+        
+        .status {
+            padding: 10px 20px;
+            background: #ecf0f1;
+            border-top: 1px solid #ddd;
+            font-size: 14px;
+            color: #555;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ZMQ Connection Editor</h1>
+            <div class="controls">
+                <input type="file" id="fileInput" multiple accept=".json" class="hidden">
+                <button class="btn btn-primary" onclick="loadFiles()">Load JSON Files</button>
+                <button class="btn btn-success" onclick="saveAllFiles()">Save All Changes</button>
+                <button class="btn btn-primary" onclick="refreshGraph()">Refresh Graph</button>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="file-list">
+                    <h3>Bundle Files</h3>
+                    <div id="fileList"></div>
+                </div>
+                
+                <div class="connection-details">
+                    <h3>Socket List</h3>
+                    <div id="socketList" class="socket-list"></div>
+                    
+                    <h3>Edit Connection</h3>
+                    <div class="form-group">
+                        <label>Socket Name:</label>
+                        <input type="text" id="socketName" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Transport:</label>
+                        <select id="transport">
+                            <option value="tcp">tcp</option>
+                            <option value="inproc">inproc</option>
+                            <option value="ipc">ipc</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Host:</label>
+                        <input type="text" id="host" placeholder="127.0.0.1 or *">
+                    </div>
+                    <div class="form-group">
+                        <label>Port:</label>
+                        <input type="number" id="port" placeholder="5000">
+                    </div>
+                    <div class="form-group">
+                        <label>Socket Type:</label>
+                        <select id="socketType">
+                            <option value="pub">pub</option>
+                            <option value="sub">sub</option>
+                            <option value="push">push</option>
+                            <option value="pull">pull</option>
+                            <option value="req">req</option>
+                            <option value="rep">rep</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Queue Size:</label>
+                        <input type="number" id="queueSize" placeholder="100">
+                    </div>
+                    <button class="btn btn-success" onclick="updateConnection()" style="width: 100%; margin-top: 10px;">
+                        Update Connection
+                    </button>
+                </div>
+            </div>
+            
+            <div class="graph-container" id="graphContainer">
+                <!-- Socket graphs will be dynamically generated here -->
+            </div>
+        </div>
+        
+        <div class="status" id="status">
+            No files loaded. Click "Load JSON Files" to begin.
+        </div>
+    </div>
+    
+    <div class="tooltip hidden" id="tooltip"></div>
+
+    <script>
+        // Global variables
+        let bundleConfigs = {};
+        let connections = [];
+        let selectedFile = null;
+        let selectedSocket = null;
+        let simulations = {};
+        let socketGraphs = {};
+        
+        // Load files
+        function loadFiles() {
+            document.getElementById('fileInput').click();
+        }
+        
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            const files = Array.from(event.target.files);
+            bundleConfigs = {};
+            
+            let loadedCount = 0;
+            files.forEach(file => {
+                if (file.name.endsWith('.json')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            const config = JSON.parse(e.target.result);
+                            bundleConfigs[file.name] = {
+                                config: config,
+                                modified: false
+                            };
+                            loadedCount++;
+                            
+                            if (loadedCount === files.length) {
+                                updateFileList();
+                                analyzeConnections();
+                                updateGraph();
+                                updateStatus(`Loaded ${Object.keys(bundleConfigs).length} files`);
+                            }
+                        } catch (error) {
+                            console.error(`Error parsing ${file.name}:`, error);
+                            updateStatus(`Error loading ${file.name}: ${error.message}`);
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            });
+        });
+        
+        // Update file list
+        function updateFileList() {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+            
+            Object.keys(bundleConfigs).forEach(filename => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.textContent = filename;
+                fileItem.onclick = () => selectFile(filename);
+                fileList.appendChild(fileItem);
+            });
+        }
+        
+        // Select file
+        function selectFile(filename) {
+            selectedFile = filename;
+            selectedSocket = null;
+            
+            // Update UI
+            document.querySelectorAll('.file-item').forEach(item => {
+                item.classList.remove('selected');
+                if (item.textContent === filename) {
+                    item.classList.add('selected');
+                }
+            });
+            
+            updateSocketList();
+            clearConnectionForm();
+        }
+        
+        // Update socket list
+        function updateSocketList() {
+            const socketList = document.getElementById('socketList');
+            socketList.innerHTML = '';
+            
+            if (!selectedFile || !bundleConfigs[selectedFile].config.dataport) {
+                return;
+            }
+            
+            const dataport = bundleConfigs[selectedFile].config.dataport;
+            Object.keys(dataport).forEach(socketName => {
+                const socketInfo = dataport[socketName];
+                const socketItem = document.createElement('div');
+                socketItem.className = 'socket-item';
+                socketItem.onclick = () => selectSocket(socketName);
+                
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'socket-name';
+                nameDiv.textContent = socketName;
+                
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'socket-info';
+                const transport = socketInfo.transport || 'unknown';
+                const socketType = socketInfo.socket_type || 'unknown';
+                const port = socketInfo.port ? `:${socketInfo.port}` : '';
+                infoDiv.textContent = `${transport}${port} (${socketType})`;
+                
+                socketItem.appendChild(nameDiv);
+                socketItem.appendChild(infoDiv);
+                socketList.appendChild(socketItem);
+            });
+        }
+        
+        // Select socket
+        function selectSocket(socketName) {
+            selectedSocket = socketName;
+            
+            // Update UI
+            document.querySelectorAll('.socket-item').forEach(item => {
+                item.classList.remove('selected');
+                if (item.querySelector('.socket-name').textContent === socketName) {
+                    item.classList.add('selected');
+                }
+            });
+            
+            loadConnectionForm();
+        }
+        
+        // Load connection form
+        function loadConnectionForm() {
+            if (!selectedFile || !selectedSocket) return;
+            
+            const socketInfo = bundleConfigs[selectedFile].config.dataport[selectedSocket];
+            
+            document.getElementById('socketName').value = selectedSocket;
+            document.getElementById('transport').value = socketInfo.transport || 'tcp';
+            document.getElementById('host').value = socketInfo.host || '';
+            document.getElementById('port').value = socketInfo.port || '';
+            document.getElementById('socketType').value = socketInfo.socket_type || 'pub';
+            document.getElementById('queueSize').value = socketInfo.queue_size || '';
+        }
+        
+        // Clear connection form
+        function clearConnectionForm() {
+            document.getElementById('socketName').value = '';
+            document.getElementById('transport').value = 'tcp';
+            document.getElementById('host').value = '';
+            document.getElementById('port').value = '';
+            document.getElementById('socketType').value = 'pub';
+            document.getElementById('queueSize').value = '';
+        }
+        
+        // Update connection
+        function updateConnection() {
+            if (!selectedFile || !selectedSocket) {
+                alert('Please select a file and socket first.');
+                return;
+            }
+            
+            const config = bundleConfigs[selectedFile].config;
+            if (!config.dataport) {
+                config.dataport = {};
+            }
+            
+            const socketInfo = config.dataport[selectedSocket] || {};
+            
+            socketInfo.transport = document.getElementById('transport').value;
+            const host = document.getElementById('host').value.trim();
+            if (host) socketInfo.host = host;
+            
+            const port = document.getElementById('port').value.trim();
+            if (port) socketInfo.port = parseInt(port);
+            
+            socketInfo.socket_type = document.getElementById('socketType').value;
+            
+            const queueSize = document.getElementById('queueSize').value.trim();
+            if (queueSize) socketInfo.queue_size = parseInt(queueSize);
+            
+            config.dataport[selectedSocket] = socketInfo;
+            bundleConfigs[selectedFile].modified = true;
+            
+            updateSocketList();
+            analyzeConnections();
+            updateGraph();
+            updateStatus(`Updated ${selectedSocket} in ${selectedFile}`);
+        }
+        
+        // Analyze connections
+        function analyzeConnections() {
+            connections = [];
+            const portMap = {};
+            
+            // Build port mapping
+            Object.keys(bundleConfigs).forEach(filename => {
+                const config = bundleConfigs[filename].config;
+                const componentName = filename.replace('.json', '');
+                
+                if (!config.dataport) return;
+                
+                Object.keys(config.dataport).forEach(socketName => {
+                    const socketInfo = config.dataport[socketName];
+                    if (!socketInfo.port) return;
+                    
+                    const host = socketInfo.host || '127.0.0.1';
+                    const transport = socketInfo.transport || 'tcp';
+                    const key = `${transport}://${host}:${socketInfo.port}`;
+                    
+                    if (!portMap[key]) portMap[key] = [];
+                    
+                    portMap[key].push({
+                        component: componentName,
+                        socketName: socketName,
+                        socketInfo: socketInfo,
+                        filename: filename
+                    });
+                });
+            });
+            
+            // Find connections
+            Object.keys(portMap).forEach(portKey => {
+                const sockets = portMap[portKey];
+                if (sockets.length < 2) return;
+                
+                const publishers = sockets.filter(s => 
+                    ['pub', 'push'].includes(s.socketInfo.socket_type));
+                const subscribers = sockets.filter(s => 
+                    ['sub', 'pull'].includes(s.socketInfo.socket_type));
+                
+                publishers.forEach(pub => {
+                    subscribers.forEach(sub => {
+                        connections.push({
+                            source: pub,
+                            target: sub,
+                            portKey: portKey
+                        });
+                    });
+                });
+            });
+        }
+        
+        // Update graph - now creates separate graphs per socket
+        function updateGraph() {
+            const container = document.getElementById('graphContainer');
+            container.innerHTML = '';
+            
+            if (connections.length === 0) {
+                const noDataDiv = document.createElement('div');
+                noDataDiv.style.textAlign = 'center';
+                noDataDiv.style.padding = '50px';
+                noDataDiv.style.color = '#666';
+                noDataDiv.style.fontSize = '18px';
+                noDataDiv.textContent = 'No connections found. Load JSON files to visualize connections.';
+                container.appendChild(noDataDiv);
+                return;
+            }
+            
+            // Group connections by port/socket
+            const socketGroups = {};
+            connections.forEach(conn => {
+                const key = conn.portKey;
+                if (!socketGroups[key]) {
+                    socketGroups[key] = [];
+                }
+                socketGroups[key].push(conn);
+            });
+            
+            // Create a graph for each socket group
+            Object.keys(socketGroups).forEach(portKey => {
+                createSocketGraph(portKey, socketGroups[portKey]);
+            });
+        }
+        
+        // Create individual socket graph
+        function createSocketGraph(portKey, connections) {
+            const container = document.getElementById('graphContainer');
+            
+            // Create graph container
+            const graphDiv = document.createElement('div');
+            graphDiv.className = 'socket-graph';
+            
+            // Create header
+            const header = document.createElement('div');
+            header.className = 'socket-graph-header';
+            
+            const title = document.createElement('h3');
+            title.className = 'socket-graph-title';
+            title.textContent = `Socket: ${portKey}`;
+            
+            const info = document.createElement('div');
+            info.className = 'socket-graph-info';
+            info.textContent = `${connections.length} connection(s)`;
+            
+            header.appendChild(title);
+            header.appendChild(info);
+            
+            // Create SVG
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('class', 'socket-graph-svg');
+            svg.setAttribute('width', '100%');
+            svg.setAttribute('height', '300');
+            
+            graphDiv.appendChild(header);
+            graphDiv.appendChild(svg);
+            container.appendChild(graphDiv);
+            
+            // Use D3 to create the graph
+            const d3svg = d3.select(svg);
+            
+            // Add defs for arrowhead
+            const defs = d3svg.append('defs');
+            defs.append('marker')
+                .attr('id', `arrowhead-${portKey.replace(/[^a-zA-Z0-9]/g, '-')}`)
+                .attr('markerWidth', 10)
+                .attr('markerHeight', 7)
+                .attr('refX', 9)
+                .attr('refY', 3.5)
+                .attr('orient', 'auto')
+                .append('polygon')
+                .attr('points', '0 0, 10 3.5, 0 7')
+                .attr('fill', '#7f8c8d');
+            
+            // Prepare data
+            const nodes = [];
+            const links = [];
+            const nodeMap = new Map();
+            
+            connections.forEach(conn => {
+                const sourceId = conn.source.component;
+                const targetId = conn.target.component;
+                
+                if (!nodeMap.has(sourceId)) {
+                    nodeMap.set(sourceId, { id: sourceId, name: sourceId });
+                    nodes.push(nodeMap.get(sourceId));
+                }
+                
+                if (!nodeMap.has(targetId)) {
+                    nodeMap.set(targetId, { id: targetId, name: targetId });
+                    nodes.push(nodeMap.get(targetId));
+                }
+                
+                const portInfo = conn.portKey.split('://')[1];
+                links.push({
+                    source: sourceId,
+                    target: targetId,
+                    label: `${conn.source.socketName} → ${conn.target.socketName}\n${portInfo}`,
+                    connection: conn
+                });
+            });
+            
+            // Set up dimensions
+            const width = svg.clientWidth || 800;
+            const height = 300;
+            
+            // Create simulation
+            const simulation = d3.forceSimulation(nodes)
+                .force('link', d3.forceLink(links).id(d => d.id).distance(100))
+                .force('charge', d3.forceManyBody().strength(-200))
+                .force('center', d3.forceCenter(width / 2, height / 2))
+                .force('collision', d3.forceCollide().radius(40));
+            
+            simulations[portKey] = simulation;
+            
+            // Create links
+            const link = d3svg.append('g')
+                .selectAll('path')
+                .data(links)
+                .enter().append('path')
+                .attr('class', 'link editable')
+                .attr('marker-end', `url(#arrowhead-${portKey.replace(/[^a-zA-Z0-9]/g, '-')})`)
+                .on('mouseover', function(event, d) {
+                    showTooltip(event, d.label);
+                })
+                .on('mouseout', hideTooltip)
+                .on('dblclick', function(event, d) {
+                    editConnection(d.connection);
+                });
+            
+            // Create nodes
+            const node = d3svg.append('g')
+                .selectAll('circle')
+                .data(nodes)
+                .enter().append('circle')
+                .attr('class', 'node')
+                .attr('r', 25)
+                .call(d3.drag()
+                    .on('start', (event, d) => dragstarted(event, d, simulation))
+                    .on('drag', (event, d) => dragged(event, d))
+                    .on('end', (event, d) => dragended(event, d, simulation)));
+            
+            // Create node labels
+            const nodeLabel = d3svg.append('g')
+                .selectAll('text')
+                .data(nodes)
+                .enter().append('text')
+                .attr('class', 'node-label')
+                .style('font-size', '10px')
+                .text(d => d.name);
+            
+            // Update positions on tick
+            simulation.on('tick', () => {
+                link.attr('d', d => {
+                    const dx = d.target.x - d.source.x;
+                    const dy = d.target.y - d.source.y;
+                    const dr = Math.sqrt(dx * dx + dy * dy);
+                    return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
+                });
+                
+                node
+                    .attr('cx', d => d.x)
+                    .attr('cy', d => d.y);
+                
+                nodeLabel
+                    .attr('x', d => d.x)
+                    .attr('y', d => d.y);
+            });
+        }
+        
+        // Edit connection function - triggered by double-click on edge
+        function editConnection(connection) {
+            const sourceSocket = connection.source;
+            const targetSocket = connection.target;
+            
+            // Find the file containing the source socket
+            const sourceFile = sourceSocket.filename;
+            
+            // Select the file and socket
+            selectFile(sourceFile);
+            selectSocket(sourceSocket.socketName);
+            
+            // Show alert with connection info
+            const message = `Editing connection:\n\nSource: ${sourceSocket.component}.${sourceSocket.socketName}\nTarget: ${targetSocket.component}.${targetSocket.socketName}\nPort: ${connection.portKey}\n\nThe source socket has been selected in the sidebar for editing.`;
+            alert(message);
+        }
+        
+        // Drag functions
+        function dragstarted(event, d, simulation) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+        
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+        
+        function dragended(event, d, simulation) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+        
+        // Tooltip functions
+        function showTooltip(event, text) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = text.replace(/\n/g, '<br>');
+            tooltip.style.left = (event.pageX + 10) + 'px';
+            tooltip.style.top = (event.pageY - 10) + 'px';
+            tooltip.classList.remove('hidden');
+        }
+        
+        function hideTooltip() {
+            document.getElementById('tooltip').classList.add('hidden');
+        }
+        
+        // Refresh graph
+        function refreshGraph() {
+            analyzeConnections();
+            updateGraph();
+            updateStatus('Graph refreshed');
+        }
+        
+        // Save all files
+        function saveAllFiles() {
+            const modifiedFiles = Object.keys(bundleConfigs).filter(
+                filename => bundleConfigs[filename].modified
+            );
+            
+            if (modifiedFiles.length === 0) {
+                alert('No files have been modified.');
+                return;
+            }
+            
+            modifiedFiles.forEach(filename => {
+                const config = bundleConfigs[filename].config;
+                const dataStr = JSON.stringify(config, null, 4);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(dataBlob);
+                link.download = filename;
+                link.click();
+                
+                bundleConfigs[filename].modified = false;
+            });
+            
+            updateStatus(`Downloaded ${modifiedFiles.length} modified files`);
+        }
+        
+        // Update status
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+    </script>
+</body>
+</html>
