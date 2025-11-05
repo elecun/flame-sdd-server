@@ -25,6 +25,8 @@ import re
 from typing import List, Tuple
 import csv
 import re
+import subprocess
+import glob
 
 try:
     # using PyQt5
@@ -229,6 +231,7 @@ class AppWindow(QMainWindow):
                                                                                   connection=config["dk_level2_interface_source"], 
                                                                                   topic=config["dk_level2_interface_sub_topic"])
                         self.__dk_level2_data_subscriber.level2_data_update_signal.connect(self.on_update_dk_level2_data)
+                        self.__dk_level2_data_subscriber.labeling_job_signal.connect(self.on_update_label)
                         self.__dk_level2_data_subscriber.start()
 
                         self.__dk_level2_status_subscriber = DKLevel2StatusSubscriber(self.__pipeline_context,
@@ -333,7 +336,8 @@ class AppWindow(QMainWindow):
                                                                         model_config=config["sdd_model_config"],
                                                                         in_path_root=config["sdd_in_root"],
                                                                         out_path_root=config["sdd_out_root"],
-                                                                        save_visual=config.get("sdd_inference_save_result_images", False))
+                                                                        save_visual=config.get("sdd_inference_save_result_images", False),
+                                                                        defect_images_save_path=config.get("sdd_detect_images_save_path","/volume1/sdd/defect_images/"))
                     self.__sdd_inference_subscriber.update_status_signal.connect(self.on_update_sdd_status)
                     self.__sdd_inference_subscriber.processing_result_signal.connect(self.on_update_sdd_result_binary)
 
@@ -630,6 +634,44 @@ class AppWindow(QMainWindow):
         else:
             self.__console.error("it must have 2 numbers in preset filename")
         return int(0), int(0)
+    
+    def _parse_labeled_filename(self, filename:str):
+        base_name = filename.rsplit('.', 1)[0] # remove extensio
+        parts = base_name.split("_") # split by '_'
+        timestamp = parts[0] # YYYYMMDDhhmmss
+        date = timestamp[:8]  # YYYYMMDD
+        size_part = parts[1][1:]  # '300X300'
+        width, height = re.split(r"[xX]", size_part) #split
+        camera_id = parts[3]
+        image_idx = parts[4]
+        defect_label = parts[5]  # defect label
+
+        return date, timestamp, width, height, camera_id, image_idx, defect_label
+    
+
+    def on_update_label(self, data:dict):
+        try:
+            for id in range(1,16): # 1~15
+                key = f"mea_image{id}"
+                if key in data and not data[key]:
+                    labeled_name = data.get(key)
+
+                    # split filename
+                    date, timestamp, width, height, camera_id, image_idx, defect_label = self._parse_labeled_filename(labeled_name)
+
+                    # change image label
+                    ssh_command = [
+                        "sshpass", "-p", "Ehdrnrwprkd1",
+                        "ssh",
+                        "-T",
+                        "dksteel@192.168.1.52",
+                        f"mv /volume1/sdd/{date}/{timestamp}_{width}x{height}/camera_{camera_id}/{camera_id}_{image_idx}_*.jpg /volume1/sdd/{date}/{timestamp}_{width}x{height}/camera_{camera_id}/{camera_id}_{image_idx}_{defect_label}.jpg"
+                    ]
+                    subprocess.run(ssh_command)
+                    self.__console.info(f"Label updated for {camera_id}_{image_idx} image file with defect class {defect_label}")
+
+        except Exception as e:
+            self.__console.error(f"DK Level2 Label Update Error: {e}")
 
 
     def on_update_dk_level2_data(self, data:dict):
@@ -656,7 +698,11 @@ class AppWindow(QMainWindow):
                 self.__console.info("push level2 data into model inference")
                 self.__sdd_inference_subscriber.add_job_lv2_info(data["date"],
                                                                  mt_stand_height=int(data.get("mt_stand_height", 0)/10),
-                                                                 mt_stand_width=int(data.get("mt_stand_width", 0)/10))
+                                                                 mt_stand_width=int(data.get("mt_stand_width", 0)/10),
+                                                                 mt_no = data.get("mt_no", "-"),
+                                                                 lot_no=data.get("lot_no", "-"),
+                                                                 mt_type_cd=data.get("mt_type_cd", "-"),
+                                                                 mt_stand=data.get("mt_stand_raw","-"))
 
             # apply preset
             if near_preset:

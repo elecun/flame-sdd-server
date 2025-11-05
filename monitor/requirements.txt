@@ -13,3 +13,4 @@ tqdm
 nvitop
 scikit-learn
 xgboost
+synology-api

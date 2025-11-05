@@ -28,6 +28,7 @@ for name in dir(zmq):
 
 class DKLevel2DataSubscriber(QThread):
     level2_data_update_signal = pyqtSignal(dict) # signal for level2 data update
+    labeling_job_signal = pyqtSignal(dict) # signal for labeling job dispatch
 
     def __init__(self, context:zmq.Context, connection:str, topic:str):
         super().__init__()
@@ -41,11 +42,13 @@ class DKLevel2DataSubscriber(QThread):
 
         # initialize zmq
         self.__socket = context.socket(zmq.SUB)
-        self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 100)
+        self.__socket.setsockopt(zmq.RCVHWM, 100)
+        self.__socket.setsockopt(zmq.RCVBUF, 1000)
         self.__socket.setsockopt(zmq.RCVTIMEO, 500)
         self.__socket.setsockopt(zmq.LINGER,0)
         self.__socket.connect(connection)
         self.__socket.subscribe(topic)
+        self.__socket.subscribe("labeling_job_dispatch")
 
         self.__poller = zmq.Poller()
         self.__poller.register(self.__socket, zmq.POLLIN) # POLLIN, POLLOUT, POLLERR
@@ -71,7 +74,11 @@ class DKLevel2DataSubscriber(QThread):
                         topic, data = self.__socket.recv_multipart()
                         if topic.decode() == self.__topic:
                             data = json.loads(data.decode('utf8').replace("'", '"'))
+                            self.__console.info(f"LV2 Subscribe : {data}")
                             self.level2_data_update_signal.emit(data)
+                        elif topic.decode() == "labeling_job_dispatch":
+                            data = json.loads(data.decode('utf8').replace("'", '"'))
+                            self.labeling_job_signal.emit(data)
             
             except json.JSONDecodeError as e:
                 self.__console.critical(f"<Level2 Data Monitor>[DecodeError] {e}")

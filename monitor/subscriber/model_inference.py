@@ -33,6 +33,8 @@ import glob
 import shutil
 import pytorch_ssim
 import stat
+import subprocess
+import paramiko
 
 import re
 import torch.nn as nn
@@ -72,7 +74,7 @@ class SDDModelInference(QThread):
     models = [{cam_ids":[1,2], "model_path:"/path/mode.onnx"}, ...}]
     '''
 
-    def __init__(self, context:zmq.Context, connection:str, topic:str, model_config:dict, in_path_root:str, out_path_root:str, save_visual:bool):
+    def __init__(self, context:zmq.Context, connection:str, topic:str, model_config:dict, in_path_root:str, out_path_root:str, save_visual:bool, defect_images_save_path:str):
         super().__init__()
 
         self.__console = ConsoleLogger.get_logger()   # console logger
@@ -83,6 +85,7 @@ class SDDModelInference(QThread):
         self.__images_root_path = pathlib.Path(in_path_root)
         self.__out_root_path = pathlib.Path(out_path_root)
         self.__job_queue = queue.Queue()
+        self.__defect_images_save_path = defect_images_save_path
 
         # # add xgboost (25.07.17)
         self.xgb_model = None
@@ -95,11 +98,19 @@ class SDDModelInference(QThread):
 
         # initialize zmq
         self.__socket = context.socket(zmq.SUB)
-        self.__socket.setsockopt(zmq.RCVBUF .RCVHWM, 100)
+        self.__socket.setsockopt(zmq.RCVHWM, 100)
+        self.__socket.setsockopt(zmq.RCVBUF, 1000)
         self.__socket.setsockopt(zmq.RCVTIMEO, 500)
         self.__socket.setsockopt(zmq.LINGER,0)
         self.__socket.connect(connection)
         self.__socket.subscribe(topic)
+
+        # lv2 notification
+        self.__socket_lv2_notify = context.socket(zmq.PUB)
+        self.__socket_lv2_notify.setsockopt(zmq.SNDHWM, 100)
+        self.__socket_lv2_notify.setsockopt(zmq.SNDBUF, 1000)
+        self.__socket_lv2_notify.setsockopt(zmq.LINGER, 0)
+        self.__socket_lv2_notify.bind("tcp://127.0.0.1:5402")
 
         self.__poller = zmq.Poller()
         self.__poller.register(self.__socket, zmq.POLLIN) # POLLIN, POLLOUT, POLLERR
@@ -121,11 +132,16 @@ class SDDModelInference(QThread):
         # }
         # self.__job_queue.put(test_data)
 
-    def add_job_lv2_info(self, date:str, mt_stand_height:int, mt_stand_width:int):
+    def add_job_lv2_info(self, date:str, mt_stand_height:int, mt_stand_width:int, mt_no:str, lot_no:str, mt_type_cd:str, mt_stand:str):
         self.__job_lv2_info["date"] = date
         self.__job_lv2_info["mt_stand_width"] = mt_stand_width
         self.__job_lv2_info["mt_stand_height"] = mt_stand_height
+        self.__job_lv2_info["mt_no"] = mt_no
+        self.__job_lv2_info["lot_no"] = lot_no
+        self.__job_lv2_info["mt_type_cd"] = mt_type_cd
+        self.__job_lv2_info["mt_stand"] = mt_stand
         self.__console.info(f"Updated the job desc to process the SDD (waiting for start)")
+        self.__console.debug(f"LV2 Job Info: {self.__job_lv2_info}")
     
     def __remove_readonly(self, func, path, exc_info):
         os.chmod(path, stat.S_IWRITE)
@@ -178,6 +194,13 @@ class SDDModelInference(QThread):
                                     data["sdd_in_path"] = self.__images_root_path / target_dir
                                     data["sdd_out_path"] = self.__out_root_path / target_dir
                                     data["save_visual"] = self.__save_visual
+                                    data["mt_no"] = self.__job_lv2_info.get("mt_no","-")
+                                    data["date"] = self.__job_lv2_info["date"]
+                                    data["mt_stand_width"] = lv2_mt_w
+                                    data["mt_stand_height"] = lv2_mt_h
+                                    data["lot_no"] = self.__job_lv2_info.get("lot_no","-")
+                                    data["mt_type_cd"] = self.__job_lv2_info.get("mt_type_cd","-")
+                                    data["mt_stand"] = self.__job_lv2_info.get("mt_stand","-")
                                     self.__job_queue.put(data)
 
                                 self.__console.info(f"<SDD Model Inference> Adding job to queue... (Remaining {self.__job_queue.qsize()})")
@@ -290,6 +313,122 @@ class SDDModelInference(QThread):
         renamed = [r for r in results if r==True]
         self.__console.info(f"{len(renamed)}/{len(results)} file(s) are renamed for self-explanatory")
 
+        # (added 25.11.04) copy result file to NAS defect_images folder
+        n_copied = self.copy_defect_images(output_csv, job_desc.get("date"), job_desc.get("mt_stand_width"), job_desc.get("mt_stand_height"), job_desc.get("mt_no"))
+
+        # (added 25.11.04) complete notify to LV2
+        self.push_job_complete_to_lv2(job_desc.get("date"), job_desc.get("lot_no"), job_desc.get("mt_no"), job_desc.get("mt_type_cd"), job_desc.get("mt_stand"), n_copied)
+
+    def push_job_complete_to_lv2(self, date:str, lot_no:str, mt_no:str,  mt_type_cd:str, mt_stand:str, n_copied:int):
+        topic = "sdd_job_queue"
+        message = {"date":date, "lot_no":lot_no, "mt_no":mt_no, "mt_type_cd":mt_type_cd, "mt_stand":mt_stand, "defect_count":n_copied}
+        self.__console.info(f"<SDD Model Inference> Notify LV2 SDD job complete: {message}")
+        jmsg = json.dumps(message)
+        self.__socket_lv2_notify.send_multipart([topic.encode(), jmsg.encode()])
+
+    def copy_defect_images(self, output_csv:str, date:str, width:int, height:int, mt_no:str) -> int:
+        copy_tasks = []
+        n_copied = 0
+
+        try:
+            # Read CSV and gather tasks
+            with open(output_csv, 'r', newline='') as csvfile:
+                reader = csv.reader(csvfile)
+                next(reader)  # Skip header
+                for row in reader:
+                    if len(row) > 0 and row[-1].strip() == '1':  # if defect
+                        image_filename = row[0].strip()[:-4]  # remove file extension (.jpg)
+                        camera_id = image_filename.split('_')[0]
+                        new_filename = f"{date}_H{width}X{height}_{mt_no}_{image_filename}_x.jpg"
+
+                        copy_tasks.append({
+                            'src': f"/volume1/sdd/{date[0:8]}/{date}_{width}x{height}/camera_{camera_id}/{image_filename}_x.jpg",
+                            'dst': f"/volume1/sdd/defect_images/{new_filename}"
+                        })
+
+            if not copy_tasks:
+                self.__console.info("No defect images to copy")
+                return 0
+
+            # SSH connection parameters (keep same behavior as before)
+            host = '192.168.1.52'
+            user = 'dksteel'
+            password = 'Ehdrnrwprkd1'
+
+            # Allow configurable number of persistent SSH sessions; default to 4
+            pool_size = max(1, min(8, len(copy_tasks)))
+
+            # Prepare a thread-safe queue of tasks
+            task_q = queue.Queue()
+            for t in copy_tasks:
+                task_q.put(t)
+
+            lock = threading.Lock()
+
+            def make_client():
+                client = paramiko.SSHClient()
+                client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                client.connect(hostname=host, username=user, password=password,
+                               look_for_keys=False, allow_agent=False, timeout=10)
+                return client
+
+            def worker_thread():
+                nonlocal n_copied
+                client = None
+                try:
+                    client = make_client()
+                except Exception as e:
+                    self.__console.error(f"Failed to create SSH client: {e}")
+                    return
+
+                while True:
+                    try:
+                        task = task_q.get_nowait()
+                    except Exception:
+                        break
+
+                    src = task['src']
+                    dst = task['dst']
+                    cmd = f"cp {src} {dst}"
+                    try:
+                        stdin, stdout, stderr = client.exec_command(cmd)
+                        exit_status = stdout.channel.recv_exit_status()
+                        if exit_status == 0:
+                            with lock:
+                                n_copied += 1
+                        else:
+                            err = stderr.read().decode(errors='ignore')
+                            self.__console.error(f"Remote cp failed ({exit_status}): {cmd} -> {err}")
+                    except Exception as e:
+                        self.__console.error(f"SSH exec error for {src} -> {dst}: {e}")
+                    finally:
+                        task_q.task_done()
+
+                try:
+                    client.close()
+                except Exception:
+                    pass
+
+            # Start worker threads (each maintains its own SSH session)
+            threads = []
+            for _ in range(pool_size):
+                t = threading.Thread(target=worker_thread, daemon=True)
+                threads.append(t)
+                t.start()
+
+            # Wait for all tasks to be processed
+            for t in threads:
+                t.join()
+
+        except FileNotFoundError:
+            self.__console.error(f"File not found: {output_csv}")
+            return 0
+        except Exception as e:
+            self.__console.error(f"Error processing {output_csv}: {e}")
+            return 0
+
+        self.__console.info(f"Copied {n_copied} defect image(s) to NAS defect_images folder")
+        return n_copied
 
     def __infer_worker(self, cams, model_path, gpu_id, input_root, result_queue, output_csv, save_visual, progress, total):
 

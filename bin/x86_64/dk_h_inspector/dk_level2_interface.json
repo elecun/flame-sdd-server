@@ -7,6 +7,7 @@
         "enable_sdd_host":true,
         "enable_level2_access":true,
         "enable_line_check":true,
+        "enable_job_check":true,
         "alive_interval":30,
         "level2_access_ip":"128.1.50.1",
         "level2_access_port":7571,
@@ -29,10 +30,24 @@
             "socket_type" : "pub",
             "queue_size" : 100
         },
+        "labeling_job_dispatch" : {
+            "transport" : "tcp",
+            "host" : "*",
+            "port" : 5605,
+            "socket_type" : "pub",
+            "queue_size" : 100
+        },
         "ni_daq_controller/line_signal" : {
             "transport":"tcp",
             "host":"127.0.0.1",
             "port":5401,
+            "socket_type" : "sub",
+            "queue_size" : 100
+        },
+        "sdd_job_queue" : {
+            "transport":"tcp",
+            "host":"127.0.0.1",
+            "port":5402,
             "socket_type" : "sub",
             "queue_size" : 100
         }

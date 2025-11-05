@@ -5,7 +5,7 @@ import json
 
 context = zmq.Context()
 socket = context.socket(zmq.PUB)
-socket.setsockopt(zmq.RCVBUF .RCVHWM, 1000)
+socket.setsockopt(zmq.RCVHWM, 1000)
 socket.setsockopt(zmq.LINGER, 0)
 socket.bind("tcp://*:5401")
 

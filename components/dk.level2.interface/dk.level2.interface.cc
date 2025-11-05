@@ -33,12 +33,46 @@ bool dk_level2_interface::on_init(){
             _server_worker = thread(&dk_level2_interface::_do_server_work, this, get_profile()->parameters());
         if(get_profile()->parameters().value("enable_line_check", true))
             _line_check_worker = thread(&dk_level2_interface::_line_check_work, this, get_profile()->parameters());
+        if(get_profile()->parameters().value("enable_job_check", true))
+            _job_check_worker = thread(&dk_level2_interface::_job_check_work, this, get_profile()->parameters());
     }
     catch(std::exception& e) {
         logger::error("[{}] Create client exception : {}", get_name(), e.what());
     }
 
     return true;
+}
+
+void dk_level2_interface::_job_check_work(json parameters){
+    while(!_worker_stop.load()){
+        try{
+            zmq::multipart_t msg_multipart;
+            bool success = msg_multipart.recv(*get_port("sdd_job_queue"));
+            if(success){
+                string topic = msg_multipart.popstr();
+                string data = msg_multipart.popstr();
+                logger::info("[{}] Job Complete received : {}", get_name(), data);
+
+                auto json_data = json::parse(data);
+
+                // job complete packet generation & insert to queue
+                // message = {"date":date, "lot_no":lot_no, "mt_no":mt_no, "mt_type_cd":mt_type_cd, "mt_stand":mt_stand, "defect_count":n_copied}
+                dk_sdd_job_complete job_completed_packet = generate_packet_job_complete(json_data["lot_no"].get<string>(),
+                                                                                        json_data["mt_no"].get<string>(),
+                                                                                        json_data["mt_type_cd"].get<string>(),
+                                                                                        json_data["mt_stand"].get<string>(),
+                                                                                        json_data["defect_count"].get<int>());
+                _sdd_job_complete_queue.push(std::move(job_completed_packet));
+            }
+        }
+        catch(const zmq::error_t& e){
+            logger::error("[{}] Pipeline Exception : {}", get_name(), e.what());
+        }
+        catch(const std::exception& e){
+            logger::error("[{}] Standard Exception : {}", get_name(), e.what());
+        }
+    }
+
 }
 
 void dk_level2_interface::_line_check_work(json paramters){
@@ -153,12 +187,12 @@ void dk_level2_interface::_do_client_work(json parameters){
                         }
                     }
 
-                    /* 3. job result */
+                    /* 3. job result(completed) */
                     if(_tcp_socket && is_connected){
-                        dk_sdd_job_result job_result_packet;
-                        if(_sdd_job_result_queue.pop_async(job_result_packet)){
-                            char* packet = reinterpret_cast<char*>(&job_result_packet);
-                            ssize_t sent_bytes = _tcp_socket->send(packet, sizeof(job_result_packet));
+                        dk_sdd_job_complete job_completed_packet;
+                        if(_sdd_job_complete_queue.pop_async(job_completed_packet)){
+                            char* packet = reinterpret_cast<char*>(&job_completed_packet);
+                            ssize_t sent_bytes = _tcp_socket->send(packet, sizeof(job_completed_packet));
                             if(sent_bytes<=0){
                                 logger::warn("[{}] Level2 Server connection is lost or closed.", get_name());
                                 _tcp_socket->close(); // socket close & clear 
@@ -233,6 +267,51 @@ void dk_level2_interface::_do_server_work(json parameters){
                             }
                         }
 
+                        /* tc code 1002 : labeled*/
+                        else if(!memcmp(data, "1002", 4)){
+                            dk_lv2_defect_labeled packet;
+                            if(length==sizeof(packet)){
+                                memcpy(&packet, data, sizeof(packet));
+                                string str_packet(data, length);
+                                logger::info("[{}] {}", get_name(), str_packet);
+
+                                json data_pack;
+                                data_pack["date"] = remove_space(packet.cDate, sizeof(packet.cDate));
+                                data_pack["mt_no"] = remove_space(packet.cMtNo, sizeof(packet.cMtNo));
+                                data_pack["mea_image1"] = remove_space(packet.cMea_Image1, sizeof(packet.cMea_Image1));
+                                data_pack["mea_image2"] = remove_space(packet.cMea_Image2, sizeof(packet.cMea_Image2));
+                                data_pack["mea_image3"] = remove_space(packet.cMea_Image3, sizeof(packet.cMea_Image3));
+                                data_pack["mea_image4"] = remove_space(packet.cMea_Image4, sizeof(packet.cMea_Image4));
+                                data_pack["mea_image5"] = remove_space(packet.cMea_Image5, sizeof(packet.cMea_Image5));
+                                data_pack["mea_image6"] = remove_space(packet.cMea_Image6, sizeof(packet.cMea_Image6));
+                                data_pack["mea_image7"] = remove_space(packet.cMea_Image7, sizeof(packet.cMea_Image7));
+                                data_pack["mea_image8"] = remove_space(packet.cMea_Image8, sizeof(packet.cMea_Image8));
+                                data_pack["mea_image9"] = remove_space(packet.cMea_Image9, sizeof(packet.cMea_Image9));
+                                data_pack["mea_image10"] = remove_space(packet.cMea_Image10, sizeof(packet.cMea_Image10));
+                                data_pack["mea_image11"] = remove_space(packet.cMea_Image11, sizeof(packet.cMea_Image11));
+                                data_pack["mea_image12"] = remove_space(packet.cMea_Image12, sizeof(packet.cMea_Image12));
+                                data_pack["mea_image13"] = remove_space(packet.cMea_Image13, sizeof(packet.cMea_Image13));
+                                data_pack["mea_image14"] = remove_space(packet.cMea_Image14, sizeof(packet.cMea_Image14));
+                                data_pack["mea_image15"] = remove_space(packet.cMea_Image15, sizeof(packet.cMea_Image15));
+                                if(!_ignore.load()){
+                                    logger::info("Level2 Labeled Defect Info : mt_no: {}", data_pack["mt_no"].get<string>());
+
+                                    /* publish the level2 data via labeling_job_dispatch port */
+                                    string topic = fmt::format("labeling_job_dispatch", get_name());
+                                    string data = data_pack.dump();
+                                    zmq::multipart_t msg_multipart;
+                                    msg_multipart.addstr(topic);
+                                    msg_multipart.addstr(data);
+                                    msg_multipart.send(*get_port("labeling_job_dispatch"), ZMQ_DONTWAIT);
+                                    logger::info("[{}] Publish to labeling_job_dispatch", get_name());
+                                }
+
+                            }
+                            else {
+                                logger::info("[{}] Wrong packet(TC code:1002) length", get_name());
+                            }
+                        }
+
                         /* tc code : job instruction */
                         else if(!memcmp(data, "1001", 4)){
                             dk_lv2_mf_instruction packet;
@@ -248,21 +327,23 @@ void dk_level2_interface::_do_server_work(json parameters){
                                 data_pack["mt_no"] = remove_space(packet.cMtNo, sizeof(packet.cMtNo));
                                 //dk_h_standard_dim dim = extract_stand_dim(packet.cMtStand, sizeof(packet.cMtStand));
                                 data_pack["mt_stand"] = remove_space(packet.cMtStand, sizeof(packet.cMtStand));
+                                data_pack["mt_stand_raw"] = string(packet.cMtStand, sizeof(packet.cMtStand));
                                 data_pack["mt_stand_height"] = stoi(remove_space(packet.cStandSize2, sizeof(packet.cStandSize2))); //B
                                 data_pack["mt_stand_width"] = stoi(remove_space(packet.cStandSize1, sizeof(packet.cStandSize1))); // H
                                 data_pack["mt_stand_t1"] = stoi(remove_space(packet.cStandSize3, sizeof(packet.cStandSize3))); //t1
                                 data_pack["mt_stand_t2"] = stoi(remove_space(packet.cStandSize4, sizeof(packet.cStandSize4))); //t2
                                 data_pack["fm_length"] = stol(remove_space(packet.cFMLength, sizeof(packet.cFMLength))); //fm length
+                                data_pack["mt_type_cd"] = remove_space(packet.cMtTypeCd, sizeof(packet.cMtTypeCd)); // mt_type_cd
                                 data_pack["fm_speed"] = stoi(remove_space(packet.cFMSpeed, sizeof(packet.cFMSpeed))); //fm_speed
-
                                 if(!_ignore.load()){
-                                    logger::info("Level2 Info : {}x{}x{}/{}, ({})", 
+                                    logger::info("Level2 Info : {}x{}x{}/{}, ({})(type:{})(raw:{})", 
                                                                         data_pack["mt_stand_height"].get<int>(),
                                                                         data_pack["mt_stand_width"].get<int>(),
                                                                         data_pack["mt_stand_t1"].get<int>(),
                                                                         data_pack["mt_stand_t2"].get<int>(),
                                                                         data_pack["fm_length"].get<long>(),
-                                                                        data_pack["fm_speed"].get<int>());
+                                                                        data_pack["mt_type_cd"].get<string>(),
+                                                                        data_pack["mt_stand_raw"].get<string>());
 
                                     /* publish the level2 data via lv2_dispatch port */
                                     string topic = fmt::format("lv2_dispatch", get_name());
@@ -342,6 +423,10 @@ void dk_level2_interface::on_close(){
     if(_line_check_worker.joinable()){
         logger::info("[{}] waiting for line check...", get_name());
         _line_check_worker.join();
+    }
+    if(_job_check_worker.joinable()){
+        logger::info("[{}] waiting for job check...", get_name());
+        _job_check_worker.join();
     }
 
     logger::info("[{}] Level2 Interface is now closed", get_name());
@@ -478,6 +563,59 @@ dk_sdd_job_result dk_level2_interface::generate_packet_job_result(string lot_no,
 
     return packet;
 
+}
+
+dk_sdd_job_complete dk_level2_interface::generate_packet_job_complete(string lot_no, string mt_no, string mt_type_cd, string mt_stand, int defect_count){
+
+    dk_sdd_job_complete packet;
+    std::stringstream ss;
+    static unsigned long defect_counter = 0;
+
+    /* 1. cTcCode (4) */
+    string code = "1101";
+    std::memcpy(packet.cTcCode, code.c_str(), sizeof(packet.cTcCode));
+
+    /* 2. cDate (14) */
+    string date = get_current_time();
+    std::memcpy(packet.cDate, date.c_str(), sizeof(packet.cDate));
+
+    /* 3. cTcLength (6) */
+    ss << std::setw(sizeof(packet.cTcLength)) << std::setfill('0') << std::right << sizeof(dk_sdd_job_complete);
+    std::memcpy(packet.cTcLength, ss.str().c_str(), sizeof(packet.cTcLength));
+    ss.str(""); ss.clear();
+
+    /* 4. cLotNo (15) */
+    ss << std::left << std::setw(sizeof(packet.cLotNo)) << std::setfill(' ') << lot_no;
+    std::memcpy(packet.cLotNo, ss.str().c_str(), sizeof(packet.cLotNo));
+    ss.str(""); ss.clear();
+
+    /* 5. cMtNo (15) */
+    ss << std::left << std::setw(sizeof(packet.cMtNo)) << std::setfill(' ') << mt_no;
+    std::memcpy(packet.cMtNo, ss.str().c_str(), sizeof(packet.cMtNo));
+    ss.str(""); ss.clear();
+
+    /* 6. cMtTypeCd (2) */
+    ss << std::left << std::setw(sizeof(packet.cMtTypeCd)) << std::setfill(' ') << mt_type_cd;
+    std::memcpy(packet.cMtTypeCd, ss.str().c_str(), sizeof(packet.cMtTypeCd));
+    ss.str(""); ss.clear();
+
+    /* 7. cMtStand (30) */
+    ss << std::left << std::setw(sizeof(packet.cMtStand)) << std::setfill(' ') << mt_stand;
+    std::memcpy(packet.cMtStand, ss.str().c_str(), sizeof(packet.cMtStand));
+    ss.str(""); ss.clear();
+
+    /* 8. cCount (5) */
+    ss << std::setw(sizeof(packet.cCount)) << std::setfill('0') << std::right << defect_counter;
+    std::memcpy(packet.cCount, ss.str().c_str(), sizeof(packet.cCount));
+    ss.str(""); ss.clear();
+
+    /* 9. cSpare (10) */
+    memset(packet.cSpare, '0', sizeof(packet.cSpare));
+
+    if(_show_raw_packet.load())
+        show_raw_packet(reinterpret_cast<char*>(&packet), sizeof(packet));
+
+    return packet;
 }
 
 string dk_level2_interface::get_current_time(){

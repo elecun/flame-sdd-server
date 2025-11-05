@@ -5,7 +5,7 @@ import json
 
 context = zmq.Context()
 socket = context.socket(zmq.SUB)
-socket.setsockopt(zmq.RCVBUF .RCVHWM, 1000)
+socket.setsockopt(zmq.RCVHWM, 1000)
 # socket.setsockopt(zmq.RCVTIMEO, 500)
 socket.setsockopt(zmq.LINGER, 0)
 socket.setsockopt(zmq.RECONNECT_IVL, 500)

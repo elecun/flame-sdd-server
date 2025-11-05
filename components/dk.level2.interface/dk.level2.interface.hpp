@@ -44,15 +44,18 @@ class dk_level2_interface : public flame::component::object {
         thread _client_worker;
         thread _server_worker;
         thread _line_check_worker;
+        thread _job_check_worker;
         atomic<bool> _worker_stop {false};
         atomic<bool> _ignore { false }; // set true if MD signals on
         concurrent_queue<dk_sdd_alarm> _sdd_alarm_queue;
         concurrent_queue<dk_sdd_job_result> _sdd_job_result_queue;
+        concurrent_queue<dk_sdd_job_complete> _sdd_job_complete_queue;
 
         /* worker callback functions */
         void _do_client_work(json parameters);
         void _do_server_work(json parameters);
         void _line_check_work(json paramters);
+        void _job_check_work(json paramters);
 
     private:
         /* useful functions */
@@ -66,6 +69,7 @@ class dk_level2_interface : public flame::component::object {
         dk_sdd_alive generate_packet_alive(bool show = false);
         dk_sdd_alarm generate_packet_alarm(string alarm_code, bool show = false);
         dk_sdd_job_result generate_packet_job_result(string lot_no, string mt_no, string mt_type_cd, string mt_stand, vector<dk_sdd_defect> defect_list, bool show = false);
+        dk_sdd_job_complete generate_packet_job_complete(string lot_no, string mt_no, string mt_type_cd, string mt_stand, int defect_count);
 
         /* status udpate */
         void publish_status(bool lv2_connect);

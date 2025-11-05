@@ -117,3 +117,46 @@ struct _type_dk_h_standard_dim {
 };
 #pragma pack(pop)
 typedef _type_dk_h_standard_dim dk_h_standard_dim;
+
+/* (added 25.11.04) sdd complete */
+#pragma pack(push, 1)
+struct _type_dk_sdd_job_complete {
+    char cTcCode[4];    /* TC Code */
+    char cDate[14];     /* 송신시간 */
+    char cTcLength[6];  /* 전문길이 */
+    char cLotNo[15];    /* Lot No */
+    char cMtNo[15];     /* 강편번호 */
+    char cMtTypeCd[2];  /* 제품형태 */
+    char cMtStand[30];  /* 제품규격명 */
+    char cCount[5];     /* 전체 획득 이미지 수*/
+    char cSpare[10];    /* reserved */
+};
+#pragma pack(pop)
+typedef _type_dk_sdd_job_complete dk_sdd_job_complete;
+
+/* (added 25. 11. 04) lv2 defect labeled */
+#pragma pack(push, 1)
+struct _type_dk_lv2_defect_labeled {
+    char cTcCode[4];        /* TC Code */
+    char cDate[14];         /* 송신시간 */
+    char cTcLength[6];      /* 전문길이 */
+    char cMtNo[15];        /* 강편번호 */
+    char cMea_Image1[50];   /* 측정 이미지 1 파일명 */
+    char cMea_Image2[50];   /* 측정 이미지 2 파일명 */
+    char cMea_Image3[50];   /* 측정 이미지 3 파일명 */
+    char cMea_Image4[50];   /* 측정 이미지 4 파일명 */
+    char cMea_Image5[50];   /* 측정 이미지 5 파일명 */
+    char cMea_Image6[50];   /* 측정 이미지 6 파일명 */
+    char cMea_Image7[50];   /* 측정 이미지 7 파일명 */
+    char cMea_Image8[50];   /* 측정 이미지 8 파일명 */
+    char cMea_Image9[50];   /* 측정 이미지 9 파일명 */
+    char cMea_Image10[50];  /* 측정 이미지 10 파일명 */
+    char cMea_Image11[50];  /* 측정 이미지 11 파일명 */
+    char cMea_Image12[50];  /* 측정 이미지 12 파일명 */
+    char cMea_Image13[50];  /* 측정 이미지 13 파일명 */
+    char cMea_Image14[50];  /* 측정 이미지 14 파일명 */
+    char cMea_Image15[50];  /* 측정 이미지 15 파일명 */
+    char cSpare[11];      /* reserved */
+};
+#pragma pack(pop)
+typedef _type_dk_lv2_defect_labeled dk_lv2_defect_labeled;
