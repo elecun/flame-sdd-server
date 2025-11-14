@@ -569,7 +569,6 @@ dk_sdd_job_complete dk_level2_interface::generate_packet_job_complete(string lot
 
     dk_sdd_job_complete packet;
     std::stringstream ss;
-    static unsigned long defect_counter = 0;
 
     /* 1. cTcCode (4) */
     string code = "1101";
@@ -605,7 +604,7 @@ dk_sdd_job_complete dk_level2_interface::generate_packet_job_complete(string lot
     ss.str(""); ss.clear();
 
     /* 8. cCount (5) */
-    ss << std::setw(sizeof(packet.cCount)) << std::setfill('0') << std::right << defect_counter;
+    ss << std::setw(sizeof(packet.cCount)) << std::setfill('0') << std::right << defect_count;
     std::memcpy(packet.cCount, ss.str().c_str(), sizeof(packet.cCount));
     ss.str(""); ss.clear();
 
