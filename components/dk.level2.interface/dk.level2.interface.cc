@@ -61,7 +61,7 @@ void dk_level2_interface::_job_check_work(json parameters){
                                                                                         json_data["mt_no"].get<string>(),
                                                                                         json_data["mt_type_cd"].get<string>(),
                                                                                         json_data["mt_stand"].get<string>(),
-                                                                                        json_data["defect_count"].get<int>());
+                                                                                        json_data["frames"].get<int>());
                 _sdd_job_complete_queue.push(std::move(job_completed_packet));
             }
         }
@@ -565,7 +565,7 @@ dk_sdd_job_result dk_level2_interface::generate_packet_job_result(string lot_no,
 
 }
 
-dk_sdd_job_complete dk_level2_interface::generate_packet_job_complete(string lot_no, string mt_no, string mt_type_cd, string mt_stand, int defect_count){
+dk_sdd_job_complete dk_level2_interface::generate_packet_job_complete(string lot_no, string mt_no, string mt_type_cd, string mt_stand, int frames){
 
     dk_sdd_job_complete packet;
     std::stringstream ss;
@@ -604,7 +604,7 @@ dk_sdd_job_complete dk_level2_interface::generate_packet_job_complete(string lot
     ss.str(""); ss.clear();
 
     /* 8. cCount (5) */
-    ss << std::setw(sizeof(packet.cCount)) << std::setfill('0') << std::right << defect_count;
+    ss << std::setw(sizeof(packet.cCount)) << std::setfill('0') << std::right << frames;
     std::memcpy(packet.cCount, ss.str().c_str(), sizeof(packet.cCount));
     ss.str(""); ss.clear();
 

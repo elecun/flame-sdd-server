@@ -317,11 +317,11 @@ class SDDModelInference(QThread):
         n_copied = self.copy_defect_images(output_csv, job_desc.get("date"), job_desc.get("mt_stand_width"), job_desc.get("mt_stand_height"), job_desc.get("mt_no"))
 
         # (added 25.11.04) complete notify to LV2
-        self.push_job_complete_to_lv2(job_desc.get("date"), job_desc.get("lot_no"), job_desc.get("mt_no"), job_desc.get("mt_type_cd"), job_desc.get("mt_stand"), n_copied)
+        self.push_job_complete_to_lv2(job_desc.get("date"), job_desc.get("lot_no"), job_desc.get("mt_no"), job_desc.get("mt_type_cd"), job_desc.get("mt_stand"), frames=len(rows), n_copied=n_copied)
 
-    def push_job_complete_to_lv2(self, date:str, lot_no:str, mt_no:str,  mt_type_cd:str, mt_stand:str, n_copied:int):
+    def push_job_complete_to_lv2(self, date:str, lot_no:str, mt_no:str,  mt_type_cd:str, mt_stand:str, frames:int, n_copied:int):
         topic = "sdd_job_queue"
-        message = {"date":date, "lot_no":lot_no, "mt_no":mt_no, "mt_type_cd":mt_type_cd, "mt_stand":mt_stand, "defect_count":n_copied}
+        message = {"date":date, "lot_no":lot_no, "mt_no":mt_no, "mt_type_cd":mt_type_cd, "mt_stand":mt_stand, "frames":frames}
         self.__console.info(f"<SDD Model Inference> Notify LV2 SDD job complete: {message}")
         jmsg = json.dumps(message)
         self.__socket_lv2_notify.send_multipart([topic.encode(), jmsg.encode()])
