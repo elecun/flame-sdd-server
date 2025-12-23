@@ -437,7 +437,7 @@ void dk_level2_interface::on_message(){
     
 }
 
-dk_sdd_alive dk_level2_interface::generate_packet_alive(bool show){
+dk_sdd_alive dk_level2_interface::generate_packet_alive(bool show, bool work){
 
     dk_sdd_alive packet;
     std::stringstream ss;
@@ -462,6 +462,12 @@ dk_sdd_alive dk_level2_interface::generate_packet_alive(bool show){
         alive_msg_counter = 0;
     std::memcpy(packet.cCount, ss.str().c_str(), sizeof(packet.cCount));
     ss.str(""); ss.clear();
+
+    /* 5. cWork (2) */
+    if(work)
+        std::memcpy(packet.cWork, "01", sizeof(packet.cWork));
+    else
+        std::memcpy(packet.cWork, "99", sizeof(packet.cWork));
 
     /* 5. reserved (22) */
     memset(packet.cSpare, '0', sizeof(packet.cSpare));

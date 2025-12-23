@@ -103,7 +103,8 @@ struct _type_dk_sdd_alive {
     char cDate[14];     /* 송신시간 */
     char cTcLength[6];  /* 전문길이 */
     char cCount[4];     /* 카운트 */
-    char cSpare[22];    /* 스페어 */
+    char cWork[2];    /* 가동상태(01:online, 99:offline) */
+    char cSpare[20];    /* 스페어 */
 };
 #pragma pack(pop)
 typedef _type_dk_sdd_alive  dk_sdd_alive;
