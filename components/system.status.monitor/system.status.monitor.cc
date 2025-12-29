@@ -1,6 +1,5 @@
 #include "system.status.monitor.hpp"
 #include <flame/log.hpp>
-#include <flame/config_def.hpp>
 
 using namespace flame;
 
@@ -31,6 +30,6 @@ void system_status_monitor::on_close(){
 
 }
 
-void system_status_monitor::on_message(){
+void system_status_monitor::on_message(const component::message_t& msg){
 
 }

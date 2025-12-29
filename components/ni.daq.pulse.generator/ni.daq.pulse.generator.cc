@@ -1,7 +1,6 @@
 
 #include "ni.daq.pulse.generator.hpp"
 #include <flame/log.hpp>
-#include <flame/config_def.hpp>
 
 using namespace flame;
 
@@ -66,7 +65,7 @@ void ni_daq_pulse_generator::on_close(){
     
 }
 
-void ni_daq_pulse_generator::on_message(){
+void ni_daq_pulse_generator::on_message(const component::message_t& msg){
     
 }
 

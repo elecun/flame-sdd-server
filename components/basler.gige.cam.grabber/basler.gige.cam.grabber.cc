@@ -1,7 +1,6 @@
 
 #include "basler.gige.cam.grabber.hpp"
 #include <flame/log.hpp>
-#include <flame/config_def.hpp>
 #include <opencv2/opencv.hpp>
 #include <chrono>
 
@@ -162,7 +161,7 @@ void basler_gige_cam_grabber::on_close(){
     PylonTerminate();
 }
 
-void basler_gige_cam_grabber::on_message(){
+void basler_gige_cam_grabber::on_message(const component::message_t& msg){
     
 }
 

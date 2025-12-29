@@ -1,7 +1,6 @@
 
 #include "test.image.pusher.hpp"
 #include <flame/log.hpp>
-#include <flame/config_def.hpp>
 #include <opencv2/opencv.hpp>
 #include <chrono>
 
@@ -69,7 +68,7 @@ void test_image_pusher::on_close(){
 
 }
 
-void test_image_pusher::on_message(){
+void test_image_pusher::on_message(const component::message_t& msg){
     
 }
 

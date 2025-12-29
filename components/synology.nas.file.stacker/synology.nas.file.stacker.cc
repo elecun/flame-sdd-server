@@ -1,7 +1,6 @@
 
 #include "synology.nas.file.stacker.hpp"
 #include <flame/log.hpp>
-#include <flame/config_def.hpp>
 #include <chrono>
 #include <sstream>
 #include <ctime>
@@ -84,7 +83,7 @@ void synology_nas_file_stacker::on_close(){
     _stacker_worker.clear();
 }
 
-void synology_nas_file_stacker::on_message(){
+void synology_nas_file_stacker::on_message(const component::message_t& msg){
     
 }
 

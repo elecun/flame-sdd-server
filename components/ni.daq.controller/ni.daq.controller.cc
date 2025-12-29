@@ -1,7 +1,6 @@
 
 #include "ni.daq.controller.hpp"
 #include <flame/log.hpp>
-#include <flame/config_def.hpp>
 #include <algorithm>
 #include <execution> // parallel
 #include <iostream>
@@ -106,7 +105,7 @@ void ni_daq_controller::on_close(){
     }
 }
 
-void ni_daq_controller::on_message(){
+void ni_daq_controller::on_message(const component::message_t& msg){
     
 }
 

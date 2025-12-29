@@ -1,7 +1,6 @@
 
 #include "general.file.stacker.hpp"
 #include <flame/log.hpp>
-#include <flame/config_def.hpp>
 #include <chrono>
 #include <sstream>
 #include <ctime>
@@ -83,7 +82,7 @@ void general_file_stacker::on_close(){
     _stacker_worker.clear();
 }
 
-void general_file_stacker::on_message(){
+void general_file_stacker::on_message(const component::message_t& msg){
     
 }
 

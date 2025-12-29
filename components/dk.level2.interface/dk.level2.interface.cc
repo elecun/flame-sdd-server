@@ -1,7 +1,6 @@
 
 #include "dk.level2.interface.hpp"
 #include <flame/log.hpp>
-#include <flame/config_def.hpp>
 #include <chrono>
 #include <filesystem>
 #include <sstream>
@@ -91,6 +90,8 @@ void dk_level2_interface::_line_check_work(json paramters){
                     bool hmd_signal_1_on = json_data["hmd_signal_1_on"].get<bool>();
                     bool hmd_signal_2_on = json_data["hmd_signal_2_on"].get<bool>();
                     bool online_signal_on = json_data["online_signal_on"].get<bool>();
+                    
+                    _is_online.store(online_signal_on); // update online status
 
                     if(hmd_signal_1_on || hmd_signal_2_on){
                         logger::info("[{}] Level2 Data usage will be discontinued", get_name());
@@ -113,6 +114,7 @@ void dk_level2_interface::_line_check_work(json paramters){
 
 }
 
+/* loop for 100ms interval */
 void dk_level2_interface::_do_client_work(json parameters){
 
     logger::info("[{}] Trying to access to Level2 {}:{}", get_name(), _lv2_access_ip, _lv2_access_port);
@@ -156,7 +158,7 @@ void dk_level2_interface::_do_client_work(json parameters){
                     /* 1. send alive check packet for every 30s */
                     if(alive_time>=(_alive_interval*10)){
                         if(_tcp_socket && is_connected){
-                            dk_sdd_alive alive_packet = generate_packet_alive();
+                            dk_sdd_alive alive_packet = generate_packet_alive(false, _is_online.load());
                             char* packet = reinterpret_cast<char*>(&alive_packet);
                             ssize_t sent_bytes = _tcp_socket->send(packet, sizeof(alive_packet));
                             if(sent_bytes<=0){
@@ -433,11 +435,11 @@ void dk_level2_interface::on_close(){
     
 }
 
-void dk_level2_interface::on_message(){
+void dk_level2_interface::on_message(const component::message_t& msg){
     
 }
 
-dk_sdd_alive dk_level2_interface::generate_packet_alive(bool show, bool work){
+dk_sdd_alive dk_level2_interface::generate_packet_alive(bool show, bool working){
 
     dk_sdd_alive packet;
     std::stringstream ss;
@@ -464,7 +466,7 @@ dk_sdd_alive dk_level2_interface::generate_packet_alive(bool show, bool work){
     ss.str(""); ss.clear();
 
     /* 5. cWork (2) */
-    if(work)
+    if(working)
         std::memcpy(packet.cWork, "01", sizeof(packet.cWork));
     else
         std::memcpy(packet.cWork, "99", sizeof(packet.cWork));

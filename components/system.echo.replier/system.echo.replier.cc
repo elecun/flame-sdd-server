@@ -1,6 +1,5 @@
 #include "system.echo.replier.hpp"
 #include <flame/log.hpp>
-#include <flame/config_def.hpp>
 
 using namespace flame;
 
@@ -45,7 +44,7 @@ void system_echo::on_close(){
 
 }
 
-void system_echo::on_message(){
+void system_echo::on_message(const component::message_t& msg){
 
 }
 
@@ -72,11 +71,11 @@ void system_echo::_echo_worker_task(){
             logger::error("[{}] Pipeline error : {}", get_name(), e.what());
             break;
         }
-        catch(const std::exception& e){
-            logger::error("[{}] Standard Exception : {}", get_name(), e.what());
-        }
         catch(const json::parse_error& e){
             logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());
+        }
+        catch(const std::exception& e){
+            logger::error("[{}] Standard Exception : {}", get_name(), e.what());
         }
     }
 
