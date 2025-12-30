@@ -33,11 +33,13 @@ class dk_level2_interface : public flame::component::object {
         bool on_init() override;
         void on_loop() override;
         void on_close() override;
-        void on_message() override;
+        void on_message(const component::message_t& msg) override;
 
     private:
         atomic<bool> _show_raw_packet {false}; /* if true, show packet via logger*/
         int _alive_interval {1000}; /* alive packet send interval */
+        
+        atomic<bool> _is_online { false }; /* true if line is online */
 
     private:
         /* worker */
@@ -64,9 +66,10 @@ class dk_level2_interface : public flame::component::object {
         string remove_space(const char* in, int size);
         dk_h_standard_dim extract_stand_dim(const char* in, int size); /* extract lot no. from packet */
         std::vector<std::string> split(const std::string& str, const std::string& delimiters);
+        string _mtstand_normalize(string mt_stand_raw);  // normalize mt_stand string via regex
 
         /* packet generation */
-        dk_sdd_alive generate_packet_alive(bool show = false);
+        dk_sdd_alive generate_packet_alive(bool show = false, bool working = false);
         dk_sdd_alarm generate_packet_alarm(string alarm_code, bool show = false);
         dk_sdd_job_result generate_packet_job_result(string lot_no, string mt_no, string mt_type_cd, string mt_stand, vector<dk_sdd_defect> defect_list, bool show = false);
         dk_sdd_job_complete generate_packet_job_complete(string lot_no, string mt_no, string mt_type_cd, string mt_stand, int frames);

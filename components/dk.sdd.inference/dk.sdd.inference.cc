@@ -1,7 +1,6 @@
 
 #include "dk.sdd.inference.hpp"
 #include <flame/log.hpp>
-#include <flame/config_def.hpp>
 
 using namespace flame;
 
@@ -59,7 +58,7 @@ void dk_sdd_inference::on_close(){
     
 }
 
-void dk_sdd_inference::on_message(){
+void dk_sdd_inference::on_message(const component::message_t& msg){
     
 }
 

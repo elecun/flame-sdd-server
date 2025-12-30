@@ -1,7 +1,6 @@
 
 #include "dummy.image.pusher.hpp"
 #include <flame/log.hpp>
-#include <flame/config_def.hpp>
 #include <chrono>
 #include <sstream>
 #include <ctime>
@@ -59,7 +58,7 @@ void dummy_image_pusher::on_close(){
     _push_worker.clear();
 }
 
-void dummy_image_pusher::on_message(){
+void dummy_image_pusher::on_message(const component::message_t& msg){
     
 }
 

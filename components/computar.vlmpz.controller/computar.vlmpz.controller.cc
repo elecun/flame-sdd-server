@@ -1,7 +1,6 @@
 
 #include "computar.vlmpz.controller.hpp"
 #include <flame/log.hpp>
-#include <flame/config_def.hpp>
 #include <cmath>
 
 using namespace flame;
@@ -66,7 +65,7 @@ void computar_vlmpz_controller::on_close(){
 
 }
 
-void computar_vlmpz_controller::on_message(){
+void computar_vlmpz_controller::on_message(const component::message_t& msg){
     
 }
 

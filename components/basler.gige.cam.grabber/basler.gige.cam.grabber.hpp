@@ -49,7 +49,7 @@ class basler_gige_cam_grabber : public flame::component::object {
         bool on_init() override;
         void on_loop() override;
         void on_close() override;
-        void on_message() override;
+        void on_message(const component::message_t& msg) override;
 
 
     private:

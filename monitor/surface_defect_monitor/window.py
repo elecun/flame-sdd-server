@@ -26,6 +26,7 @@ from typing import List, Tuple
 import csv
 import re
 import subprocess
+import shlex
 import glob
 
 try:
@@ -636,39 +637,68 @@ class AppWindow(QMainWindow):
         return int(0), int(0)
     
     def _parse_labeled_filename(self, filename:str):
-        base_name = filename.rsplit('.', 1)[0] # remove extensio
+        base_name = filename.rsplit('.', 1)[0] # remove extension
         parts = base_name.split("_") # split by '_'
+
         timestamp = parts[0] # YYYYMMDDhhmmss
-        date = timestamp[:8]  # YYYYMMDD
-        size_part = parts[1][1:]  # '300X300'
-        width, height = re.split(r"[xX]", size_part) #split
+        mt_stand_norm = parts[1]
+        mt_no = parts[2]
         camera_id = parts[3]
         image_idx = parts[4]
         defect_label = parts[5]  # defect label
 
-        return date, timestamp, width, height, camera_id, image_idx, defect_label
+        return timestamp, mt_stand_norm, mt_no, camera_id, image_idx, defect_label
     
 
     def on_update_label(self, data:dict):
         try:
+            mv_commands = []
             for id in range(1,16): # 1~15
                 key = f"mea_image{id}"
-                if key in data and not data[key]:
-                    labeled_name = data.get(key)
+                labeled_name = data.get(key)
+                if not labeled_name:
+                    continue
 
-                    # split filename
-                    date, timestamp, width, height, camera_id, image_idx, defect_label = self._parse_labeled_filename(labeled_name)
+                # split filename
+                try:
+                    timestamp, mt_stand_norm, mt_no, camera_id, image_idx, defect_label = self._parse_labeled_filename(labeled_name)
+                except Exception as e:
+                    self.__console.error(f"Label parse failed for {key}: {e}")
+                    continue
+                date = timestamp[:8]  # YYYYMMDD
 
-                    # change image label
-                    ssh_command = [
-                        "sshpass", "-p", "Ehdrnrwprkd1",
-                        "ssh",
-                        "-T",
-                        "dksteel@192.168.1.52",
-                        f"mv /volume1/sdd/{date}/{timestamp}_{width}x{height}/camera_{camera_id}/{camera_id}_{image_idx}_*.jpg /volume1/sdd/{date}/{timestamp}_{width}x{height}/camera_{camera_id}/{camera_id}_{image_idx}_{defect_label}.jpg"
-                    ]
-                    subprocess.run(ssh_command)
-                    self.__console.info(f"Label updated for {camera_id}_{image_idx} image file with defect class {defect_label}")
+                src = f"/volume1/sdd/{date}/{timestamp}_{mt_stand_norm}/camera_{camera_id}/{camera_id}_{image_idx}_*.jpg"
+                dst = f"/volume1/sdd/{date}/{timestamp}_{mt_stand_norm}/camera_{camera_id}/{camera_id}_{image_idx}_{defect_label}.jpg"
+                mv_commands.append(f"mv {shlex.quote(src)} {shlex.quote(dst)}")
+
+            if not mv_commands:
+                self.__console.info("No label updates to apply")
+                return
+
+            # change image labels in a single SSH session
+            remote_cmd = " && ".join(mv_commands)
+            ssh_command = [
+                "sshpass", "-p", "Ehdrnrwprkd1",
+                "ssh",
+                "-T",
+                "-o", "ConnectTimeout=5",
+                "-o", "ConnectionAttempts=1",
+                "dksteel@192.168.1.52",
+                remote_cmd
+            ]
+            try:
+                completed = subprocess.run(
+                    ssh_command,
+                    check=True,
+                    text=True,
+                    capture_output=True
+                )
+                if completed.stderr:
+                    self.__console.warning(f"Label update stderr: {completed.stderr.strip()}")
+                self.__console.info(f"Label updated for {len(mv_commands)} image file(s)")
+            except subprocess.CalledProcessError as e:
+                err = e.stderr.strip() if e.stderr else "Unknown error"
+                self.__console.error(f"Label update failed: {err}")
 
         except Exception as e:
             self.__console.error(f"DK Level2 Label Update Error: {e}")
@@ -702,7 +732,8 @@ class AppWindow(QMainWindow):
                                                                  mt_no = data.get("mt_no", "-"),
                                                                  lot_no=data.get("lot_no", "-"),
                                                                  mt_type_cd=data.get("mt_type_cd", "-"),
-                                                                 mt_stand=data.get("mt_stand_raw","-"))
+                                                                 mt_stand_raw=data.get("mt_stand_raw",""),
+                                                                 mt_stand_norm=data.get("mt_stand_norm",""))
 
             # apply preset
             if near_preset:
@@ -855,4 +886,3 @@ class AppWindow(QMainWindow):
     
     def __push_inference_job(self, job_desc):
         pass
-

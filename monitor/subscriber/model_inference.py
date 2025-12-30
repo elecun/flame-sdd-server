@@ -132,14 +132,15 @@ class SDDModelInference(QThread):
         # }
         # self.__job_queue.put(test_data)
 
-    def add_job_lv2_info(self, date:str, mt_stand_height:int, mt_stand_width:int, mt_no:str, lot_no:str, mt_type_cd:str, mt_stand:str):
+    def add_job_lv2_info(self, date:str, mt_stand_height:int, mt_stand_width:int, mt_no:str, lot_no:str, mt_type_cd:str, mt_stand_raw:str, mt_stand_norm:str):
         self.__job_lv2_info["date"] = date
         self.__job_lv2_info["mt_stand_width"] = mt_stand_width
         self.__job_lv2_info["mt_stand_height"] = mt_stand_height
         self.__job_lv2_info["mt_no"] = mt_no
         self.__job_lv2_info["lot_no"] = lot_no
         self.__job_lv2_info["mt_type_cd"] = mt_type_cd
-        self.__job_lv2_info["mt_stand"] = mt_stand
+        self.__job_lv2_info["mt_stand_raw"] = mt_stand_raw
+        self.__job_lv2_info["mt_stand_norm"] = mt_stand_norm
         self.__console.info(f"Updated the job desc to process the SDD (waiting for start)")
         self.__console.debug(f"LV2 Job Info: {self.__job_lv2_info}")
     
@@ -186,11 +187,11 @@ class SDDModelInference(QThread):
                         if "hmd_signal_1_on" in data and "hmd_signal_2_on" in data and "online_signal_on" in data:
                             self.__console.info(f"<SDD Model Inference> ready : {data}")
                             if not data["hmd_signal_1_on"] and not data["hmd_signal_2_on"] and data["online_signal_on"]:
-                                if "date" in self.__job_lv2_info and "mt_stand_height" in self.__job_lv2_info:
+                                if "date" in self.__job_lv2_info and "mt_stand_norm" in self.__job_lv2_info:
                                     lv2_date = self.__job_lv2_info["date"][0:8]  # YYYYMMDD
                                     lv2_mt_h = self.__job_lv2_info["mt_stand_height"]
                                     lv2_mt_w = self.__job_lv2_info["mt_stand_width"]
-                                    target_dir = pathlib.Path(lv2_date) / f"{self.__job_lv2_info['date']}_{lv2_mt_w}x{lv2_mt_h}"
+                                    target_dir = pathlib.Path(lv2_date) / f"{self.__job_lv2_info['date']}_{self.__job_lv2_info['mt_stand_norm']}"
                                     data["sdd_in_path"] = self.__images_root_path / target_dir
                                     data["sdd_out_path"] = self.__out_root_path / target_dir
                                     data["save_visual"] = self.__save_visual
@@ -200,7 +201,8 @@ class SDDModelInference(QThread):
                                     data["mt_stand_height"] = lv2_mt_h
                                     data["lot_no"] = self.__job_lv2_info.get("lot_no","-")
                                     data["mt_type_cd"] = self.__job_lv2_info.get("mt_type_cd","-")
-                                    data["mt_stand"] = self.__job_lv2_info.get("mt_stand","-")
+                                    data["mt_stand_raw"] = self.__job_lv2_info.get("mt_stand_raw","-")
+                                    data["mt_stand_norm"] = self.__job_lv2_info.get("mt_stand_norm","-")
                                     self.__job_queue.put(data)
 
                                 self.__console.info(f"<SDD Model Inference> Adding job to queue... (Remaining {self.__job_queue.qsize()})")
@@ -314,7 +316,7 @@ class SDDModelInference(QThread):
         self.__console.info(f"{len(renamed)}/{len(results)} file(s) are renamed for self-explanatory")
 
         # (added 25.11.04) copy result file to NAS defect_images folder
-        n_copied = self.copy_defect_images(output_csv, job_desc.get("date"), job_desc.get("mt_stand_width"), job_desc.get("mt_stand_height"), job_desc.get("mt_no"))
+        n_copied = self.copy_defect_images(output_csv, job_desc.get("date"), job_desc.get("mt_stand_width"), job_desc.get("mt_stand_height"), job_desc.get("mt_no"), job_desc.get("mt_stand_raw"), job_desc.get("mt_stand_norm"))
 
         # (added 25.11.04) complete notify to LV2
         self.push_job_complete_to_lv2(job_desc.get("date"), job_desc.get("lot_no"), job_desc.get("mt_no"), job_desc.get("mt_type_cd"), job_desc.get("mt_stand"), frames=len(rows), n_copied=n_copied)
@@ -326,9 +328,12 @@ class SDDModelInference(QThread):
         jmsg = json.dumps(message)
         self.__socket_lv2_notify.send_multipart([topic.encode(), jmsg.encode()])
 
-    def copy_defect_images(self, output_csv:str, date:str, width:int, height:int, mt_no:str) -> int:
+    def copy_defect_images(self, output_csv:str, date:str, width:int, height:int, mt_no:str, mt_stand_raw:str, mt_stand_norm:str) -> int:
         copy_tasks = []
         n_copied = 0
+        if not mt_stand_norm:
+            self.__console.warning(f"Undefined MT Stand Info '{mt_stand_raw}', defaulting to Unknown{width}X{height}")
+            mt_stand_norm = f"Unknown{width}X{height}"
 
         try:
             # Read CSV and gather tasks
@@ -339,10 +344,10 @@ class SDDModelInference(QThread):
                     if len(row) > 0 and row[-1].strip() == '1':  # if defect
                         image_filename = row[0].strip()[:-4]  # remove file extension (.jpg)
                         camera_id = image_filename.split('_')[0]
-                        new_filename = f"{date}_H{width}X{height}_{mt_no}_{image_filename}_x.jpg"
+                        new_filename = f"{date}_{mt_stand_norm}_{mt_no}_{image_filename}_x.jpg"
 
                         copy_tasks.append({
-                            'src': f"/volume1/sdd/{date[0:8]}/{date}_{width}x{height}/camera_{camera_id}/{image_filename}_x.jpg",
+                            'src': f"/volume1/sdd/{date[0:8]}/{date}_{mt_stand_norm}/camera_{camera_id}/{image_filename}_x.jpg",
                             'dst': f"/volume1/sdd/defect_images/{new_filename}"
                         })
 

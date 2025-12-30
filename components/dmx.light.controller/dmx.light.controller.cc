@@ -1,7 +1,6 @@
 
 #include "dk.light.linker.hpp"
 #include <flame/log.hpp>
-#include <flame/config_def.hpp>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
@@ -66,6 +65,6 @@ void dk_light_linker::on_close(){
     
 }
 
-void dk_light_linker::on_message(){
+void dk_light_linker::on_message(const component::message_t& msg){
     
 }

@@ -1,7 +1,6 @@
 
 #include "autonics.temp.controller.hpp"
 #include <flame/log.hpp>
-#include <flame/config_def.hpp>
 
 using namespace flame;
 
@@ -122,11 +121,11 @@ void autonics_temp_controller::on_loop(){
             msg_multipart.send(*get_port("temp_stream"), ZMQ_DONTWAIT);
         }
     }
-    catch(std::exception& e){
-        logger::error("[{}] Stardard Exception : {}", get_name(), e.what());
-    }
     catch(const zmq::error_t& e){
         logger::error("[{}] Pipeline Exception : {}", get_name(), e.what());
+    }
+    catch(std::exception& e){
+        logger::error("[{}] Stardard Exception : {}", get_name(), e.what());
     }
 }
 
@@ -135,7 +134,7 @@ void autonics_temp_controller::on_close(){
     modbus_free(_modbus_ctx);
 }
 
-void autonics_temp_controller::on_message(){
+void autonics_temp_controller::on_message(const component::message_t& msg){
     
 }
 
