@@ -218,11 +218,13 @@ void general_file_stacker::_level2_dispatch_task(json target_path){
                     auto json_data = json::parse(data);
 
                     /* generate target dir & name */
-                    if(json_data.contains("date") && json_data.contains("mt_stand_height") and json_data.contains("mt_stand_width")){
+                    if(json_data.contains("date") && json_data.contains("mt_stand_height") && json_data.contains("mt_stand_width") && json_data.contains("mt_stand_norm")){
                         string date = json_data["date"].get<string>().substr(0, 8);
-                        target_dirname = fmt::format("{}_{}x{}",json_data["date"].get<string>(),
-                                                                int(json_data["mt_stand_width"].get<int>()/10),
-                                                                int(json_data["mt_stand_height"].get<int>()/10));
+                        string mt_stand_norm = json_data.value("mt_stand_norm",""); 
+                        if(mt_stand_norm.empty()){
+                            mt_stand_norm = fmt::format("Unknown{}x{}", int(json_data["mt_stand_width"].get<int>()/10), int(json_data["mt_stand_height"].get<int>()/10));
+                        }
+                        target_dirname = fmt::format("{}_{}", json_data["date"].get<string>(), mt_stand_norm);
 
                         /* create directory & save level2 info (if backup only)*/
                         for(const auto& target:target_path){
@@ -258,14 +260,14 @@ void general_file_stacker::_level2_dispatch_task(json target_path){
                                 }
 
                             }
-                            catch(const std::exception& e){
-                                logger::error("[{}] Standard Exception : {}", get_name(), e.what());
-                            }
                             catch(const fs::filesystem_error& e){
                                 logger::error("[{}] Create directory error : {}", get_name(), e.what());
                             }
                             catch(const json::parse_error& e){
                                 logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());
+                            }
+                            catch(const std::exception& e){
+                                logger::error("[{}] Standard Exception : {}", get_name(), e.what());
                             }
                         }
 
@@ -288,10 +290,10 @@ void general_file_stacker::_level2_dispatch_task(json target_path){
     catch(const zmq::error_t& e){
         logger::error("[{}] Pipeline error : {}", get_name(), e.what());
     }
-    catch(const std::runtime_error& e){
-        logger::error("[{}] Runtime error occurred!", get_name());
-    }
     catch(const json::parse_error& e){
         logger::error("[{}] message cannot be parsed. {}", get_name(), e.what());
+    }
+    catch(const std::runtime_error& e){
+        logger::error("[{}] Runtime error occurred!", get_name());
     }
 }

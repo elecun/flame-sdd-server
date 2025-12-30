@@ -5,6 +5,9 @@
 #include <filesystem>
 #include <sstream>
 #include <bitset>
+#include <regex>
+#include <algorithm>
+#include <cctype>
 
 using namespace flame;
 
@@ -299,7 +302,7 @@ void dk_level2_interface::_do_server_work(json parameters){
                                     logger::info("Level2 Labeled Defect Info : mt_no: {}", data_pack["mt_no"].get<string>());
 
                                     /* publish the level2 data via labeling_job_dispatch port */
-                                    string topic = fmt::format("labeling_job_dispatch", get_name());
+                                    string topic = fmt::format("labeling_job_dispatch");
                                     string data = data_pack.dump();
                                     zmq::multipart_t msg_multipart;
                                     msg_multipart.addstr(topic);
@@ -330,6 +333,7 @@ void dk_level2_interface::_do_server_work(json parameters){
                                 //dk_h_standard_dim dim = extract_stand_dim(packet.cMtStand, sizeof(packet.cMtStand));
                                 data_pack["mt_stand"] = remove_space(packet.cMtStand, sizeof(packet.cMtStand));
                                 data_pack["mt_stand_raw"] = string(packet.cMtStand, sizeof(packet.cMtStand));
+                                data_pack["mt_stand_norm"] = _mtstand_normalize(data_pack["mt_stand_raw"].get<string>());
                                 data_pack["mt_stand_height"] = stoi(remove_space(packet.cStandSize2, sizeof(packet.cStandSize2))); //B
                                 data_pack["mt_stand_width"] = stoi(remove_space(packet.cStandSize1, sizeof(packet.cStandSize1))); // H
                                 data_pack["mt_stand_t1"] = stoi(remove_space(packet.cStandSize3, sizeof(packet.cStandSize3))); //t1
@@ -348,7 +352,7 @@ void dk_level2_interface::_do_server_work(json parameters){
                                                                         data_pack["mt_stand_raw"].get<string>());
 
                                     /* publish the level2 data via lv2_dispatch port */
-                                    string topic = fmt::format("lv2_dispatch", get_name());
+                                    string topic = fmt::format("lv2_dispatch");
                                     string data = data_pack.dump();
                                     zmq::multipart_t msg_multipart;
                                     msg_multipart.addstr(topic);
@@ -716,4 +720,100 @@ std::vector<std::string> split(const std::string& str, const std::string& delimi
         tokens.push_back(str.substr(start));
     }
     return tokens;
+}
+
+string dk_level2_interface::_mtstand_normalize(string mt_stand_raw){
+    if(mt_stand_raw.empty()){
+        return "Unknown";
+    }
+
+    auto trim = [](const string& input) -> string {
+        const auto start = input.find_first_not_of(" \t\n\r");
+        if(start == string::npos){
+            return "";
+        }
+        const auto end = input.find_last_not_of(" \t\n\r");
+        return input.substr(start, end - start + 1);
+    };
+
+    auto replace_slash = [](string input) -> string {
+        std::replace(input.begin(), input.end(), '/', '_');
+        return input;
+    };
+
+    if(mt_stand_raw.empty()){
+        return "";
+    }
+
+    string raw = std::regex_replace(mt_stand_raw, std::regex("\\s+"), " ");
+    raw = trim(raw);
+    if(raw.empty()){
+        return "";
+    }
+
+    if(!std::regex_search(raw, std::regex("[xX]"))){
+        raw.erase(std::remove(raw.begin(), raw.end(), ' '), raw.end());
+        return replace_slash(raw);
+    }
+
+    std::regex split_re("\\s*[xX]\\s*");
+    std::sregex_token_iterator it(raw.begin(), raw.end(), split_re, -1);
+    std::sregex_token_iterator end;
+    vector<string> parts;
+    for(; it != end; ++it){
+        string token = trim(*it);
+        if(!token.empty()){
+            parts.push_back(token);
+        }
+    }
+    if(parts.empty()){
+        raw.erase(std::remove(raw.begin(), raw.end(), ' '), raw.end());
+        return replace_slash(raw);
+    }
+
+    string first = parts.front();
+    vector<string> rest(parts.begin() + 1, parts.end());
+
+    std::smatch match;
+    std::regex prefix_re("^([A-Za-z]+)\\s*([0-9].*)$");
+    string prefix;
+    string first_dim;
+    if(std::regex_match(first, match, prefix_re)){
+        prefix = match[1].str();
+        first_dim = trim(match[2].str());
+    }
+    else{
+        prefix = "";
+        first_dim = first;
+        first_dim.erase(std::remove(first_dim.begin(), first_dim.end(), ' '), first_dim.end());
+    }
+
+    vector<string> dims;
+    dims.push_back(first_dim);
+    dims.insert(dims.end(), rest.begin(), rest.end());
+
+    string prefix_upper = prefix;
+    std::transform(prefix_upper.begin(), prefix_upper.end(), prefix_upper.begin(),
+                   [](unsigned char c){ return static_cast<char>(std::toupper(c)); });
+    if(prefix_upper == "H" && dims.size() >= 2){
+        dims.resize(2);
+    }
+
+    string joined;
+    for(const auto& dim_raw : dims){
+        string dim = dim_raw;
+        dim.erase(std::remove(dim.begin(), dim.end(), ' '), dim.end());
+        dim = replace_slash(dim);
+        if(dim.empty()){
+            continue;
+        }
+        if(!joined.empty()){
+            joined += "x";
+        }
+        joined += dim;
+    }
+
+    string normalized = prefix.empty() ? joined : (prefix + joined);
+    return normalized;
+
 }

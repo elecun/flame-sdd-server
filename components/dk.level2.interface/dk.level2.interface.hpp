@@ -66,6 +66,7 @@ class dk_level2_interface : public flame::component::object {
         string remove_space(const char* in, int size);
         dk_h_standard_dim extract_stand_dim(const char* in, int size); /* extract lot no. from packet */
         std::vector<std::string> split(const std::string& str, const std::string& delimiters);
+        string _mtstand_normalize(string mt_stand_raw);  // normalize mt_stand string via regex
 
         /* packet generation */
         dk_sdd_alive generate_packet_alive(bool show = false, bool working = false);
