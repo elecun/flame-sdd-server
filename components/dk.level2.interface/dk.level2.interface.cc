@@ -309,6 +309,7 @@ void dk_level2_interface::_do_server_work(json parameters){
                                     msg_multipart.addstr(data);
                                     msg_multipart.send(*get_port("labeling_job_dispatch"), ZMQ_DONTWAIT);
                                     logger::info("[{}] Publish to labeling_job_dispatch", get_name());
+                                    logger::debug("[{}] labeling job : {}", get_name(), data);
                                 }
 
                             }

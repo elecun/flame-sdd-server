@@ -651,6 +651,7 @@ class AppWindow(QMainWindow):
     
 
     def on_update_label(self, data:dict):
+        self.__console.info(f"Update Label : {data}")
         try:
             mv_commands = []
             for id in range(1,16): # 1~15
