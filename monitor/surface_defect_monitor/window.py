@@ -28,6 +28,7 @@ import re
 import subprocess
 import shlex
 import glob
+import shutil
 
 try:
     # using PyQt5
@@ -230,7 +231,7 @@ class AppWindow(QMainWindow):
                     if "dk_level2_interface_source" in config and "dk_level2_interface_sub_topic" in config:
                         self.__dk_level2_data_subscriber = DKLevel2DataSubscriber(self.__pipeline_context, 
                                                                                   connection=config["dk_level2_interface_source"], 
-                                                                                  topic=config["dk_level2_interface_sub_topic"])
+                                                                                  topics=config["dk_level2_interface_sub_topic"])
                         self.__dk_level2_data_subscriber.level2_data_update_signal.connect(self.on_update_dk_level2_data)
                         self.__dk_level2_data_subscriber.labeling_job_signal.connect(self.on_update_label)
                         self.__dk_level2_data_subscriber.start()
@@ -653,6 +654,7 @@ class AppWindow(QMainWindow):
     def on_update_label(self, data:dict):
         self.__console.info(f"Update Label : {data}")
         try:
+            moved_count = 0
             mv_commands = []
             for id in range(1,16): # 1~15
                 key = f"mea_image{id}"
@@ -668,39 +670,23 @@ class AppWindow(QMainWindow):
                     continue
                 date = timestamp[:8]  # YYYYMMDD
 
-                src = f"/volume1/sdd/{date}/{timestamp}_{mt_stand_norm}/camera_{camera_id}/{camera_id}_{image_idx}_*.jpg"
-                dst = f"/volume1/sdd/{date}/{timestamp}_{mt_stand_norm}/camera_{camera_id}/{camera_id}_{image_idx}_{defect_label}.jpg"
-                mv_commands.append(f"mv {shlex.quote(src)} {shlex.quote(dst)}")
+                src_pattern = f"/home/dk-sdd/nas_storage/{date}/{timestamp}_{mt_stand_norm}/camera_{camera_id}/{camera_id}_{image_idx}_*.jpg"
+                dst = f"/home/dk-sdd/nas_storage/{date}/{timestamp}_{mt_stand_norm}/camera_{camera_id}/{camera_id}_{image_idx}_{defect_label}.jpg"
+                matches = sorted(glob.glob(src_pattern))
+                if not matches:
+                    self.__console.warning(f"No source file for {key}: {src_pattern}")
+                    continue
+                if len(matches) > 1:
+                    self.__console.warning(f"Multiple source files for {key}, using first: {matches[0]}")
 
-            if not mv_commands:
-                self.__console.info("No label updates to apply")
-                return
+                src = matches[0]
+                try:
+                    shutil.move(src, dst)
+                    moved_count += 1
+                except Exception as e:
+                    self.__console.error(f"Move failed for {key}: {e}")
 
-            # change image labels in a single SSH session
-            remote_cmd = " && ".join(mv_commands)
-            ssh_command = [
-                "sshpass", "-p", "Ehdrnrwprkd1",
-                "ssh",
-                "-T",
-                "-o", "ConnectTimeout=5",
-                "-o", "ConnectionAttempts=1",
-                "dksteel@192.168.1.52",
-                remote_cmd
-            ]
-            try:
-                completed = subprocess.run(
-                    ssh_command,
-                    check=True,
-                    text=True,
-                    capture_output=True
-                )
-                if completed.stderr:
-                    self.__console.warning(f"Label update stderr: {completed.stderr.strip()}")
-                self.__console.info(f"Label updated for {len(mv_commands)} image file(s)")
-            except subprocess.CalledProcessError as e:
-                err = e.stderr.strip() if e.stderr else "Unknown error"
-                self.__console.error(f"Label update failed: {err}")
-
+                self.__console.info(f"Label updated for {moved_count} image file(s)")
         except Exception as e:
             self.__console.error(f"DK Level2 Label Update Error: {e}")
 
